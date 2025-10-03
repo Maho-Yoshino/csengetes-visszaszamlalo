@@ -13,6 +13,8 @@ from json import load as jload, dump as jdump
 from typing import Optional, Any, Literal
 from pathlib import Path
 logger = logging.getLogger(__name__)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("pystray").setLevel(logging.WARNING)
 
 # Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
@@ -44,19 +46,18 @@ async def setup_tray(root:Tk):
 	def on_quit(icon, item):
 		print_info("Closing application")
 		icon.stop()
-		global root
+		global root, update_cycle_task, transparency_task
+		update_cycle_task.cancel()
+		transparency_task.cancel()
 		root.quit()
 		runtime.stop()
-	def updateFast(root:Tk):
-		root.update()
-		root.after(50, updateFast) 
 	def settings_callback(): runtime.create_task(open_settings(root))
 	def setDelayWindow(icon, item):
 		global _root
 		async def CreateWindow():
 			def saveValue(event=None):
 				settings.delay = int(val.get())
-				_root.destroy()
+				_root.grid_forget()
 			_root = tk.Toplevel(root)
 			_root.title("Delay Time Input")
 			_root.geometry(f"+{_root.winfo_screenwidth()//2-25}+{_root.winfo_screenheight()//2-25}")
@@ -68,7 +69,7 @@ async def setup_tray(root:Tk):
 			tk.Button(_root, text="Save", command=saveValue).grid(row=2, column=0, columnspan=3)
 			_root.focus_force()
 			_root.bind('<Return>', saveValue)
-			updateFast(_root)
+			asyncio.create_task(updateFast(_root))
 		runtime.create_task(CreateWindow())
 	def ScheduleWindow(icon, item):
 		... # TODO: Fullscreen Schedule display
@@ -108,7 +109,8 @@ class Settings:
 					"alpha": {
 						"default":0.75, 
 						"onHover":0.25
-					}
+					},
+					"display_next_time":10
 				}, f, indent=4)
 			with open(self.filename, "r", encoding=self.encoding) as f:
 				self._data = jload(f)
@@ -121,6 +123,7 @@ class Settings:
 		self._data.setdefault("special_begintimes", {})
 		self._data.setdefault("delay", 0)
 		self._data.setdefault("classes_begin", 800)
+		self._data.setdefault("alpha", {"default":0.75,"onHover":0.25})
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
@@ -232,8 +235,19 @@ class Settings:
 	def alpha(self, key:Literal["onHover"]|Literal["default"], value: float):
 		self._data["alpha"][key] = value
 		self.save()
+	@property # display_next_time
+	def display_next_time(self) -> int:
+		return self._data["display_next_time"]
+	@display_next_time.setter
+	def display_next_time(self, value: int):
+		self._data["display_next_time"] = value
+		self.save()
 settings = Settings()
 _settings:tk.Toplevel|None = None
+async def updateFast(sep_root:Tk):
+	while True:
+		sep_root.update()
+		await asyncio.sleep(0.01) 
 async def open_settings(root:Tk):
 	global _settings
 	_settings = tk.Toplevel(root)
@@ -244,19 +258,13 @@ async def open_settings(root:Tk):
 	menu.add_command(label="Not implemented yet")
 	_settings.config(menu=menu)
 	tk.Label(_settings, text="Settings window", font=font_size(20)).grid(row=0, column=0, columnspan=10)
-	_settings.update()
+	await updateFast(_settings)
 
 # Clock Window
-mainlabel:tk.Label|None = None
-timelabel:tk.Label|None = None
-class1label:tk.Label|None = None
-class2label:tk.Label|None = None
-loc1label:tk.Label|None = None
-loc2label:tk.Label|None = None
-vert_separator:Separator|None = None
-separator:Separator|None = None
-runtime:asyncio.AbstractEventLoop|None = None
-dummy_date:None|datetime = None
+runtime:asyncio.AbstractEventLoop
+transparency_task:asyncio.Task = None
+update_cycle_task:asyncio.Task = None
+dummy_date:datetime|None = None
 root:Tk
 def font_size(size:int): return Font(size=size)
 async def set_click_through():
@@ -295,10 +303,9 @@ async def transparency_check(root:Tk):
 		elif await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.10: 
 			root.wm_attributes("-alpha", settings.alpha["onHover"])
 		await asyncio.sleep(await is_battery_saver_on(1, 0.1))
-async def get_rn():
-	return datetime.now() if dummy_date is None else dummy_date
+async def get_rn(): return datetime.now() if dummy_date is None else dummy_date
 async def startup(root:Tk):
-	global mainlabel, timelabel, loc1label, loc2label, class1label, class2label, separator, vert_separator
+	global transparency_task, update_cycle_task
 	root.configure(background="black")
 	root.attributes("-topmost", True)
 	root.title("Csengetés időzítő")
@@ -306,10 +313,9 @@ async def startup(root:Tk):
 	root.overrideredirect(True)
 	root.wm_attributes("-alpha", settings.alpha["default"])
 	root.grid(3, 5, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
-	#root.grid_propagate(False)
 	root.config(padx=15, pady=15, border=1, borderwidth=1)
 	init_data = {
-		"text":"Init",
+		"text":"Initializing...",
 		"bg":"black",
 		"fg":"white"
 	}
@@ -317,26 +323,25 @@ async def startup(root:Tk):
 	mainlabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
 	mainlabel.grid_rowconfigure(0, weight=1)
 	timelabel = tk.Label(root, init_data, font=font_size(30))
-	timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 	timelabel.grid_rowconfigure(1, weight=1)
 	separator = Separator(root, orient="horizontal")
-	separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 	separator.grid_rowconfigure(2, weight=1)
-	class2label = tk.Label(root, init_data, font=font_size(10))
-	class2label.grid(row=3, column=2, sticky="nsew")
-	class1label = tk.Label(root, init_data, font=font_size(10),padx=5)
-	class1label.grid(row=3, column=0, sticky="nsew")
+	class1label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
 	class1label.grid_rowconfigure(3, weight=1)
-	loc2label = tk.Label(root, init_data, font=font_size(10))
-	loc2label.grid(row=4, column=2, sticky="nsew")
-	loc1label = tk.Label(root, init_data, font=font_size(10), padx=5)
-	loc1label.grid(row=4, column=0, sticky="nsew")
+	class2label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
+	loc2label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
+	loc1label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
+	aux_label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
+	vert_separator = Separator(root, orient="vertical")
 	asyncio.create_task(set_click_through())
-	asyncio.create_task(transparency_check(root))
+	transparency_task = asyncio.create_task(transparency_check(root))
 	del init_data
 	await setup_tray(root)
+	root.columnconfigure(0, weight=1)
+	root.columnconfigure(1, weight=0)
+	root.columnconfigure(2, weight=1)
 	root.update()
-	asyncio.create_task(update_cycle())
+	update_cycle_task = asyncio.create_task(update_cycle(mainlabel, timelabel, class1label, class2label, loc1label, loc2label, root, vert_separator, separator, schedule, aux_label))
 	root.protocol("WM_DELETE_WINDOW", root.withdraw)
 	print_info("Startup complete")
 
@@ -386,14 +391,13 @@ class Schedule:
 				self.classes.append(self.ClassData(classinfo, ind, self))
 		print_debug("Initialized Schedule class")
 schedule:Schedule|None = None
-async def update_cycle():
+async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, schedule:Schedule, aux_label:tk.Label):
 	async def set_dynamic_size():
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
-	global mainlabel, timelabel, class1label, class2label, loc1label, loc2label, root, vert_separator, separator, schedule, _root
-	aux_label:tk.Label|None = None
 	prev_day:datetime = (await get_rn()).date()
 	schedule = Schedule()
+	global dummy_date
 	while True:
 		_start = perf_counter()
 		delay = settings.delay
@@ -404,6 +408,10 @@ async def update_cycle():
 			if len(schedule.classes) == 0: await asyncio.sleep(60*30)
 		now = (await get_rn())
 		now_time = now.time()
+		if all([not i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
+			class1label.grid(row=3, column=0, sticky="nsew")
+			loc1label.grid(row=4, column=0, sticky="nsew")
+			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 		for num, _class in enumerate(schedule.classes):
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list):
@@ -414,32 +422,26 @@ async def update_cycle():
 				mainlabel.config(text=f"Szünet végéig")
 				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				class1label.config(text=f"{_class.classname}", anchor="center")
-				if aux_label is not None:
-					aux_label = aux_label.destroy()
-					root.grid(3, 4, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
+				if aux_label.winfo_ismapped():
+					aux_label.grid_forget()
+					root.rowconfigure(4, weight=0, minsize=0)
 				if tmp_class is not None:
-					class2label.config(text=f"{tmp_class.classname}", anchor="center", wraplength=class2label.winfo_width())
+					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
+					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
+					if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 					class1label.grid_configure(columnspan=1)
+					loc1label.grid_configure(columnspan=1)
+					class2label.config(text=f"{tmp_class.classname}", anchor="center", wraplength=class2label.winfo_width())
 					loc1label.config(text=f"{_class.room}", wraplength=loc1label.winfo_width())
 					loc2label.config(text=f"{tmp_class.room}", wraplength=loc2label.winfo_width())
-					loc1label.grid_configure(columnspan=1)
-					if vert_separator is None:
-						vert_separator = Separator(root, orient="vertical")
-						vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 				else:
-					if vert_separator is not None:
-						vert_separator.destroy()
-						vert_separator = None
-					class2label.config(text="", wraplength=class2label.winfo_width())
+					if class2label.winfo_ismapped(): class2label.grid_forget()
+					if loc2label.winfo_ismapped(): loc2label.grid_forget()
+					if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
 					class1label.grid_configure(columnspan=3)
-					class1label.config(wraplength=class1label.winfo_width())
-					loc1label.config(text=_class.room, wraplength=loc1label.winfo_width())
-					loc2label.config(text="", wraplength=loc2label.winfo_width())
 					loc1label.grid_configure(columnspan=3)
-				if separator is None:
-					separator = Separator(root, orient="horizontal")
-					separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-				class1label.config(wraplength=class1label.winfo_width())
+					loc1label.config(text=_class.room, wraplength=loc1label.winfo_width())
+				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 				await set_dynamic_size()
 				break
 			elif ((_class.end_datetime + timedelta(seconds=delay)).time() > now_time):
@@ -448,102 +450,87 @@ async def update_cycle():
 				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				class1label.config(text=f"{_class.classname}", anchor="center")
 				if tmp_class is not None:
+					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
+					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
 					if (tmp.seconds > 60*10):
-						if aux_label.winfo_ismapped():
-							aux_label = aux_label.destroy()
-							root.grid(3, 4, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
-						class2label.config(text=f"{tmp_class.classname}", anchor="center")
+						if aux_label.winfo_ismapped(): 
+							aux_label.grid_forget()
+							root.rowconfigure(4, weight=0, minsize=0)
+						if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 						class1label.grid_configure(columnspan=1)
+						loc1label.grid_configure(columnspan=1)
+						class2label.config(text=f"{tmp_class.classname}", anchor="center")
 						loc1label.config(text=f"{_class.room}")
 						loc2label.config(text=f"{tmp_class.room}")
-						loc1label.grid_configure(columnspan=1)
-						aux_label.config(text="")
-						if vert_separator is None:
-							vert_separator = Separator(root, orient="vertical")
-							vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 					else:
-						if aux_label is None:
-							root.grid(3, 5, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
-							aux_label = tk.Label(root, {"text":"", "bg":"black", "fg":"white"}, font=font_size(10), text="Következő óra")
+						if not aux_label.winfo_ismapped():
 							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
+							aux_label.config(text="Következő óra")
+							root.rowconfigure(4, weight=1)
 						if isinstance(next_class := schedule.classes[num+1], list) and len(next_class) > 1:
-							class1label.config(text=f"{next_class[0].classname}", anchor="center", wraplength=class1label.winfo_width())
-							class2label.config(text=f"{next_class[1].classname}", anchor="center", wraplength=class2label.winfo_width())
+							if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
+							class1label.config(text=f"{next_class[0].classname}", anchor="center")
+							class2label.config(text=f"{next_class[1].classname}", anchor="center")
 							loc1label.config(text=f"{next_class[0].room}")
 							loc2label.config(text=f"{next_class[1].room}")
-							if vert_separator is None:
-								vert_separator = Separator(root, orient="vertical")
-								vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 						else:
-							class2label.config(text="")
+							if class2label.winfo_ismapped(): class2label.grid_forget()
+							if loc2label.winfo_ismapped(): loc2label.grid_forget()
 							class1label.grid_configure(columnspan=3)
-							class1label.config(text=f"{next_class.classname}", anchor="center", wraplength=class1label.winfo_width())
-							loc1label.config(text=f"{next_class.room}")
-							loc2label.config(text="")
 							loc1label.grid_configure(columnspan=3)
-							if vert_separator is not None:
-								vert_separator = vert_separator.destroy()
+							class1label.config(text=f"{next_class.classname}", anchor="center")
+							loc1label.config(text=f"{next_class.room}")
+							if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
+					if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 				else:
 					if (tmp.seconds > 60*10):
-						class1label.config(text=f"{_class.classname}", anchor="center")
+						if class2label is not None: class2label = class2label.grid_forget()
+						if loc2label is not None: loc2label = loc2label.grid_forget()
 						class1label.grid_configure(columnspan=3)
-						loc1label.config(text=f"{_class.room}")
-						loc2label.config(text="")
 						loc1label.grid_configure(columnspan=3)
-						if aux_label is not None:
-							aux_label = aux_label.destroy()
-							root.grid(3, 4, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
+						class1label.config(text=f"{_class.classname}", anchor="center")
+						loc1label.config(text=f"{_class.room}")
+						if aux_label.winfo_ismapped():
+							aux_label.grid_forget()
+							root.rowconfigure(4, weight=0, minsize=0)
 					else:
 						if isinstance(next_class := schedule.classes[num+1], list) and len(next_class) > 1:
-							class1label.config(text=f"{next_class[0].classname}", anchor="center", wraplength=class1label.winfo_width())
-							class2label.config(text=f"{next_class[1].classname}", anchor="center", wraplength=class2label.winfo_width())
+							if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
+							if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
+							class1label.config(text=f"{next_class[0].classname}", anchor="center")
+							class2label.config(text=f"{next_class[1].classname}", anchor="center")
 							loc1label.config(text=f"{next_class[0].room}")
 							loc2label.config(text=f"{next_class[1].room}")
-							if vert_separator is None:
-								vert_separator = Separator(root, orient="vertical")
-								vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
+							if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 						else:
-							class2label.config(text="")
+							if class2label.winfo_ismapped(): class2label.grid_forget()
+							if loc2label.winfo_ismapped(): loc2label.grid_forget()
 							class1label.grid_configure(columnspan=3)
-							class1label.config(text=f"{next_class.classname}", anchor="center", wraplength=class1label.winfo_width())
+							class1label.config(text=f"{next_class.classname}", anchor="center")
 							loc1label.config(text=f"{next_class.room}")
-							loc2label.config(text="")
 							loc1label.grid_configure(columnspan=3)
-							if vert_separator is not None:
-								vert_separator = vert_separator.destroy()
-						if aux_label is None:
-							root.grid(3, 5, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
-							aux_label = tk.Label(root, {"text":"", "bg":"black", "fg":"white"}, font=font_size(10), text="Következő óra")
+							if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
+						if not aux_label.winfo_ismapped():
 							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
-				if separator is None:
-					separator = Separator(root, orient="horizontal")
-					separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
+							aux_label.config(text="Következő óra")
+							root.rowconfigure(4, weight=1)
+				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 				await set_dynamic_size()
 				break
 		else:
 			mainlabel.config(text="A napnak vége")
-			timelabel.config(text="")
-			class1label.config(text="")
-			class2label.config(text="")
-			loc1label.config(text="")
-			loc2label.config(text="")
-			if aux_label is not None:
-				aux_label = aux_label.destroy()
-			if vert_separator is not None:
-				vert_separator.destroy()
-				vert_separator = None
-			if separator is not None:
-				separator.destroy()
-				separator = None
+			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,separator,vert_separator,aux_label] if i.winfo_ismapped()]
 			await set_dynamic_size()
 			root.update()
 			await asyncio.sleep(60)
 			continue
+		class1label.config(wraplength=class1label.winfo_width())
+		class2label.config(wraplength=class2label.winfo_width())
 		root.update()
-		if _root is not None:
-			_root.update()
 		await set_dynamic_size()
 		update_delay = await is_battery_saver_on(5, 1)
+		if dummy_date is not None:
+			dummy_date = dummy_date + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
 		await asyncio.sleep(delay)
 
@@ -564,7 +551,7 @@ def main(_dummy_date:datetime|None = None):
 	filename = f"logs/timer_{datetime.now().date().isoformat().replace('-', '_')}.log"
 	if (not path.isdir("logs")): mkdir("logs")
 	log_format = "%(asctime)s::%(levelname)-8s:%(message)s"
-	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.WARNING, format=log_format, datefmt="%H:%M:%S")
+	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.WARNING, format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
 	print_info("Application Starting up")
 	global root, runtime
@@ -575,5 +562,7 @@ def main(_dummy_date:datetime|None = None):
 	runtime.run_forever()
 	runtime.close()
 
-#main(datetime(2025, 10, 1, 9, 15))
-main()
+if environ.get('TERM_PROGRAM') == 'vscode':
+	main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
+else:
+	main()
