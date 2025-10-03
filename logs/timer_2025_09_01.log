@@ -1,0 +1,444 @@
+19:27:42::INFO    :Application Starting up
+19:27:42::DEBUG   :Using proactor: IocpProactor
+19:27:42::DEBUG   :Importing AvifImagePlugin
+19:27:42::DEBUG   :Importing BlpImagePlugin
+19:27:42::DEBUG   :Importing BmpImagePlugin
+19:27:42::DEBUG   :Importing BufrStubImagePlugin
+19:27:42::DEBUG   :Importing CurImagePlugin
+19:27:42::DEBUG   :Importing DcxImagePlugin
+19:27:42::DEBUG   :Importing DdsImagePlugin
+19:27:42::DEBUG   :Importing EpsImagePlugin
+19:27:42::DEBUG   :Importing FitsImagePlugin
+19:27:42::DEBUG   :Importing FliImagePlugin
+19:27:42::DEBUG   :Importing FpxImagePlugin
+19:27:42::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:27:42::DEBUG   :Importing FtexImagePlugin
+19:27:42::DEBUG   :Importing GbrImagePlugin
+19:27:42::DEBUG   :Importing GifImagePlugin
+19:27:42::DEBUG   :Importing GribStubImagePlugin
+19:27:42::DEBUG   :Importing Hdf5StubImagePlugin
+19:27:42::DEBUG   :Importing IcnsImagePlugin
+19:27:42::DEBUG   :Importing IcoImagePlugin
+19:27:42::DEBUG   :Importing ImImagePlugin
+19:27:42::DEBUG   :Importing ImtImagePlugin
+19:27:42::DEBUG   :Importing IptcImagePlugin
+19:27:42::DEBUG   :Importing JpegImagePlugin
+19:27:42::DEBUG   :Importing Jpeg2KImagePlugin
+19:27:42::DEBUG   :Importing McIdasImagePlugin
+19:27:42::DEBUG   :Importing MicImagePlugin
+19:27:42::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:27:42::DEBUG   :Importing MpegImagePlugin
+19:27:42::DEBUG   :Importing MpoImagePlugin
+19:27:42::DEBUG   :Importing MspImagePlugin
+19:27:42::DEBUG   :Importing PalmImagePlugin
+19:27:42::DEBUG   :Importing PcdImagePlugin
+19:27:42::DEBUG   :Importing PcxImagePlugin
+19:27:42::DEBUG   :Importing PdfImagePlugin
+19:27:42::DEBUG   :Importing PixarImagePlugin
+19:27:42::DEBUG   :Importing PngImagePlugin
+19:27:42::DEBUG   :Importing PpmImagePlugin
+19:27:42::DEBUG   :Importing PsdImagePlugin
+19:27:42::DEBUG   :Importing QoiImagePlugin
+19:27:42::DEBUG   :Importing SgiImagePlugin
+19:27:42::DEBUG   :Importing SpiderImagePlugin
+19:27:42::DEBUG   :Importing SunImagePlugin
+19:27:42::DEBUG   :Importing TgaImagePlugin
+19:27:42::DEBUG   :Importing TiffImagePlugin
+19:27:42::DEBUG   :Importing WebPImagePlugin
+19:27:42::DEBUG   :Importing WmfImagePlugin
+19:27:42::DEBUG   :Importing XbmImagePlugin
+19:27:42::DEBUG   :Importing XpmImagePlugin
+19:27:42::DEBUG   :Importing XVThumbImagePlugin
+19:27:42::INFO    :Startup complete
+19:35:04::INFO    :Application Starting up
+19:35:04::DEBUG   :Using proactor: IocpProactor
+19:35:04::DEBUG   :Importing AvifImagePlugin
+19:35:04::DEBUG   :Importing BlpImagePlugin
+19:35:04::DEBUG   :Importing BmpImagePlugin
+19:35:04::DEBUG   :Importing BufrStubImagePlugin
+19:35:04::DEBUG   :Importing CurImagePlugin
+19:35:04::DEBUG   :Importing DcxImagePlugin
+19:35:04::DEBUG   :Importing DdsImagePlugin
+19:35:04::DEBUG   :Importing EpsImagePlugin
+19:35:04::DEBUG   :Importing FitsImagePlugin
+19:35:04::DEBUG   :Importing FliImagePlugin
+19:35:04::DEBUG   :Importing FpxImagePlugin
+19:35:04::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:35:04::DEBUG   :Importing FtexImagePlugin
+19:35:04::DEBUG   :Importing GbrImagePlugin
+19:35:04::DEBUG   :Importing GifImagePlugin
+19:35:04::DEBUG   :Importing GribStubImagePlugin
+19:35:04::DEBUG   :Importing Hdf5StubImagePlugin
+19:35:04::DEBUG   :Importing IcnsImagePlugin
+19:35:04::DEBUG   :Importing IcoImagePlugin
+19:35:04::DEBUG   :Importing ImImagePlugin
+19:35:04::DEBUG   :Importing ImtImagePlugin
+19:35:04::DEBUG   :Importing IptcImagePlugin
+19:35:04::DEBUG   :Importing JpegImagePlugin
+19:35:04::DEBUG   :Importing Jpeg2KImagePlugin
+19:35:04::DEBUG   :Importing McIdasImagePlugin
+19:35:04::DEBUG   :Importing MicImagePlugin
+19:35:04::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:35:04::DEBUG   :Importing MpegImagePlugin
+19:35:04::DEBUG   :Importing MpoImagePlugin
+19:35:04::DEBUG   :Importing MspImagePlugin
+19:35:04::DEBUG   :Importing PalmImagePlugin
+19:35:04::DEBUG   :Importing PcdImagePlugin
+19:35:04::DEBUG   :Importing PcxImagePlugin
+19:35:04::DEBUG   :Importing PdfImagePlugin
+19:35:04::DEBUG   :Importing PixarImagePlugin
+19:35:04::DEBUG   :Importing PngImagePlugin
+19:35:04::DEBUG   :Importing PpmImagePlugin
+19:35:04::DEBUG   :Importing PsdImagePlugin
+19:35:04::DEBUG   :Importing QoiImagePlugin
+19:35:04::DEBUG   :Importing SgiImagePlugin
+19:35:04::DEBUG   :Importing SpiderImagePlugin
+19:35:04::DEBUG   :Importing SunImagePlugin
+19:35:04::DEBUG   :Importing TgaImagePlugin
+19:35:04::DEBUG   :Importing TiffImagePlugin
+19:35:04::DEBUG   :Importing WebPImagePlugin
+19:35:04::DEBUG   :Importing WmfImagePlugin
+19:35:04::DEBUG   :Importing XbmImagePlugin
+19:35:04::DEBUG   :Importing XpmImagePlugin
+19:35:04::DEBUG   :Importing XVThumbImagePlugin
+19:35:04::INFO    :Startup complete
+19:35:11::INFO    :Application Starting up
+19:35:11::DEBUG   :Using proactor: IocpProactor
+19:35:11::DEBUG   :Importing AvifImagePlugin
+19:35:11::DEBUG   :Importing BlpImagePlugin
+19:35:11::DEBUG   :Importing BmpImagePlugin
+19:35:11::DEBUG   :Importing BufrStubImagePlugin
+19:35:11::DEBUG   :Importing CurImagePlugin
+19:35:11::DEBUG   :Importing DcxImagePlugin
+19:35:11::DEBUG   :Importing DdsImagePlugin
+19:35:11::DEBUG   :Importing EpsImagePlugin
+19:35:11::DEBUG   :Importing FitsImagePlugin
+19:35:11::DEBUG   :Importing FliImagePlugin
+19:35:11::DEBUG   :Importing FpxImagePlugin
+19:35:11::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:35:11::DEBUG   :Importing FtexImagePlugin
+19:35:11::DEBUG   :Importing GbrImagePlugin
+19:35:11::DEBUG   :Importing GifImagePlugin
+19:35:11::DEBUG   :Importing GribStubImagePlugin
+19:35:11::DEBUG   :Importing Hdf5StubImagePlugin
+19:35:11::DEBUG   :Importing IcnsImagePlugin
+19:35:11::DEBUG   :Importing IcoImagePlugin
+19:35:11::DEBUG   :Importing ImImagePlugin
+19:35:11::DEBUG   :Importing ImtImagePlugin
+19:35:11::DEBUG   :Importing IptcImagePlugin
+19:35:11::DEBUG   :Importing JpegImagePlugin
+19:35:11::DEBUG   :Importing Jpeg2KImagePlugin
+19:35:11::DEBUG   :Importing McIdasImagePlugin
+19:35:11::DEBUG   :Importing MicImagePlugin
+19:35:11::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:35:11::DEBUG   :Importing MpegImagePlugin
+19:35:11::DEBUG   :Importing MpoImagePlugin
+19:35:11::DEBUG   :Importing MspImagePlugin
+19:35:11::DEBUG   :Importing PalmImagePlugin
+19:35:11::DEBUG   :Importing PcdImagePlugin
+19:35:11::DEBUG   :Importing PcxImagePlugin
+19:35:11::DEBUG   :Importing PdfImagePlugin
+19:35:12::DEBUG   :Importing PixarImagePlugin
+19:35:12::DEBUG   :Importing PngImagePlugin
+19:35:12::DEBUG   :Importing PpmImagePlugin
+19:35:12::DEBUG   :Importing PsdImagePlugin
+19:35:12::DEBUG   :Importing QoiImagePlugin
+19:35:12::DEBUG   :Importing SgiImagePlugin
+19:35:12::DEBUG   :Importing SpiderImagePlugin
+19:35:12::DEBUG   :Importing SunImagePlugin
+19:35:12::DEBUG   :Importing TgaImagePlugin
+19:35:12::DEBUG   :Importing TiffImagePlugin
+19:35:12::DEBUG   :Importing WebPImagePlugin
+19:35:12::DEBUG   :Importing WmfImagePlugin
+19:35:12::DEBUG   :Importing XbmImagePlugin
+19:35:12::DEBUG   :Importing XpmImagePlugin
+19:35:12::DEBUG   :Importing XVThumbImagePlugin
+19:35:12::INFO    :Startup complete
+19:35:15::INFO    :Application Starting up
+19:35:15::DEBUG   :Using proactor: IocpProactor
+19:35:15::DEBUG   :Importing AvifImagePlugin
+19:35:15::DEBUG   :Importing BlpImagePlugin
+19:35:15::DEBUG   :Importing BmpImagePlugin
+19:35:15::DEBUG   :Importing BufrStubImagePlugin
+19:35:15::DEBUG   :Importing CurImagePlugin
+19:35:15::DEBUG   :Importing DcxImagePlugin
+19:35:15::DEBUG   :Importing DdsImagePlugin
+19:35:15::DEBUG   :Importing EpsImagePlugin
+19:35:15::DEBUG   :Importing FitsImagePlugin
+19:35:15::DEBUG   :Importing FliImagePlugin
+19:35:15::DEBUG   :Importing FpxImagePlugin
+19:35:15::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:35:15::DEBUG   :Importing FtexImagePlugin
+19:35:15::DEBUG   :Importing GbrImagePlugin
+19:35:15::DEBUG   :Importing GifImagePlugin
+19:35:15::DEBUG   :Importing GribStubImagePlugin
+19:35:15::DEBUG   :Importing Hdf5StubImagePlugin
+19:35:15::DEBUG   :Importing IcnsImagePlugin
+19:35:15::DEBUG   :Importing IcoImagePlugin
+19:35:15::DEBUG   :Importing ImImagePlugin
+19:35:15::DEBUG   :Importing ImtImagePlugin
+19:35:15::DEBUG   :Importing IptcImagePlugin
+19:35:15::DEBUG   :Importing JpegImagePlugin
+19:35:15::DEBUG   :Importing Jpeg2KImagePlugin
+19:35:15::DEBUG   :Importing McIdasImagePlugin
+19:35:15::DEBUG   :Importing MicImagePlugin
+19:35:15::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:35:15::DEBUG   :Importing MpegImagePlugin
+19:35:15::DEBUG   :Importing MpoImagePlugin
+19:35:15::DEBUG   :Importing MspImagePlugin
+19:35:15::DEBUG   :Importing PalmImagePlugin
+19:35:15::DEBUG   :Importing PcdImagePlugin
+19:35:15::DEBUG   :Importing PcxImagePlugin
+19:35:15::DEBUG   :Importing PdfImagePlugin
+19:35:15::DEBUG   :Importing PixarImagePlugin
+19:35:15::DEBUG   :Importing PngImagePlugin
+19:35:15::DEBUG   :Importing PpmImagePlugin
+19:35:15::DEBUG   :Importing PsdImagePlugin
+19:35:15::DEBUG   :Importing QoiImagePlugin
+19:35:15::DEBUG   :Importing SgiImagePlugin
+19:35:15::DEBUG   :Importing SpiderImagePlugin
+19:35:15::DEBUG   :Importing SunImagePlugin
+19:35:15::DEBUG   :Importing TgaImagePlugin
+19:35:15::DEBUG   :Importing TiffImagePlugin
+19:35:15::DEBUG   :Importing WebPImagePlugin
+19:35:15::DEBUG   :Importing WmfImagePlugin
+19:35:15::DEBUG   :Importing XbmImagePlugin
+19:35:15::DEBUG   :Importing XpmImagePlugin
+19:35:15::DEBUG   :Importing XVThumbImagePlugin
+19:35:15::INFO    :Startup complete
+19:35:39::INFO    :Application Starting up
+19:35:39::DEBUG   :Using proactor: IocpProactor
+19:35:39::DEBUG   :Importing AvifImagePlugin
+19:35:39::DEBUG   :Importing BlpImagePlugin
+19:35:39::DEBUG   :Importing BmpImagePlugin
+19:35:39::DEBUG   :Importing BufrStubImagePlugin
+19:35:39::DEBUG   :Importing CurImagePlugin
+19:35:39::DEBUG   :Importing DcxImagePlugin
+19:35:39::DEBUG   :Importing DdsImagePlugin
+19:35:39::DEBUG   :Importing EpsImagePlugin
+19:35:39::DEBUG   :Importing FitsImagePlugin
+19:35:39::DEBUG   :Importing FliImagePlugin
+19:35:39::DEBUG   :Importing FpxImagePlugin
+19:35:39::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:35:39::DEBUG   :Importing FtexImagePlugin
+19:35:39::DEBUG   :Importing GbrImagePlugin
+19:35:39::DEBUG   :Importing GifImagePlugin
+19:35:39::DEBUG   :Importing GribStubImagePlugin
+19:35:39::DEBUG   :Importing Hdf5StubImagePlugin
+19:35:39::DEBUG   :Importing IcnsImagePlugin
+19:35:39::DEBUG   :Importing IcoImagePlugin
+19:35:39::DEBUG   :Importing ImImagePlugin
+19:35:39::DEBUG   :Importing ImtImagePlugin
+19:35:39::DEBUG   :Importing IptcImagePlugin
+19:35:39::DEBUG   :Importing JpegImagePlugin
+19:35:39::DEBUG   :Importing Jpeg2KImagePlugin
+19:35:39::DEBUG   :Importing McIdasImagePlugin
+19:35:39::DEBUG   :Importing MicImagePlugin
+19:35:39::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:35:39::DEBUG   :Importing MpegImagePlugin
+19:35:39::DEBUG   :Importing MpoImagePlugin
+19:35:39::DEBUG   :Importing MspImagePlugin
+19:35:39::DEBUG   :Importing PalmImagePlugin
+19:35:39::DEBUG   :Importing PcdImagePlugin
+19:35:39::DEBUG   :Importing PcxImagePlugin
+19:35:39::DEBUG   :Importing PdfImagePlugin
+19:35:39::DEBUG   :Importing PixarImagePlugin
+19:35:39::DEBUG   :Importing PngImagePlugin
+19:35:39::DEBUG   :Importing PpmImagePlugin
+19:35:39::DEBUG   :Importing PsdImagePlugin
+19:35:39::DEBUG   :Importing QoiImagePlugin
+19:35:39::DEBUG   :Importing SgiImagePlugin
+19:35:39::DEBUG   :Importing SpiderImagePlugin
+19:35:39::DEBUG   :Importing SunImagePlugin
+19:35:39::DEBUG   :Importing TgaImagePlugin
+19:35:39::DEBUG   :Importing TiffImagePlugin
+19:35:39::DEBUG   :Importing WebPImagePlugin
+19:35:39::DEBUG   :Importing WmfImagePlugin
+19:35:39::DEBUG   :Importing XbmImagePlugin
+19:35:39::DEBUG   :Importing XpmImagePlugin
+19:35:39::DEBUG   :Importing XVThumbImagePlugin
+19:35:39::INFO    :Startup complete
+19:35:43::INFO    :Application Starting up
+19:35:43::DEBUG   :Using proactor: IocpProactor
+19:35:43::DEBUG   :Importing AvifImagePlugin
+19:35:43::DEBUG   :Importing BlpImagePlugin
+19:35:43::DEBUG   :Importing BmpImagePlugin
+19:35:43::DEBUG   :Importing BufrStubImagePlugin
+19:35:43::DEBUG   :Importing CurImagePlugin
+19:35:43::DEBUG   :Importing DcxImagePlugin
+19:35:43::DEBUG   :Importing DdsImagePlugin
+19:35:43::DEBUG   :Importing EpsImagePlugin
+19:35:43::DEBUG   :Importing FitsImagePlugin
+19:35:43::DEBUG   :Importing FliImagePlugin
+19:35:43::DEBUG   :Importing FpxImagePlugin
+19:35:43::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:35:43::DEBUG   :Importing FtexImagePlugin
+19:35:43::DEBUG   :Importing GbrImagePlugin
+19:35:43::DEBUG   :Importing GifImagePlugin
+19:35:43::DEBUG   :Importing GribStubImagePlugin
+19:35:43::DEBUG   :Importing Hdf5StubImagePlugin
+19:35:43::DEBUG   :Importing IcnsImagePlugin
+19:35:43::DEBUG   :Importing IcoImagePlugin
+19:35:43::DEBUG   :Importing ImImagePlugin
+19:35:43::DEBUG   :Importing ImtImagePlugin
+19:35:43::DEBUG   :Importing IptcImagePlugin
+19:35:43::DEBUG   :Importing JpegImagePlugin
+19:35:43::DEBUG   :Importing Jpeg2KImagePlugin
+19:35:43::DEBUG   :Importing McIdasImagePlugin
+19:35:43::DEBUG   :Importing MicImagePlugin
+19:35:43::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:35:43::DEBUG   :Importing MpegImagePlugin
+19:35:43::DEBUG   :Importing MpoImagePlugin
+19:35:43::DEBUG   :Importing MspImagePlugin
+19:35:43::DEBUG   :Importing PalmImagePlugin
+19:35:43::DEBUG   :Importing PcdImagePlugin
+19:35:43::DEBUG   :Importing PcxImagePlugin
+19:35:43::DEBUG   :Importing PdfImagePlugin
+19:35:43::DEBUG   :Importing PixarImagePlugin
+19:35:43::DEBUG   :Importing PngImagePlugin
+19:35:43::DEBUG   :Importing PpmImagePlugin
+19:35:43::DEBUG   :Importing PsdImagePlugin
+19:35:43::DEBUG   :Importing QoiImagePlugin
+19:35:43::DEBUG   :Importing SgiImagePlugin
+19:35:43::DEBUG   :Importing SpiderImagePlugin
+19:35:43::DEBUG   :Importing SunImagePlugin
+19:35:43::DEBUG   :Importing TgaImagePlugin
+19:35:43::DEBUG   :Importing TiffImagePlugin
+19:35:43::DEBUG   :Importing WebPImagePlugin
+19:35:43::DEBUG   :Importing WmfImagePlugin
+19:35:43::DEBUG   :Importing XbmImagePlugin
+19:35:43::DEBUG   :Importing XpmImagePlugin
+19:35:43::DEBUG   :Importing XVThumbImagePlugin
+19:35:43::INFO    :Startup complete
+19:36:10::ERROR   :Task exception was never retrieved
+future: <Task finished name='Task-4' coro=<transparency_check() done, defined at c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py:195> exception=TclError('can\'t invoke "winfo" command: application has been destroyed')>
+Traceback (most recent call last):
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 202, in transparency_check
+    if not await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.65:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 197, in is_cursor_over_window
+    win_x = root.winfo_rootx()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 1324, in winfo_rootx
+    self.tk.call('winfo', 'rootx', self._w))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: can't invoke "winfo" command: application has been destroyed
+19:37:49::INFO    :Application Starting up
+19:37:49::DEBUG   :Using proactor: IocpProactor
+19:37:49::DEBUG   :Importing AvifImagePlugin
+19:37:49::DEBUG   :Importing BlpImagePlugin
+19:37:49::DEBUG   :Importing BmpImagePlugin
+19:37:49::DEBUG   :Importing BufrStubImagePlugin
+19:37:49::DEBUG   :Importing CurImagePlugin
+19:37:49::DEBUG   :Importing DcxImagePlugin
+19:37:49::DEBUG   :Importing DdsImagePlugin
+19:37:49::DEBUG   :Importing EpsImagePlugin
+19:37:49::DEBUG   :Importing FitsImagePlugin
+19:37:50::DEBUG   :Importing FliImagePlugin
+19:37:50::DEBUG   :Importing FpxImagePlugin
+19:37:50::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:37:50::DEBUG   :Importing FtexImagePlugin
+19:37:50::DEBUG   :Importing GbrImagePlugin
+19:37:50::DEBUG   :Importing GifImagePlugin
+19:37:50::DEBUG   :Importing GribStubImagePlugin
+19:37:50::DEBUG   :Importing Hdf5StubImagePlugin
+19:37:50::DEBUG   :Importing IcnsImagePlugin
+19:37:50::DEBUG   :Importing IcoImagePlugin
+19:37:50::DEBUG   :Importing ImImagePlugin
+19:37:50::DEBUG   :Importing ImtImagePlugin
+19:37:50::DEBUG   :Importing IptcImagePlugin
+19:37:50::DEBUG   :Importing JpegImagePlugin
+19:37:50::DEBUG   :Importing Jpeg2KImagePlugin
+19:37:50::DEBUG   :Importing McIdasImagePlugin
+19:37:50::DEBUG   :Importing MicImagePlugin
+19:37:50::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:37:50::DEBUG   :Importing MpegImagePlugin
+19:37:50::DEBUG   :Importing MpoImagePlugin
+19:37:50::DEBUG   :Importing MspImagePlugin
+19:37:50::DEBUG   :Importing PalmImagePlugin
+19:37:50::DEBUG   :Importing PcdImagePlugin
+19:37:50::DEBUG   :Importing PcxImagePlugin
+19:37:50::DEBUG   :Importing PdfImagePlugin
+19:37:50::DEBUG   :Importing PixarImagePlugin
+19:37:50::DEBUG   :Importing PngImagePlugin
+19:37:50::DEBUG   :Importing PpmImagePlugin
+19:37:50::DEBUG   :Importing PsdImagePlugin
+19:37:50::DEBUG   :Importing QoiImagePlugin
+19:37:50::DEBUG   :Importing SgiImagePlugin
+19:37:50::DEBUG   :Importing SpiderImagePlugin
+19:37:50::DEBUG   :Importing SunImagePlugin
+19:37:50::DEBUG   :Importing TgaImagePlugin
+19:37:50::DEBUG   :Importing TiffImagePlugin
+19:37:50::DEBUG   :Importing WebPImagePlugin
+19:37:50::DEBUG   :Importing WmfImagePlugin
+19:37:50::DEBUG   :Importing XbmImagePlugin
+19:37:50::DEBUG   :Importing XpmImagePlugin
+19:37:50::DEBUG   :Importing XVThumbImagePlugin
+19:37:50::INFO    :Startup complete
+19:37:57::ERROR   :Task exception was never retrieved
+future: <Task finished name='Task-4' coro=<transparency_check() done, defined at c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py:198> exception=TclError('can\'t invoke "winfo" command: application has been destroyed')>
+Traceback (most recent call last):
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 205, in transparency_check
+    if not await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.65:
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 200, in is_cursor_over_window
+    win_x = root.winfo_rootx()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 1324, in winfo_rootx
+    self.tk.call('winfo', 'rootx', self._w))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: can't invoke "winfo" command: application has been destroyed
+19:38:44::INFO    :Application Starting up
+19:38:44::DEBUG   :Using proactor: IocpProactor
+19:38:44::DEBUG   :Importing AvifImagePlugin
+19:38:44::DEBUG   :Importing BlpImagePlugin
+19:38:44::DEBUG   :Importing BmpImagePlugin
+19:38:44::DEBUG   :Importing BufrStubImagePlugin
+19:38:44::DEBUG   :Importing CurImagePlugin
+19:38:44::DEBUG   :Importing DcxImagePlugin
+19:38:44::DEBUG   :Importing DdsImagePlugin
+19:38:44::DEBUG   :Importing EpsImagePlugin
+19:38:44::DEBUG   :Importing FitsImagePlugin
+19:38:44::DEBUG   :Importing FliImagePlugin
+19:38:44::DEBUG   :Importing FpxImagePlugin
+19:38:44::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+19:38:44::DEBUG   :Importing FtexImagePlugin
+19:38:44::DEBUG   :Importing GbrImagePlugin
+19:38:44::DEBUG   :Importing GifImagePlugin
+19:38:44::DEBUG   :Importing GribStubImagePlugin
+19:38:44::DEBUG   :Importing Hdf5StubImagePlugin
+19:38:44::DEBUG   :Importing IcnsImagePlugin
+19:38:44::DEBUG   :Importing IcoImagePlugin
+19:38:44::DEBUG   :Importing ImImagePlugin
+19:38:44::DEBUG   :Importing ImtImagePlugin
+19:38:44::DEBUG   :Importing IptcImagePlugin
+19:38:44::DEBUG   :Importing JpegImagePlugin
+19:38:44::DEBUG   :Importing Jpeg2KImagePlugin
+19:38:44::DEBUG   :Importing McIdasImagePlugin
+19:38:44::DEBUG   :Importing MicImagePlugin
+19:38:44::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+19:38:44::DEBUG   :Importing MpegImagePlugin
+19:38:44::DEBUG   :Importing MpoImagePlugin
+19:38:44::DEBUG   :Importing MspImagePlugin
+19:38:44::DEBUG   :Importing PalmImagePlugin
+19:38:44::DEBUG   :Importing PcdImagePlugin
+19:38:44::DEBUG   :Importing PcxImagePlugin
+19:38:44::DEBUG   :Importing PdfImagePlugin
+19:38:44::DEBUG   :Importing PixarImagePlugin
+19:38:44::DEBUG   :Importing PngImagePlugin
+19:38:44::DEBUG   :Importing PpmImagePlugin
+19:38:44::DEBUG   :Importing PsdImagePlugin
+19:38:44::DEBUG   :Importing QoiImagePlugin
+19:38:44::DEBUG   :Importing SgiImagePlugin
+19:38:44::DEBUG   :Importing SpiderImagePlugin
+19:38:44::DEBUG   :Importing SunImagePlugin
+19:38:44::DEBUG   :Importing TgaImagePlugin
+19:38:44::DEBUG   :Importing TiffImagePlugin
+19:38:44::DEBUG   :Importing WebPImagePlugin
+19:38:44::DEBUG   :Importing WmfImagePlugin
+19:38:44::DEBUG   :Importing XbmImagePlugin
+19:38:44::DEBUG   :Importing XpmImagePlugin
+19:38:44::DEBUG   :Importing XVThumbImagePlugin
+19:38:44::INFO    :Startup complete
+19:38:53::ERROR   :Task was destroyed but it is pending!
+task: <Task pending name='Task-4' coro=<transparency_check() running at c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py:209> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+19:38:53::ERROR   :Task was destroyed but it is pending!
+task: <Task pending name='Task-1' coro=<main.<locals>.tk_update_loop() running at c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py:381> wait_for=<Future pending cb=[Task.task_wakeup()]>>

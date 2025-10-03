@@ -1,0 +1,805 @@
+18:55:04::INFO    :Application Starting up
+18:55:04::DEBUG   :Using proactor: IocpProactor
+18:55:04::DEBUG   :Importing AvifImagePlugin
+18:55:04::DEBUG   :Importing BlpImagePlugin
+18:55:04::DEBUG   :Importing BmpImagePlugin
+18:55:04::DEBUG   :Importing BufrStubImagePlugin
+18:55:04::DEBUG   :Importing CurImagePlugin
+18:55:04::DEBUG   :Importing DcxImagePlugin
+18:55:04::DEBUG   :Importing DdsImagePlugin
+18:55:04::DEBUG   :Importing EpsImagePlugin
+18:55:04::DEBUG   :Importing FitsImagePlugin
+18:55:04::DEBUG   :Importing FliImagePlugin
+18:55:04::DEBUG   :Importing FpxImagePlugin
+18:55:04::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+18:55:04::DEBUG   :Importing FtexImagePlugin
+18:55:04::DEBUG   :Importing GbrImagePlugin
+18:55:04::DEBUG   :Importing GifImagePlugin
+18:55:04::DEBUG   :Importing GribStubImagePlugin
+18:55:04::DEBUG   :Importing Hdf5StubImagePlugin
+18:55:04::DEBUG   :Importing IcnsImagePlugin
+18:55:04::DEBUG   :Importing IcoImagePlugin
+18:55:04::DEBUG   :Importing ImImagePlugin
+18:55:04::DEBUG   :Importing ImtImagePlugin
+18:55:04::DEBUG   :Importing IptcImagePlugin
+18:55:04::DEBUG   :Importing JpegImagePlugin
+18:55:04::DEBUG   :Importing Jpeg2KImagePlugin
+18:55:04::DEBUG   :Importing McIdasImagePlugin
+18:55:04::DEBUG   :Importing MicImagePlugin
+18:55:04::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+18:55:04::DEBUG   :Importing MpegImagePlugin
+18:55:04::DEBUG   :Importing MpoImagePlugin
+18:55:04::DEBUG   :Importing MspImagePlugin
+18:55:04::DEBUG   :Importing PalmImagePlugin
+18:55:04::DEBUG   :Importing PcdImagePlugin
+18:55:04::DEBUG   :Importing PcxImagePlugin
+18:55:04::DEBUG   :Importing PdfImagePlugin
+18:55:04::DEBUG   :Importing PixarImagePlugin
+18:55:04::DEBUG   :Importing PngImagePlugin
+18:55:04::DEBUG   :Importing PpmImagePlugin
+18:55:04::DEBUG   :Importing PsdImagePlugin
+18:55:04::DEBUG   :Importing QoiImagePlugin
+18:55:04::DEBUG   :Importing SgiImagePlugin
+18:55:04::DEBUG   :Importing SpiderImagePlugin
+18:55:04::DEBUG   :Importing SunImagePlugin
+18:55:04::DEBUG   :Importing TgaImagePlugin
+18:55:04::DEBUG   :Importing TiffImagePlugin
+18:55:04::DEBUG   :Importing WebPImagePlugin
+18:55:04::DEBUG   :Importing WmfImagePlugin
+18:55:04::DEBUG   :Importing XbmImagePlugin
+18:55:04::DEBUG   :Importing XpmImagePlugin
+18:55:04::DEBUG   :Importing XVThumbImagePlugin
+18:55:05::INFO    :Startup complete
+18:55:05::DEBUG   :Initialized Schedule class
+18:56:10::INFO    :Application Starting up
+18:56:11::DEBUG   :Using proactor: IocpProactor
+18:56:11::DEBUG   :Importing AvifImagePlugin
+18:56:11::DEBUG   :Importing BlpImagePlugin
+18:56:11::DEBUG   :Importing BmpImagePlugin
+18:56:11::DEBUG   :Importing BufrStubImagePlugin
+18:56:11::DEBUG   :Importing CurImagePlugin
+18:56:11::DEBUG   :Importing DcxImagePlugin
+18:56:11::DEBUG   :Importing DdsImagePlugin
+18:56:11::DEBUG   :Importing EpsImagePlugin
+18:56:11::DEBUG   :Importing FitsImagePlugin
+18:56:11::DEBUG   :Importing FliImagePlugin
+18:56:11::DEBUG   :Importing FpxImagePlugin
+18:56:11::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+18:56:11::DEBUG   :Importing FtexImagePlugin
+18:56:11::DEBUG   :Importing GbrImagePlugin
+18:56:11::DEBUG   :Importing GifImagePlugin
+18:56:11::DEBUG   :Importing GribStubImagePlugin
+18:56:11::DEBUG   :Importing Hdf5StubImagePlugin
+18:56:11::DEBUG   :Importing IcnsImagePlugin
+18:56:11::DEBUG   :Importing IcoImagePlugin
+18:56:11::DEBUG   :Importing ImImagePlugin
+18:56:11::DEBUG   :Importing ImtImagePlugin
+18:56:11::DEBUG   :Importing IptcImagePlugin
+18:56:11::DEBUG   :Importing JpegImagePlugin
+18:56:11::DEBUG   :Importing Jpeg2KImagePlugin
+18:56:11::DEBUG   :Importing McIdasImagePlugin
+18:56:11::DEBUG   :Importing MicImagePlugin
+18:56:11::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+18:56:11::DEBUG   :Importing MpegImagePlugin
+18:56:11::DEBUG   :Importing MpoImagePlugin
+18:56:11::DEBUG   :Importing MspImagePlugin
+18:56:11::DEBUG   :Importing PalmImagePlugin
+18:56:11::DEBUG   :Importing PcdImagePlugin
+18:56:11::DEBUG   :Importing PcxImagePlugin
+18:56:11::DEBUG   :Importing PdfImagePlugin
+18:56:11::DEBUG   :Importing PixarImagePlugin
+18:56:11::DEBUG   :Importing PngImagePlugin
+18:56:11::DEBUG   :Importing PpmImagePlugin
+18:56:11::DEBUG   :Importing PsdImagePlugin
+18:56:11::DEBUG   :Importing QoiImagePlugin
+18:56:11::DEBUG   :Importing SgiImagePlugin
+18:56:11::DEBUG   :Importing SpiderImagePlugin
+18:56:11::DEBUG   :Importing SunImagePlugin
+18:56:11::DEBUG   :Importing TgaImagePlugin
+18:56:11::DEBUG   :Importing TiffImagePlugin
+18:56:11::DEBUG   :Importing WebPImagePlugin
+18:56:11::DEBUG   :Importing WmfImagePlugin
+18:56:11::DEBUG   :Importing XbmImagePlugin
+18:56:11::DEBUG   :Importing XpmImagePlugin
+18:56:11::DEBUG   :Importing XVThumbImagePlugin
+18:56:11::INFO    :Startup complete
+18:56:11::DEBUG   :Initialized Schedule class
+18:56:33::INFO    :Application Starting up
+18:56:33::DEBUG   :Using proactor: IocpProactor
+18:56:33::DEBUG   :Importing AvifImagePlugin
+18:56:33::DEBUG   :Importing BlpImagePlugin
+18:56:33::DEBUG   :Importing BmpImagePlugin
+18:56:33::DEBUG   :Importing BufrStubImagePlugin
+18:56:33::DEBUG   :Importing CurImagePlugin
+18:56:33::DEBUG   :Importing DcxImagePlugin
+18:56:33::DEBUG   :Importing DdsImagePlugin
+18:56:33::DEBUG   :Importing EpsImagePlugin
+18:56:33::DEBUG   :Importing FitsImagePlugin
+18:56:33::DEBUG   :Importing FliImagePlugin
+18:56:33::DEBUG   :Importing FpxImagePlugin
+18:56:33::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+18:56:33::DEBUG   :Importing FtexImagePlugin
+18:56:33::DEBUG   :Importing GbrImagePlugin
+18:56:33::DEBUG   :Importing GifImagePlugin
+18:56:33::DEBUG   :Importing GribStubImagePlugin
+18:56:33::DEBUG   :Importing Hdf5StubImagePlugin
+18:56:33::DEBUG   :Importing IcnsImagePlugin
+18:56:33::DEBUG   :Importing IcoImagePlugin
+18:56:33::DEBUG   :Importing ImImagePlugin
+18:56:33::DEBUG   :Importing ImtImagePlugin
+18:56:33::DEBUG   :Importing IptcImagePlugin
+18:56:33::DEBUG   :Importing JpegImagePlugin
+18:56:33::DEBUG   :Importing Jpeg2KImagePlugin
+18:56:33::DEBUG   :Importing McIdasImagePlugin
+18:56:33::DEBUG   :Importing MicImagePlugin
+18:56:33::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+18:56:33::DEBUG   :Importing MpegImagePlugin
+18:56:33::DEBUG   :Importing MpoImagePlugin
+18:56:33::DEBUG   :Importing MspImagePlugin
+18:56:33::DEBUG   :Importing PalmImagePlugin
+18:56:33::DEBUG   :Importing PcdImagePlugin
+18:56:33::DEBUG   :Importing PcxImagePlugin
+18:56:33::DEBUG   :Importing PdfImagePlugin
+18:56:33::DEBUG   :Importing PixarImagePlugin
+18:56:33::DEBUG   :Importing PngImagePlugin
+18:56:33::DEBUG   :Importing PpmImagePlugin
+18:56:33::DEBUG   :Importing PsdImagePlugin
+18:56:33::DEBUG   :Importing QoiImagePlugin
+18:56:33::DEBUG   :Importing SgiImagePlugin
+18:56:33::DEBUG   :Importing SpiderImagePlugin
+18:56:33::DEBUG   :Importing SunImagePlugin
+18:56:33::DEBUG   :Importing TgaImagePlugin
+18:56:33::DEBUG   :Importing TiffImagePlugin
+18:56:33::DEBUG   :Importing WebPImagePlugin
+18:56:33::DEBUG   :Importing WmfImagePlugin
+18:56:33::DEBUG   :Importing XbmImagePlugin
+18:56:33::DEBUG   :Importing XpmImagePlugin
+18:56:33::DEBUG   :Importing XVThumbImagePlugin
+18:56:33::INFO    :Startup complete
+18:56:33::DEBUG   :Initialized Schedule class
+20:08:34::INFO    :Application Starting up
+20:08:34::DEBUG   :Using proactor: IocpProactor
+20:08:34::DEBUG   :Importing AvifImagePlugin
+20:08:35::DEBUG   :Importing BlpImagePlugin
+20:08:35::DEBUG   :Importing BmpImagePlugin
+20:08:35::DEBUG   :Importing BufrStubImagePlugin
+20:08:35::DEBUG   :Importing CurImagePlugin
+20:08:35::DEBUG   :Importing DcxImagePlugin
+20:08:35::DEBUG   :Importing DdsImagePlugin
+20:08:35::DEBUG   :Importing EpsImagePlugin
+20:08:35::DEBUG   :Importing FitsImagePlugin
+20:08:35::DEBUG   :Importing FliImagePlugin
+20:08:35::DEBUG   :Importing FpxImagePlugin
+20:08:35::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:08:35::DEBUG   :Importing FtexImagePlugin
+20:08:35::DEBUG   :Importing GbrImagePlugin
+20:08:35::DEBUG   :Importing GifImagePlugin
+20:08:35::DEBUG   :Importing GribStubImagePlugin
+20:08:35::DEBUG   :Importing Hdf5StubImagePlugin
+20:08:35::DEBUG   :Importing IcnsImagePlugin
+20:08:35::DEBUG   :Importing IcoImagePlugin
+20:08:35::DEBUG   :Importing ImImagePlugin
+20:08:35::DEBUG   :Importing ImtImagePlugin
+20:08:35::DEBUG   :Importing IptcImagePlugin
+20:08:35::DEBUG   :Importing JpegImagePlugin
+20:08:35::DEBUG   :Importing Jpeg2KImagePlugin
+20:08:35::DEBUG   :Importing McIdasImagePlugin
+20:08:35::DEBUG   :Importing MicImagePlugin
+20:08:35::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:08:35::DEBUG   :Importing MpegImagePlugin
+20:08:35::DEBUG   :Importing MpoImagePlugin
+20:08:35::DEBUG   :Importing MspImagePlugin
+20:08:35::DEBUG   :Importing PalmImagePlugin
+20:08:35::DEBUG   :Importing PcdImagePlugin
+20:08:35::DEBUG   :Importing PcxImagePlugin
+20:08:35::DEBUG   :Importing PdfImagePlugin
+20:08:35::DEBUG   :Importing PixarImagePlugin
+20:08:35::DEBUG   :Importing PngImagePlugin
+20:08:35::DEBUG   :Importing PpmImagePlugin
+20:08:35::DEBUG   :Importing PsdImagePlugin
+20:08:35::DEBUG   :Importing QoiImagePlugin
+20:08:35::DEBUG   :Importing SgiImagePlugin
+20:08:35::DEBUG   :Importing SpiderImagePlugin
+20:08:35::DEBUG   :Importing SunImagePlugin
+20:08:35::DEBUG   :Importing TgaImagePlugin
+20:08:35::DEBUG   :Importing TiffImagePlugin
+20:08:35::DEBUG   :Importing WebPImagePlugin
+20:08:35::DEBUG   :Importing WmfImagePlugin
+20:08:35::DEBUG   :Importing XbmImagePlugin
+20:08:35::DEBUG   :Importing XpmImagePlugin
+20:08:35::DEBUG   :Importing XVThumbImagePlugin
+20:08:35::INFO    :Startup complete
+20:08:35::DEBUG   :Initialized Schedule class
+20:08:42::ERROR   :An error occurred when calling message handler
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 412, in _dispatcher
+    return int(icon._message_handlers.get(
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        uMsg, lambda w, l: 0)(wParam, lParam) or 0)
+        ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 224, in _on_notify
+    descriptors[index - 1](self)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 328, in inner
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 453, in __call__
+    return self._action(icon, self)
+           ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 548, in wrapper0
+    return action()
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 52, in <lambda>
+    pystray.MenuItem("Show Overlay", lambda: root.deiconify()),
+                                             ~~~~~~~~~~~~~~^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2202, in wm_deiconify
+    return self.tk.call('wm', 'deiconify', self._w)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: main thread is not in main loop
+20:16:20::INFO    :Application Starting up
+20:16:20::DEBUG   :Using proactor: IocpProactor
+20:16:20::DEBUG   :Importing AvifImagePlugin
+20:16:20::DEBUG   :Importing BlpImagePlugin
+20:16:20::DEBUG   :Importing BmpImagePlugin
+20:16:20::DEBUG   :Importing BufrStubImagePlugin
+20:16:20::DEBUG   :Importing CurImagePlugin
+20:16:20::DEBUG   :Importing DcxImagePlugin
+20:16:20::DEBUG   :Importing DdsImagePlugin
+20:16:20::DEBUG   :Importing EpsImagePlugin
+20:16:20::DEBUG   :Importing FitsImagePlugin
+20:16:20::DEBUG   :Importing FliImagePlugin
+20:16:20::DEBUG   :Importing FpxImagePlugin
+20:16:20::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:16:20::DEBUG   :Importing FtexImagePlugin
+20:16:20::DEBUG   :Importing GbrImagePlugin
+20:16:20::DEBUG   :Importing GifImagePlugin
+20:16:20::DEBUG   :Importing GribStubImagePlugin
+20:16:20::DEBUG   :Importing Hdf5StubImagePlugin
+20:16:20::DEBUG   :Importing IcnsImagePlugin
+20:16:20::DEBUG   :Importing IcoImagePlugin
+20:16:20::DEBUG   :Importing ImImagePlugin
+20:16:20::DEBUG   :Importing ImtImagePlugin
+20:16:20::DEBUG   :Importing IptcImagePlugin
+20:16:20::DEBUG   :Importing JpegImagePlugin
+20:16:20::DEBUG   :Importing Jpeg2KImagePlugin
+20:16:20::DEBUG   :Importing McIdasImagePlugin
+20:16:20::DEBUG   :Importing MicImagePlugin
+20:16:20::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:16:20::DEBUG   :Importing MpegImagePlugin
+20:16:20::DEBUG   :Importing MpoImagePlugin
+20:16:20::DEBUG   :Importing MspImagePlugin
+20:16:20::DEBUG   :Importing PalmImagePlugin
+20:16:20::DEBUG   :Importing PcdImagePlugin
+20:16:20::DEBUG   :Importing PcxImagePlugin
+20:16:20::DEBUG   :Importing PdfImagePlugin
+20:16:20::DEBUG   :Importing PixarImagePlugin
+20:16:20::DEBUG   :Importing PngImagePlugin
+20:16:20::DEBUG   :Importing PpmImagePlugin
+20:16:20::DEBUG   :Importing PsdImagePlugin
+20:16:20::DEBUG   :Importing QoiImagePlugin
+20:16:20::DEBUG   :Importing SgiImagePlugin
+20:16:20::DEBUG   :Importing SpiderImagePlugin
+20:16:20::DEBUG   :Importing SunImagePlugin
+20:16:20::DEBUG   :Importing TgaImagePlugin
+20:16:20::DEBUG   :Importing TiffImagePlugin
+20:16:20::DEBUG   :Importing WebPImagePlugin
+20:16:20::DEBUG   :Importing WmfImagePlugin
+20:16:20::DEBUG   :Importing XbmImagePlugin
+20:16:20::DEBUG   :Importing XpmImagePlugin
+20:16:20::DEBUG   :Importing XVThumbImagePlugin
+20:16:20::INFO    :Startup complete
+20:16:20::ERROR   :Task exception was never retrieved
+future: <Task finished name='Task-5' coro=<update_cycle() done, defined at c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py:362> exception=AttributeError("'Schedule' object has no attribute 'date'")>
+Traceback (most recent call last):
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 370, in update_cycle
+    schedule = Schedule()
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 345, in __init__
+    weekday = self.date.weekday()
+              ^^^^^^^^^
+AttributeError: 'Schedule' object has no attribute 'date'. Did you mean: '_date'?
+20:16:37::INFO    :Application Starting up
+20:16:38::DEBUG   :Using proactor: IocpProactor
+20:16:38::DEBUG   :Importing AvifImagePlugin
+20:16:38::DEBUG   :Importing BlpImagePlugin
+20:16:38::DEBUG   :Importing BmpImagePlugin
+20:16:38::DEBUG   :Importing BufrStubImagePlugin
+20:16:38::DEBUG   :Importing CurImagePlugin
+20:16:38::DEBUG   :Importing DcxImagePlugin
+20:16:38::DEBUG   :Importing DdsImagePlugin
+20:16:38::DEBUG   :Importing EpsImagePlugin
+20:16:38::DEBUG   :Importing FitsImagePlugin
+20:16:38::DEBUG   :Importing FliImagePlugin
+20:16:38::DEBUG   :Importing FpxImagePlugin
+20:16:38::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:16:38::DEBUG   :Importing FtexImagePlugin
+20:16:38::DEBUG   :Importing GbrImagePlugin
+20:16:38::DEBUG   :Importing GifImagePlugin
+20:16:38::DEBUG   :Importing GribStubImagePlugin
+20:16:38::DEBUG   :Importing Hdf5StubImagePlugin
+20:16:38::DEBUG   :Importing IcnsImagePlugin
+20:16:38::DEBUG   :Importing IcoImagePlugin
+20:16:38::DEBUG   :Importing ImImagePlugin
+20:16:38::DEBUG   :Importing ImtImagePlugin
+20:16:38::DEBUG   :Importing IptcImagePlugin
+20:16:38::DEBUG   :Importing JpegImagePlugin
+20:16:38::DEBUG   :Importing Jpeg2KImagePlugin
+20:16:38::DEBUG   :Importing McIdasImagePlugin
+20:16:38::DEBUG   :Importing MicImagePlugin
+20:16:38::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:16:38::DEBUG   :Importing MpegImagePlugin
+20:16:38::DEBUG   :Importing MpoImagePlugin
+20:16:38::DEBUG   :Importing MspImagePlugin
+20:16:38::DEBUG   :Importing PalmImagePlugin
+20:16:38::DEBUG   :Importing PcdImagePlugin
+20:16:38::DEBUG   :Importing PcxImagePlugin
+20:16:38::DEBUG   :Importing PdfImagePlugin
+20:16:38::DEBUG   :Importing PixarImagePlugin
+20:16:38::DEBUG   :Importing PngImagePlugin
+20:16:38::DEBUG   :Importing PpmImagePlugin
+20:16:38::DEBUG   :Importing PsdImagePlugin
+20:16:38::DEBUG   :Importing QoiImagePlugin
+20:16:38::DEBUG   :Importing SgiImagePlugin
+20:16:38::DEBUG   :Importing SpiderImagePlugin
+20:16:38::DEBUG   :Importing SunImagePlugin
+20:16:38::DEBUG   :Importing TgaImagePlugin
+20:16:38::DEBUG   :Importing TiffImagePlugin
+20:16:38::DEBUG   :Importing WebPImagePlugin
+20:16:38::DEBUG   :Importing WmfImagePlugin
+20:16:38::DEBUG   :Importing XbmImagePlugin
+20:16:38::DEBUG   :Importing XpmImagePlugin
+20:16:38::DEBUG   :Importing XVThumbImagePlugin
+20:16:38::INFO    :Startup complete
+20:16:57::INFO    :Application Starting up
+20:16:57::DEBUG   :Using proactor: IocpProactor
+20:16:57::DEBUG   :Importing AvifImagePlugin
+20:16:57::DEBUG   :Importing BlpImagePlugin
+20:16:57::DEBUG   :Importing BmpImagePlugin
+20:16:57::DEBUG   :Importing BufrStubImagePlugin
+20:16:57::DEBUG   :Importing CurImagePlugin
+20:16:57::DEBUG   :Importing DcxImagePlugin
+20:16:57::DEBUG   :Importing DdsImagePlugin
+20:16:57::DEBUG   :Importing EpsImagePlugin
+20:16:57::DEBUG   :Importing FitsImagePlugin
+20:16:57::DEBUG   :Importing FliImagePlugin
+20:16:57::DEBUG   :Importing FpxImagePlugin
+20:16:57::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:16:57::DEBUG   :Importing FtexImagePlugin
+20:16:57::DEBUG   :Importing GbrImagePlugin
+20:16:57::DEBUG   :Importing GifImagePlugin
+20:16:57::DEBUG   :Importing GribStubImagePlugin
+20:16:57::DEBUG   :Importing Hdf5StubImagePlugin
+20:16:57::DEBUG   :Importing IcnsImagePlugin
+20:16:57::DEBUG   :Importing IcoImagePlugin
+20:16:57::DEBUG   :Importing ImImagePlugin
+20:16:57::DEBUG   :Importing ImtImagePlugin
+20:16:57::DEBUG   :Importing IptcImagePlugin
+20:16:57::DEBUG   :Importing JpegImagePlugin
+20:16:57::DEBUG   :Importing Jpeg2KImagePlugin
+20:16:57::DEBUG   :Importing McIdasImagePlugin
+20:16:57::DEBUG   :Importing MicImagePlugin
+20:16:57::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:16:57::DEBUG   :Importing MpegImagePlugin
+20:16:57::DEBUG   :Importing MpoImagePlugin
+20:16:57::DEBUG   :Importing MspImagePlugin
+20:16:57::DEBUG   :Importing PalmImagePlugin
+20:16:57::DEBUG   :Importing PcdImagePlugin
+20:16:57::DEBUG   :Importing PcxImagePlugin
+20:16:57::DEBUG   :Importing PdfImagePlugin
+20:16:57::DEBUG   :Importing PixarImagePlugin
+20:16:57::DEBUG   :Importing PngImagePlugin
+20:16:57::DEBUG   :Importing PpmImagePlugin
+20:16:57::DEBUG   :Importing PsdImagePlugin
+20:16:57::DEBUG   :Importing QoiImagePlugin
+20:16:57::DEBUG   :Importing SgiImagePlugin
+20:16:57::DEBUG   :Importing SpiderImagePlugin
+20:16:57::DEBUG   :Importing SunImagePlugin
+20:16:57::DEBUG   :Importing TgaImagePlugin
+20:16:57::DEBUG   :Importing TiffImagePlugin
+20:16:57::DEBUG   :Importing WebPImagePlugin
+20:16:57::DEBUG   :Importing WmfImagePlugin
+20:16:57::DEBUG   :Importing XbmImagePlugin
+20:16:57::DEBUG   :Importing XpmImagePlugin
+20:16:57::DEBUG   :Importing XVThumbImagePlugin
+20:16:57::INFO    :Startup complete
+20:16:57::DEBUG   :Initialized Schedule class
+20:17:04::INFO    :Application Starting up
+20:17:04::DEBUG   :Using proactor: IocpProactor
+20:17:04::DEBUG   :Importing AvifImagePlugin
+20:17:04::DEBUG   :Importing BlpImagePlugin
+20:17:04::DEBUG   :Importing BmpImagePlugin
+20:17:04::DEBUG   :Importing BufrStubImagePlugin
+20:17:04::DEBUG   :Importing CurImagePlugin
+20:17:04::DEBUG   :Importing DcxImagePlugin
+20:17:04::DEBUG   :Importing DdsImagePlugin
+20:17:04::DEBUG   :Importing EpsImagePlugin
+20:17:04::DEBUG   :Importing FitsImagePlugin
+20:17:04::DEBUG   :Importing FliImagePlugin
+20:17:04::DEBUG   :Importing FpxImagePlugin
+20:17:04::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:17:04::DEBUG   :Importing FtexImagePlugin
+20:17:04::DEBUG   :Importing GbrImagePlugin
+20:17:04::DEBUG   :Importing GifImagePlugin
+20:17:04::DEBUG   :Importing GribStubImagePlugin
+20:17:04::DEBUG   :Importing Hdf5StubImagePlugin
+20:17:04::DEBUG   :Importing IcnsImagePlugin
+20:17:04::DEBUG   :Importing IcoImagePlugin
+20:17:04::DEBUG   :Importing ImImagePlugin
+20:17:04::DEBUG   :Importing ImtImagePlugin
+20:17:04::DEBUG   :Importing IptcImagePlugin
+20:17:04::DEBUG   :Importing JpegImagePlugin
+20:17:04::DEBUG   :Importing Jpeg2KImagePlugin
+20:17:04::DEBUG   :Importing McIdasImagePlugin
+20:17:04::DEBUG   :Importing MicImagePlugin
+20:17:04::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:17:04::DEBUG   :Importing MpegImagePlugin
+20:17:04::DEBUG   :Importing MpoImagePlugin
+20:17:04::DEBUG   :Importing MspImagePlugin
+20:17:04::DEBUG   :Importing PalmImagePlugin
+20:17:04::DEBUG   :Importing PcdImagePlugin
+20:17:04::DEBUG   :Importing PcxImagePlugin
+20:17:04::DEBUG   :Importing PdfImagePlugin
+20:17:04::DEBUG   :Importing PixarImagePlugin
+20:17:04::DEBUG   :Importing PngImagePlugin
+20:17:04::DEBUG   :Importing PpmImagePlugin
+20:17:04::DEBUG   :Importing PsdImagePlugin
+20:17:04::DEBUG   :Importing QoiImagePlugin
+20:17:04::DEBUG   :Importing SgiImagePlugin
+20:17:04::DEBUG   :Importing SpiderImagePlugin
+20:17:04::DEBUG   :Importing SunImagePlugin
+20:17:04::DEBUG   :Importing TgaImagePlugin
+20:17:04::DEBUG   :Importing TiffImagePlugin
+20:17:04::DEBUG   :Importing WebPImagePlugin
+20:17:04::DEBUG   :Importing WmfImagePlugin
+20:17:04::DEBUG   :Importing XbmImagePlugin
+20:17:04::DEBUG   :Importing XpmImagePlugin
+20:17:04::DEBUG   :Importing XVThumbImagePlugin
+20:17:04::INFO    :Startup complete
+20:17:04::DEBUG   :Initialized Schedule class
+20:17:17::INFO    :Application Starting up
+20:17:17::DEBUG   :Using proactor: IocpProactor
+20:17:17::DEBUG   :Importing AvifImagePlugin
+20:17:17::DEBUG   :Importing BlpImagePlugin
+20:17:17::DEBUG   :Importing BmpImagePlugin
+20:17:17::DEBUG   :Importing BufrStubImagePlugin
+20:17:17::DEBUG   :Importing CurImagePlugin
+20:17:17::DEBUG   :Importing DcxImagePlugin
+20:17:17::DEBUG   :Importing DdsImagePlugin
+20:17:17::DEBUG   :Importing EpsImagePlugin
+20:17:17::DEBUG   :Importing FitsImagePlugin
+20:17:17::DEBUG   :Importing FliImagePlugin
+20:17:17::DEBUG   :Importing FpxImagePlugin
+20:17:17::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:17:17::DEBUG   :Importing FtexImagePlugin
+20:17:17::DEBUG   :Importing GbrImagePlugin
+20:17:17::DEBUG   :Importing GifImagePlugin
+20:17:17::DEBUG   :Importing GribStubImagePlugin
+20:17:17::DEBUG   :Importing Hdf5StubImagePlugin
+20:17:17::DEBUG   :Importing IcnsImagePlugin
+20:17:17::DEBUG   :Importing IcoImagePlugin
+20:17:17::DEBUG   :Importing ImImagePlugin
+20:17:17::DEBUG   :Importing ImtImagePlugin
+20:17:17::DEBUG   :Importing IptcImagePlugin
+20:17:17::DEBUG   :Importing JpegImagePlugin
+20:17:17::DEBUG   :Importing Jpeg2KImagePlugin
+20:17:17::DEBUG   :Importing McIdasImagePlugin
+20:17:17::DEBUG   :Importing MicImagePlugin
+20:17:17::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:17:17::DEBUG   :Importing MpegImagePlugin
+20:17:17::DEBUG   :Importing MpoImagePlugin
+20:17:17::DEBUG   :Importing MspImagePlugin
+20:17:17::DEBUG   :Importing PalmImagePlugin
+20:17:17::DEBUG   :Importing PcdImagePlugin
+20:17:17::DEBUG   :Importing PcxImagePlugin
+20:17:17::DEBUG   :Importing PdfImagePlugin
+20:17:17::DEBUG   :Importing PixarImagePlugin
+20:17:17::DEBUG   :Importing PngImagePlugin
+20:17:17::DEBUG   :Importing PpmImagePlugin
+20:17:17::DEBUG   :Importing PsdImagePlugin
+20:17:17::DEBUG   :Importing QoiImagePlugin
+20:17:17::DEBUG   :Importing SgiImagePlugin
+20:17:17::DEBUG   :Importing SpiderImagePlugin
+20:17:17::DEBUG   :Importing SunImagePlugin
+20:17:17::DEBUG   :Importing TgaImagePlugin
+20:17:17::DEBUG   :Importing TiffImagePlugin
+20:17:17::DEBUG   :Importing WebPImagePlugin
+20:17:17::DEBUG   :Importing WmfImagePlugin
+20:17:17::DEBUG   :Importing XbmImagePlugin
+20:17:17::DEBUG   :Importing XpmImagePlugin
+20:17:17::DEBUG   :Importing XVThumbImagePlugin
+20:17:17::INFO    :Startup complete
+20:17:17::DEBUG   :Initialized Schedule class
+20:18:36::INFO    :Application Starting up
+20:18:36::DEBUG   :Using proactor: IocpProactor
+20:18:36::DEBUG   :Importing AvifImagePlugin
+20:18:36::DEBUG   :Importing BlpImagePlugin
+20:18:36::DEBUG   :Importing BmpImagePlugin
+20:18:36::DEBUG   :Importing BufrStubImagePlugin
+20:18:36::DEBUG   :Importing CurImagePlugin
+20:18:36::DEBUG   :Importing DcxImagePlugin
+20:18:36::DEBUG   :Importing DdsImagePlugin
+20:18:36::DEBUG   :Importing EpsImagePlugin
+20:18:36::DEBUG   :Importing FitsImagePlugin
+20:18:36::DEBUG   :Importing FliImagePlugin
+20:18:36::DEBUG   :Importing FpxImagePlugin
+20:18:36::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:18:36::DEBUG   :Importing FtexImagePlugin
+20:18:36::DEBUG   :Importing GbrImagePlugin
+20:18:36::DEBUG   :Importing GifImagePlugin
+20:18:36::DEBUG   :Importing GribStubImagePlugin
+20:18:36::DEBUG   :Importing Hdf5StubImagePlugin
+20:18:36::DEBUG   :Importing IcnsImagePlugin
+20:18:36::DEBUG   :Importing IcoImagePlugin
+20:18:36::DEBUG   :Importing ImImagePlugin
+20:18:36::DEBUG   :Importing ImtImagePlugin
+20:18:36::DEBUG   :Importing IptcImagePlugin
+20:18:36::DEBUG   :Importing JpegImagePlugin
+20:18:36::DEBUG   :Importing Jpeg2KImagePlugin
+20:18:36::DEBUG   :Importing McIdasImagePlugin
+20:18:36::DEBUG   :Importing MicImagePlugin
+20:18:36::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:18:36::DEBUG   :Importing MpegImagePlugin
+20:18:36::DEBUG   :Importing MpoImagePlugin
+20:18:36::DEBUG   :Importing MspImagePlugin
+20:18:36::DEBUG   :Importing PalmImagePlugin
+20:18:36::DEBUG   :Importing PcdImagePlugin
+20:18:36::DEBUG   :Importing PcxImagePlugin
+20:18:36::DEBUG   :Importing PdfImagePlugin
+20:18:36::DEBUG   :Importing PixarImagePlugin
+20:18:36::DEBUG   :Importing PngImagePlugin
+20:18:36::DEBUG   :Importing PpmImagePlugin
+20:18:36::DEBUG   :Importing PsdImagePlugin
+20:18:36::DEBUG   :Importing QoiImagePlugin
+20:18:36::DEBUG   :Importing SgiImagePlugin
+20:18:36::DEBUG   :Importing SpiderImagePlugin
+20:18:36::DEBUG   :Importing SunImagePlugin
+20:18:36::DEBUG   :Importing TgaImagePlugin
+20:18:36::DEBUG   :Importing TiffImagePlugin
+20:18:36::DEBUG   :Importing WebPImagePlugin
+20:18:36::DEBUG   :Importing WmfImagePlugin
+20:18:36::DEBUG   :Importing XbmImagePlugin
+20:18:36::DEBUG   :Importing XpmImagePlugin
+20:18:36::DEBUG   :Importing XVThumbImagePlugin
+20:18:36::INFO    :Startup complete
+20:18:36::DEBUG   :Initialized Schedule class
+20:23:38::INFO    :Application Starting up
+20:23:38::DEBUG   :Using proactor: IocpProactor
+20:23:38::DEBUG   :Importing AvifImagePlugin
+20:23:38::DEBUG   :Importing BlpImagePlugin
+20:23:38::DEBUG   :Importing BmpImagePlugin
+20:23:38::DEBUG   :Importing BufrStubImagePlugin
+20:23:38::DEBUG   :Importing CurImagePlugin
+20:23:38::DEBUG   :Importing DcxImagePlugin
+20:23:38::DEBUG   :Importing DdsImagePlugin
+20:23:38::DEBUG   :Importing EpsImagePlugin
+20:23:38::DEBUG   :Importing FitsImagePlugin
+20:23:38::DEBUG   :Importing FliImagePlugin
+20:23:38::DEBUG   :Importing FpxImagePlugin
+20:23:38::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:23:38::DEBUG   :Importing FtexImagePlugin
+20:23:38::DEBUG   :Importing GbrImagePlugin
+20:23:38::DEBUG   :Importing GifImagePlugin
+20:23:38::DEBUG   :Importing GribStubImagePlugin
+20:23:38::DEBUG   :Importing Hdf5StubImagePlugin
+20:23:38::DEBUG   :Importing IcnsImagePlugin
+20:23:38::DEBUG   :Importing IcoImagePlugin
+20:23:38::DEBUG   :Importing ImImagePlugin
+20:23:38::DEBUG   :Importing ImtImagePlugin
+20:23:38::DEBUG   :Importing IptcImagePlugin
+20:23:38::DEBUG   :Importing JpegImagePlugin
+20:23:38::DEBUG   :Importing Jpeg2KImagePlugin
+20:23:38::DEBUG   :Importing McIdasImagePlugin
+20:23:38::DEBUG   :Importing MicImagePlugin
+20:23:38::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:23:38::DEBUG   :Importing MpegImagePlugin
+20:23:38::DEBUG   :Importing MpoImagePlugin
+20:23:38::DEBUG   :Importing MspImagePlugin
+20:23:38::DEBUG   :Importing PalmImagePlugin
+20:23:38::DEBUG   :Importing PcdImagePlugin
+20:23:38::DEBUG   :Importing PcxImagePlugin
+20:23:38::DEBUG   :Importing PdfImagePlugin
+20:23:38::DEBUG   :Importing PixarImagePlugin
+20:23:38::DEBUG   :Importing PngImagePlugin
+20:23:38::DEBUG   :Importing PpmImagePlugin
+20:23:38::DEBUG   :Importing PsdImagePlugin
+20:23:38::DEBUG   :Importing QoiImagePlugin
+20:23:38::DEBUG   :Importing SgiImagePlugin
+20:23:38::DEBUG   :Importing SpiderImagePlugin
+20:23:38::DEBUG   :Importing SunImagePlugin
+20:23:38::DEBUG   :Importing TgaImagePlugin
+20:23:38::DEBUG   :Importing TiffImagePlugin
+20:23:38::DEBUG   :Importing WebPImagePlugin
+20:23:38::DEBUG   :Importing WmfImagePlugin
+20:23:38::DEBUG   :Importing XbmImagePlugin
+20:23:38::DEBUG   :Importing XpmImagePlugin
+20:23:38::DEBUG   :Importing XVThumbImagePlugin
+20:23:38::INFO    :Startup complete
+20:23:38::DEBUG   :Initialized Schedule class
+20:25:56::INFO    :Application Starting up
+20:25:56::DEBUG   :Using proactor: IocpProactor
+20:25:56::DEBUG   :Importing AvifImagePlugin
+20:25:56::DEBUG   :Importing BlpImagePlugin
+20:25:56::DEBUG   :Importing BmpImagePlugin
+20:25:56::DEBUG   :Importing BufrStubImagePlugin
+20:25:56::DEBUG   :Importing CurImagePlugin
+20:25:56::DEBUG   :Importing DcxImagePlugin
+20:25:56::DEBUG   :Importing DdsImagePlugin
+20:25:56::DEBUG   :Importing EpsImagePlugin
+20:25:56::DEBUG   :Importing FitsImagePlugin
+20:25:56::DEBUG   :Importing FliImagePlugin
+20:25:56::DEBUG   :Importing FpxImagePlugin
+20:25:56::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:25:56::DEBUG   :Importing FtexImagePlugin
+20:25:56::DEBUG   :Importing GbrImagePlugin
+20:25:56::DEBUG   :Importing GifImagePlugin
+20:25:56::DEBUG   :Importing GribStubImagePlugin
+20:25:56::DEBUG   :Importing Hdf5StubImagePlugin
+20:25:56::DEBUG   :Importing IcnsImagePlugin
+20:25:56::DEBUG   :Importing IcoImagePlugin
+20:25:56::DEBUG   :Importing ImImagePlugin
+20:25:56::DEBUG   :Importing ImtImagePlugin
+20:25:56::DEBUG   :Importing IptcImagePlugin
+20:25:56::DEBUG   :Importing JpegImagePlugin
+20:25:56::DEBUG   :Importing Jpeg2KImagePlugin
+20:25:56::DEBUG   :Importing McIdasImagePlugin
+20:25:56::DEBUG   :Importing MicImagePlugin
+20:25:56::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:25:56::DEBUG   :Importing MpegImagePlugin
+20:25:56::DEBUG   :Importing MpoImagePlugin
+20:25:56::DEBUG   :Importing MspImagePlugin
+20:25:56::DEBUG   :Importing PalmImagePlugin
+20:25:56::DEBUG   :Importing PcdImagePlugin
+20:25:56::DEBUG   :Importing PcxImagePlugin
+20:25:56::DEBUG   :Importing PdfImagePlugin
+20:25:56::DEBUG   :Importing PixarImagePlugin
+20:25:56::DEBUG   :Importing PngImagePlugin
+20:25:56::DEBUG   :Importing PpmImagePlugin
+20:25:56::DEBUG   :Importing PsdImagePlugin
+20:25:56::DEBUG   :Importing QoiImagePlugin
+20:25:56::DEBUG   :Importing SgiImagePlugin
+20:25:56::DEBUG   :Importing SpiderImagePlugin
+20:25:56::DEBUG   :Importing SunImagePlugin
+20:25:56::DEBUG   :Importing TgaImagePlugin
+20:25:56::DEBUG   :Importing TiffImagePlugin
+20:25:56::DEBUG   :Importing WebPImagePlugin
+20:25:56::DEBUG   :Importing WmfImagePlugin
+20:25:56::DEBUG   :Importing XbmImagePlugin
+20:25:56::DEBUG   :Importing XpmImagePlugin
+20:25:56::DEBUG   :Importing XVThumbImagePlugin
+20:25:56::INFO    :Startup complete
+20:25:56::DEBUG   :Initialized Schedule class
+20:25:58::ERROR   :An error occurred when calling message handler
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 412, in _dispatcher
+    return int(icon._message_handlers.get(
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        uMsg, lambda w, l: 0)(wParam, lParam) or 0)
+        ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 224, in _on_notify
+    descriptors[index - 1](self)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 328, in inner
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 453, in __call__
+    return self._action(icon, self)
+           ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 61, in setDelayWindow
+    tk.Button(_root, text="Save", sticky="ew", columnspan=3)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2850, in __init__
+    Widget.__init__(self, master, 'button', cnf, kw)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2772, in __init__
+    self.tk.call(
+    ~~~~~~~~~~~~^
+        (widgetName, self._w) + extra + self._options(cnf))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: unknown option "-sticky"
+20:26:09::ERROR   :An error occurred when calling message handler
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 412, in _dispatcher
+    return int(icon._message_handlers.get(
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        uMsg, lambda w, l: 0)(wParam, lParam) or 0)
+        ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 224, in _on_notify
+    descriptors[index - 1](self)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 328, in inner
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 453, in __call__
+    return self._action(icon, self)
+           ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 61, in setDelayWindow
+    tk.Button(_root, text="Save", sticky="ew", columnspan=3)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2850, in __init__
+    Widget.__init__(self, master, 'button', cnf, kw)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2772, in __init__
+    self.tk.call(
+    ~~~~~~~~~~~~^
+        (widgetName, self._w) + extra + self._options(cnf))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: unknown option "-sticky"
+20:27:26::INFO    :Application Starting up
+20:27:26::DEBUG   :Using proactor: IocpProactor
+20:27:26::DEBUG   :Importing AvifImagePlugin
+20:27:26::DEBUG   :Importing BlpImagePlugin
+20:27:26::DEBUG   :Importing BmpImagePlugin
+20:27:26::DEBUG   :Importing BufrStubImagePlugin
+20:27:26::DEBUG   :Importing CurImagePlugin
+20:27:26::DEBUG   :Importing DcxImagePlugin
+20:27:26::DEBUG   :Importing DdsImagePlugin
+20:27:26::DEBUG   :Importing EpsImagePlugin
+20:27:26::DEBUG   :Importing FitsImagePlugin
+20:27:26::DEBUG   :Importing FliImagePlugin
+20:27:26::DEBUG   :Importing FpxImagePlugin
+20:27:26::DEBUG   :Image: failed to import FpxImagePlugin: No module named 'olefile'
+20:27:26::DEBUG   :Importing FtexImagePlugin
+20:27:26::DEBUG   :Importing GbrImagePlugin
+20:27:26::DEBUG   :Importing GifImagePlugin
+20:27:26::DEBUG   :Importing GribStubImagePlugin
+20:27:26::DEBUG   :Importing Hdf5StubImagePlugin
+20:27:26::DEBUG   :Importing IcnsImagePlugin
+20:27:26::DEBUG   :Importing IcoImagePlugin
+20:27:26::DEBUG   :Importing ImImagePlugin
+20:27:26::DEBUG   :Importing ImtImagePlugin
+20:27:26::DEBUG   :Importing IptcImagePlugin
+20:27:26::DEBUG   :Importing JpegImagePlugin
+20:27:26::DEBUG   :Importing Jpeg2KImagePlugin
+20:27:26::DEBUG   :Importing McIdasImagePlugin
+20:27:26::DEBUG   :Importing MicImagePlugin
+20:27:26::DEBUG   :Image: failed to import MicImagePlugin: No module named 'olefile'
+20:27:26::DEBUG   :Importing MpegImagePlugin
+20:27:26::DEBUG   :Importing MpoImagePlugin
+20:27:26::DEBUG   :Importing MspImagePlugin
+20:27:26::DEBUG   :Importing PalmImagePlugin
+20:27:26::DEBUG   :Importing PcdImagePlugin
+20:27:26::DEBUG   :Importing PcxImagePlugin
+20:27:26::DEBUG   :Importing PdfImagePlugin
+20:27:26::DEBUG   :Importing PixarImagePlugin
+20:27:26::DEBUG   :Importing PngImagePlugin
+20:27:26::DEBUG   :Importing PpmImagePlugin
+20:27:26::DEBUG   :Importing PsdImagePlugin
+20:27:26::DEBUG   :Importing QoiImagePlugin
+20:27:26::DEBUG   :Importing SgiImagePlugin
+20:27:26::DEBUG   :Importing SpiderImagePlugin
+20:27:26::DEBUG   :Importing SunImagePlugin
+20:27:26::DEBUG   :Importing TgaImagePlugin
+20:27:26::DEBUG   :Importing TiffImagePlugin
+20:27:26::DEBUG   :Importing WebPImagePlugin
+20:27:26::DEBUG   :Importing WmfImagePlugin
+20:27:26::DEBUG   :Importing XbmImagePlugin
+20:27:26::DEBUG   :Importing XpmImagePlugin
+20:27:26::DEBUG   :Importing XVThumbImagePlugin
+20:27:26::INFO    :Startup complete
+20:27:26::DEBUG   :Initialized Schedule class
+20:27:29::ERROR   :An error occurred when calling message handler
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 412, in _dispatcher
+    return int(icon._message_handlers.get(
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        uMsg, lambda w, l: 0)(wParam, lParam) or 0)
+        ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_win32.py", line 224, in _on_notify
+    descriptors[index - 1](self)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 328, in inner
+    callback(self)
+    ~~~~~~~~^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\pystray\_base.py", line 453, in __call__
+    return self._action(icon, self)
+           ~~~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\Users\user\Documents\GitHub\School_Notes\csengetes_visszaszamlalo\csengo3.py", line 61, in setDelayWindow
+    tk.Button(_root, text="Save", sticky="ew").grid(row=4, column=0, columnspan=3)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2850, in __init__
+    Widget.__init__(self, master, 'button', cnf, kw)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\tkinter\__init__.py", line 2772, in __init__
+    self.tk.call(
+    ~~~~~~~~~~~~^
+        (widgetName, self._w) + extra + self._options(cnf))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: unknown option "-sticky"
