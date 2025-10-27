@@ -40,7 +40,7 @@ def print_critical(text):
 	print(text)
 	logger.critical(text)
 
-_root:Tk|None = None
+delayRoot:Tk|None = None
 # Settings window
 async def setup_tray(root:Tk):
 	def on_quit(icon, item):
@@ -53,26 +53,47 @@ async def setup_tray(root:Tk):
 		runtime.stop()
 	def settings_callback(): runtime.create_task(open_settings(root))
 	def setDelayWindow(icon, item):
-		global _root
+		global delayRoot
 		async def CreateWindow():
 			def saveValue(event=None):
 				settings.delay = int(val.get())
-				_root.grid_forget()
-			_root = tk.Toplevel(root)
-			_root.title("Delay Time Input")
-			_root.geometry(f"+{_root.winfo_screenwidth()//2-25}+{_root.winfo_screenheight()//2-25}")
-			_root.resizable(False, False)
-			_root.grid(50, 50, 3, 4)
-			tk.Label(_root, text="Set Delay Time (in seconds)").grid(row=0, column=0, columnspan=3)
-			val = tk.Entry(_root, textvariable=tk.IntVar(value=settings.delay))
-			val.grid(row=1, column=0, columnspan=3)
-			tk.Button(_root, text="Save", command=saveValue).grid(row=2, column=0, columnspan=3)
-			_root.focus_force()
-			_root.bind('<Return>', saveValue)
-			asyncio.create_task(updateFast(_root))
+				delayRoot.destroy()
+			delayRoot = tk.Toplevel(root)
+			delayRoot.title("Delay Time Input")
+			delayRoot.geometry(f"+{delayRoot.winfo_screenwidth()//2-25}+{delayRoot.winfo_screenheight()//2-25}")
+			delayRoot.resizable(False, False)
+			delayRoot.grid(1, 6, 150, 50)
+			tk.Label(delayRoot, text="Set Delay Time (in seconds)").grid(row=0, column=0)
+			val = tk.Entry(delayRoot, textvariable=tk.IntVar(value=settings.delay))
+			val.grid(row=1, column=0)
+			tk.Label(delayRoot, text="Negative = Earlier\nPositive = Later").grid(row=2, column=0, rowspan=2)
+			tk.Button(delayRoot, text="Save", command=saveValue).grid(row=5, column=0)
+			delayRoot.focus_force()
+			delayRoot.bind('<Return>', saveValue)
+			asyncio.create_task(updateFast(delayRoot))
 		runtime.create_task(CreateWindow())
 	def ScheduleWindow(icon, item):
-		... # TODO: Fullscreen Schedule display
+		async def CreateWindow():
+			scheduleRoot = tk.Toplevel(root)
+			scheduleRoot.title("Schedule")
+			windowHeight = max([len(i) for i in settings.default_schedule], [len(val) for key, val in settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V")])
+			windowWidth = len(settings.default_schedule)
+			days:list[Schedule] = []
+			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V") for key in settings.special_days.keys()]):
+				windowWidth += 1
+			scheduleRoot.grid(windowWidth, windowHeight, 300, 150)
+			frames:list[list[tk.Frame]] = []
+			for col in range(windowWidth):
+				frames.append([])
+				for row in range(windowHeight):
+					temp = tk.Frame(scheduleRoot, highlightbackground="white", highlightcolor="black")
+					temp.grid(row=row, column=col)
+					frames[col].append(temp)
+			for num, frame in enumerate(frames):
+				
+				...
+			scheduleRoot.update()
+		runtime.create_task(CreateWindow())
 	icon = pystray.Icon("Csengetés időzítő", Image.open("icon.ico"), menu=pystray.Menu(
 		pystray.MenuItem(lambda item: f"Delay: {settings.delay}", setDelayWindow),
 		pystray.MenuItem("Fullscreen Schedule", ScheduleWindow),
@@ -244,9 +265,9 @@ class Settings:
 		self.save()
 settings = Settings()
 _settings:tk.Toplevel|None = None
-async def updateFast(sep_root:Tk):
+async def updateFast(_root:Tk):
 	while True:
-		sep_root.update()
+		_root.update()
 		await asyncio.sleep(0.01) 
 async def open_settings(root:Tk):
 	global _settings
@@ -372,9 +393,13 @@ class Schedule:
 				self.classname = tmp[0]
 				self.room = tmp[1]
 				self.teacher = settings.teacherlist.get(_class, None)
-	def __init__(self):
-		self._date = (datetime.now() if dummy_date is None else dummy_date).date()
-		weekday = self._date.weekday()
+	def __init__(self, other_date:datetime|None=None):
+		if other_date is not None:
+			self._date = other_date.date()
+			weekday = self._date.weekday()
+		else:
+			self._date = (datetime.now() if dummy_date is None else dummy_date).date()
+			weekday = self._date.weekday()
 		self.special_day = any([day == self._date for day in settings.special_days])
 		if weekday in [5,6] and not self.special_day:
 			return
@@ -563,6 +588,7 @@ def main(_dummy_date:datetime|None = None):
 	runtime.close()
 
 if environ.get('TERM_PROGRAM') == 'vscode':
-	main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
+	main()
+	#main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
 else:
 	main()
