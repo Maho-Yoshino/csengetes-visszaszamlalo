@@ -567,7 +567,7 @@ def main(_dummy_date:datetime|None = None):
 	log_format = "%(asctime)s::%(levelname)-8s:%(message)s"
 	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.WARNING, format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
-	logger.info("Application Starting up")
+	logger.info(f"Application Starting up (v{VERSION_STRING})")
 	global root, runtime
 	root = Tk()
 	runtime = asyncio.new_event_loop()
