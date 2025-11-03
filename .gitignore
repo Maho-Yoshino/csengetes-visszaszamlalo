@@ -1,3 +1,4 @@
 logs/
-*.json
-*.xcf
+settings.json
+.venv
+__pycache__

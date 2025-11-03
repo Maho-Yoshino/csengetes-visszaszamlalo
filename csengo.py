@@ -15,92 +15,17 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
+VERSION_STRING:str="v3.0.1"
 
-# Setting PATH
+# region Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
 	print("not an .exe")
 	current_dir = path.dirname(path.abspath(__file__))
 else:
 	current_dir = path.dirname(path.abspath(executable))
 chdir(current_dir)
-# Logging prints
-def print_info(text):
-	print(text)
-	logger.info(text)
-def print_debug(text):
-	print(text)
-	logger.debug(text)
-def print_warning(text):
-	print(text)
-	logger.warning(text)
-def print_error(text):
-	print(text)
-	logger.error(text)
-def print_critical(text):
-	print(text)
-	logger.critical(text)
-
-delayRoot:Tk|None = None
-# Settings window
-async def setup_tray(root:Tk):
-	def on_quit(icon, item):
-		print_info("Closing application")
-		icon.stop()
-		global root, update_cycle_task, transparency_task
-		update_cycle_task.cancel()
-		transparency_task.cancel()
-		root.quit()
-		runtime.stop()
-	def settings_callback(): runtime.create_task(open_settings(root))
-	def setDelayWindow(icon, item):
-		global delayRoot
-		async def CreateWindow():
-			def saveValue(event=None):
-				settings.delay = int(val.get())
-				delayRoot.destroy()
-			delayRoot = tk.Toplevel(root)
-			delayRoot.title("Delay Time Input")
-			delayRoot.geometry(f"+{delayRoot.winfo_screenwidth()//2-25}+{delayRoot.winfo_screenheight()//2-25}")
-			delayRoot.resizable(False, False)
-			delayRoot.grid(1, 6, 150, 50)
-			tk.Label(delayRoot, text="Set Delay Time (in seconds)").grid(row=0, column=0)
-			val = tk.Entry(delayRoot, textvariable=tk.IntVar(value=settings.delay))
-			val.grid(row=1, column=0)
-			tk.Label(delayRoot, text="Negative = Earlier\nPositive = Later").grid(row=2, column=0, rowspan=2)
-			tk.Button(delayRoot, text="Save", command=saveValue).grid(row=5, column=0)
-			delayRoot.focus_force()
-			delayRoot.bind('<Return>', saveValue)
-			asyncio.create_task(updateFast(delayRoot))
-		runtime.create_task(CreateWindow())
-	def ScheduleWindow(icon, item):
-		async def CreateWindow():
-			scheduleRoot = tk.Toplevel(root)
-			scheduleRoot.title("Schedule")
-			windowHeight = max([len(i) for i in settings.default_schedule], [len(val) for key, val in settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V")])
-			windowWidth = len(settings.default_schedule)
-			days:list[Schedule] = []
-			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V") for key in settings.special_days.keys()]):
-				windowWidth += 1
-			scheduleRoot.grid(windowWidth, windowHeight, 300, 150)
-			frames:list[list[tk.Frame]] = []
-			for col in range(windowWidth):
-				frames.append([])
-				for row in range(windowHeight):
-					temp = tk.Frame(scheduleRoot, highlightbackground="white", highlightcolor="black")
-					temp.grid(row=row, column=col)
-					frames[col].append(temp)
-			for num, frame in enumerate(frames):
-				
-				...
-			scheduleRoot.update()
-		runtime.create_task(CreateWindow())
-	icon = pystray.Icon("Csengetés időzítő", Image.open("icon.ico"), menu=pystray.Menu(
-		pystray.MenuItem(lambda item: f"Delay: {settings.delay}", setDelayWindow),
-		pystray.MenuItem("Fullscreen Schedule", ScheduleWindow),
-		pystray.MenuItem("Settings", settings_callback),
-		pystray.MenuItem("Quit", lambda icon, item: on_quit(icon, item))
-	))
-	Thread(target=icon.run, daemon=True).start()
+# endregion
+# region Settings window
 class Settings:
 	def __init__(self, filename: str = "settings.json", encoding:str="utf-8"):
 		self.filename = filename
@@ -111,9 +36,9 @@ class Settings:
 		try:
 			with open(self.filename, "r", encoding=self.encoding) as f:
 				self._data = jload(f)
-				print_info("Settings loaded properly")
+				logger.info("Settings loaded properly")
 		except FileNotFoundError:
-			print_warning("Settings file not found, creating a default one.")
+			logger.warning("Settings file not found, creating a default one.")
 			with open(self.filename, "x", encoding=self.encoding) as f:
 				jdump({
 					"classlist":{},
@@ -263,12 +188,71 @@ class Settings:
 	def display_next_time(self, value: int):
 		self._data["display_next_time"] = value
 		self.save()
-settings = Settings()
-_settings:tk.Toplevel|None = None
+delayRoot:Tk|None = None
+async def setup_tray(root:Tk):
+	def on_quit(icon, item):
+		logger.info("Closing application")
+		icon.stop()
+		global root, update_cycle_task, transparency_task
+		update_cycle_task.cancel()
+		transparency_task.cancel()
+		root.quit()
+		runtime.stop()
+	def settings_callback(): runtime.create_task(open_settings(root))
+	def setDelayWindow(icon, item):
+		global delayRoot
+		async def CreateWindow():
+			def saveValue(event=None):
+				settings.delay = int(val.get())
+				delayRoot.destroy()
+			delayRoot = tk.Toplevel(root)
+			delayRoot.title("Delay Time Input")
+			delayRoot.geometry(f"+{delayRoot.winfo_screenwidth()//2-25}+{delayRoot.winfo_screenheight()//2-25}")
+			delayRoot.resizable(False, False)
+			delayRoot.grid(1, 6, 150, 50)
+			tk.Label(delayRoot, text="Set Delay Time (in seconds)").grid(row=0, column=0)
+			val = tk.Entry(delayRoot, textvariable=tk.IntVar(value=settings.delay))
+			val.grid(row=1, column=0)
+			tk.Label(delayRoot, text="Negative = Earlier\nPositive = Later").grid(row=2, column=0, rowspan=2)
+			tk.Button(delayRoot, text="Save", command=saveValue).grid(row=5, column=0)
+			delayRoot.focus_force()
+			delayRoot.bind('<Return>', saveValue)
+			asyncio.create_task(updateFast(delayRoot))
+		runtime.create_task(CreateWindow())
+	def ScheduleWindow(icon, item):
+		async def CreateWindow():
+			scheduleRoot = tk.Toplevel(root)
+			scheduleRoot.title("Schedule")
+			windowHeight = max([len(i) for i in settings.default_schedule], [len(val) for key, val in settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V")])
+			windowWidth = len(settings.default_schedule)
+			days:list[Schedule] = []
+			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V") for key in settings.special_days.keys()]):
+				windowWidth += 1
+			scheduleRoot.grid(windowWidth, windowHeight, 300, 150)
+			frames:list[list[tk.Frame]] = []
+			for col in range(windowWidth):
+				frames.append([])
+				for row in range(windowHeight):
+					temp = tk.Frame(scheduleRoot, highlightbackground="white", highlightcolor="black")
+					temp.grid(row=row, column=col)
+					frames[col].append(temp)
+			for num, frame in enumerate(frames):
+				
+				...
+			scheduleRoot.update()
+		runtime.create_task(CreateWindow())
+	icon = pystray.Icon("Csengetés időzítő", Image.open("icon.ico"), menu=pystray.Menu(
+		pystray.MenuItem(lambda item: f"Delay: {settings.delay}", setDelayWindow),
+		pystray.MenuItem("Fullscreen Schedule", ScheduleWindow),
+		pystray.MenuItem("Settings", settings_callback),
+		pystray.MenuItem("Quit", lambda icon, item: on_quit(icon, item))
+	))
+	Thread(target=icon.run, daemon=True).start()
 async def updateFast(_root:Tk):
 	while True:
 		_root.update()
-		await asyncio.sleep(0.01) 
+		await asyncio.sleep(0.01)
+_settings:tk.Toplevel|None = None 
 async def open_settings(root:Tk):
 	global _settings
 	_settings = tk.Toplevel(root)
@@ -280,13 +264,62 @@ async def open_settings(root:Tk):
 	_settings.config(menu=menu)
 	tk.Label(_settings, text="Settings window", font=font_size(20)).grid(row=0, column=0, columnspan=10)
 	await updateFast(_settings)
-
-# Clock Window
-runtime:asyncio.AbstractEventLoop
-transparency_task:asyncio.Task = None
-update_cycle_task:asyncio.Task = None
-dummy_date:datetime|None = None
+settings = Settings()
+# endregion
+# region Clock Window
+class Schedule:
+	classes:list["ClassData", list["ClassData"]] = []
+	_date:date = None
+	special_day:bool = False
+	class ClassData:
+		begin:time
+		end:time
+		begin_datetime:datetime
+		end_datetime:datetime
+		classname:str = None 
+		room:str = None 
+		teacher:str = None
+		def __init__(self, _class:str|None, index:int, parent:"Schedule"):
+			tmp = settings.classlist.get(_class, [])
+			if len(parent.classes) > 0:
+				self.begin_datetime = (parent.classes[-1].end_datetime if not isinstance(parent.classes[-1], list) else parent.classes[-1][0].end_datetime) + timedelta(minutes=(settings.special_breaktimes[parent._date] if parent.special_day else settings.breaktimes)[index-1])
+				self.begin = self.begin_datetime.time()
+			else:
+				temp = (settings.special_begintimes.get(parent._date) if parent.special_day else settings.classes_begin)
+				self.begin_datetime = datetime.strptime(f"{parent._date.strftime("%Y.%m.%d")} {temp//100}:{temp%100}", "%Y.%m.%d %H:%M")
+				self.begin = self.begin_datetime.time()
+			self.end_datetime = (self.begin_datetime + timedelta(minutes=(settings.special_classtimes if parent.special_day else settings.classtimes)[index]))
+			self.end = self.end_datetime.time()
+			if tmp:
+				self.classname = tmp[0]
+				self.room = tmp[1]
+				self.teacher = settings.teacherlist.get(_class, None)
+	def __init__(self, other_date:datetime|None=None):
+		if other_date is not None:
+			self._date = other_date.date()
+			weekday = self._date.weekday()
+		else:
+			self._date = (datetime.now() if dummy_date is None else dummy_date).date()
+			weekday = self._date.weekday()
+		self.special_day = any([datetime.strptime(day, "") == self._date for day in settings.special_days.keys()])
+		if weekday in [5,6] and not self.special_day:
+			return
+		if self.special_day:
+			tmp = settings.special_days.get(self._date)
+			if tmp is None:
+				tmp = settings.default_schedule[weekday]
+		else: 
+			tmp = settings.default_schedule[weekday]
+		for ind, classinfo in enumerate(tmp):
+			if classinfo is not None and isinstance(classinfo, list):
+				self.classes.append([self.ClassData(_, ind, self) for _ in classinfo])
+			else:
+				self.classes.append(self.ClassData(classinfo, ind, self))
+		logger.debug("Initialized Schedule class")
 root:Tk
+schedule:Schedule|None = None
+update_cycle_task:asyncio.Task = None
+transparency_task:asyncio.Task = None
 def font_size(size:int): return Font(size=size)
 async def set_click_through():
 	if platform != "win32":
@@ -364,58 +397,7 @@ async def startup(root:Tk):
 	root.update()
 	update_cycle_task = asyncio.create_task(update_cycle(mainlabel, timelabel, class1label, class2label, loc1label, loc2label, root, vert_separator, separator, schedule, aux_label))
 	root.protocol("WM_DELETE_WINDOW", root.withdraw)
-	print_info("Startup complete")
-
-class Schedule:
-	classes:list["ClassData", list["ClassData"]] = []
-	_date:date = None
-	special_day:bool = False
-	class ClassData:
-		begin:time
-		end:time
-		begin_datetime:datetime
-		end_datetime:datetime
-		classname:str = None 
-		room:str = None 
-		teacher:str = None
-		def __init__(self, _class:str|None, index:int, parent:"Schedule"):
-			tmp = settings.classlist.get(_class, [])
-			if len(parent.classes) > 0:
-				self.begin_datetime = (parent.classes[-1].end_datetime if not isinstance(parent.classes[-1], list) else parent.classes[-1][0].end_datetime) + timedelta(minutes=(settings.special_breaktimes[parent._date] if parent.special_day else settings.breaktimes)[index-1])
-				self.begin = self.begin_datetime.time()
-			else:
-				temp = (settings.special_begintimes.get(parent._date) if parent.special_day else settings.classes_begin)
-				self.begin_datetime = datetime.strptime(f"{parent._date.strftime("%Y.%m.%d")} {temp//100}:{temp%100}", "%Y.%m.%d %H:%M")
-				self.begin = self.begin_datetime.time()
-			self.end_datetime = (self.begin_datetime + timedelta(minutes=(settings.special_classtimes if parent.special_day else settings.classtimes)[index]))
-			self.end = self.end_datetime.time()
-			if tmp:
-				self.classname = tmp[0]
-				self.room = tmp[1]
-				self.teacher = settings.teacherlist.get(_class, None)
-	def __init__(self, other_date:datetime|None=None):
-		if other_date is not None:
-			self._date = other_date.date()
-			weekday = self._date.weekday()
-		else:
-			self._date = (datetime.now() if dummy_date is None else dummy_date).date()
-			weekday = self._date.weekday()
-		self.special_day = any([day == self._date for day in settings.special_days])
-		if weekday in [5,6] and not self.special_day:
-			return
-		if self.special_day:
-			tmp = settings.special_days.get(self._date)
-			if tmp is None:
-				tmp = settings.default_schedule[weekday]
-		else: 
-			tmp = settings.default_schedule[weekday]
-		for ind, classinfo in enumerate(tmp):
-			if classinfo is not None and isinstance(classinfo, list):
-				self.classes.append([self.ClassData(_, ind, self) for _ in classinfo])
-			else:
-				self.classes.append(self.ClassData(classinfo, ind, self))
-		print_debug("Initialized Schedule class")
-schedule:Schedule|None = None
+	logger.info("Startup complete")
 async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, schedule:Schedule, aux_label:tk.Label):
 	async def set_dynamic_size():
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
@@ -428,7 +410,7 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 		delay = settings.delay
 		if prev_day != schedule._date:
 			prev_day = (await get_rn()).date()
-			print_debug("Day changed since last cycle")
+			logger.debug("Day changed since last cycle")
 			schedule = Schedule()
 			if len(schedule.classes) == 0: await asyncio.sleep(60*30)
 		now = (await get_rn())
@@ -558,9 +540,16 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 			dummy_date = dummy_date + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
 		await asyncio.sleep(delay)
-
+# endregion
+runtime:asyncio.AbstractEventLoop
+dummy_date:datetime|None = None
 MAX_LOGS:int=5
 def main(_dummy_date:datetime|None = None):
+	def check_update():
+		
+		...
+	if environ.get('TERM_PROGRAM') == 'vscode':
+		check_update()
 	if _dummy_date is not None:
 		global dummy_date
 		dummy_date = _dummy_date
@@ -578,7 +567,7 @@ def main(_dummy_date:datetime|None = None):
 	log_format = "%(asctime)s::%(levelname)-8s:%(message)s"
 	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.WARNING, format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
-	print_info("Application Starting up")
+	logger.info("Application Starting up")
 	global root, runtime
 	root = Tk()
 	runtime = asyncio.new_event_loop()
@@ -588,7 +577,7 @@ def main(_dummy_date:datetime|None = None):
 	runtime.close()
 
 if environ.get('TERM_PROGRAM') == 'vscode':
-	main()
-	#main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
+	#main()
+	main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
 else:
 	main()
