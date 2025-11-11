@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
 VERSION_STRING:str="v3.0.1"
+windowHandle:str = u"Csengetés időzítő"
 
 # region Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
-	print("not an .exe")
 	current_dir = path.dirname(path.abspath(__file__))
 else:
 	current_dir = path.dirname(path.abspath(executable))
@@ -324,16 +324,20 @@ transparency_task:asyncio.Task = None
 def font_size(size:int): return Font(size=size)
 async def set_click_through():
 	if platform != "win32":
-		return print(f"User is not on windows. ({platform} instead)")
-	print("Setting click-through window")
+		return logger.warning(f"User is not on windows. ({platform} instead)")
+	logger.info("Setting click-through window")
 	try:
-		hwnd = windll.user32.FindWindowW(None, u"Csengetés időzítő")  # Get correct window handle
-		styles = windll.user32.GetWindowLongW(hwnd, -20)
-		styles |= 0x00000020  # WS_EX_LAYERED (Allows transparency)	
-		styles |= 0x00000080  # WS_EX_TRANSPARENT (Click-through)
-		windll.user32.SetWindowLongW(hwnd, -20, styles)
+		while True:
+			hwnd = windll.user32.FindWindowW(None, windowHandle)  # Get correct window handle
+			styles = windll.user32.GetWindowLongW(hwnd, -20)
+			styles |= 0x00000020  # WS_EX_LAYERED (Allows transparency)	
+			styles |= 0x00000080  # WS_EX_TRANSPARENT (Click-through)
+			windll.user32.SetWindowLongW(hwnd, -20, styles)
+			if (windll.user32.GetWindowLongW(hwnd, -20)) & 0x00000080 == 0x00000080:
+				break
+			await asyncio.sleep(0.5)
 	except Exception as e:
-		print(f"An error occured during transparency setting: {e}")
+		logger.error(f"An error occured during transparency setting: {e}")
 async def batterySaverEnabled(on_val, off_val):
 	class SYSTEM_POWER_STATUS(Structure):
 		_fields_ = [
@@ -363,7 +367,7 @@ async def startup(root:Tk):
 	global transparency_task, update_cycle_task
 	root.configure(background="black")
 	root.attributes("-topmost", True)
-	root.title("Csengetés időzítő")
+	root.title(windowHandle)
 	root.resizable(False, False)
 	root.overrideredirect(True)
 	root.wm_attributes("-alpha", settings.alpha["default"])
@@ -574,7 +578,7 @@ def main(_dummy_date:datetime|None = None):
 	runtime.close()
 
 if environ.get('TERM_PROGRAM') == 'vscode':
-	#main()
-	main(datetime(year=2025, month=11, day=5, hour=14, minute=35, second=30))
+	main()
+	#main(datetime(year=2025, month=11, day=5, hour=14, minute=35, second=30))
 else:
 	main()
