@@ -1,5 +1,9 @@
 cls
 @echo off
+if not exist ".venv" (
+	echo Virtual environment doesn't exist, running setup
+	call setup
+)
 echo [Packager] Starting Packager
 cd "%~dp0"
 if not exist "builds" (

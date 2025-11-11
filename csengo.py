@@ -12,6 +12,7 @@ from PIL import Image
 from json import load as jload, dump as jdump
 from typing import Optional, Any, Literal
 from pathlib import Path
+from github import Github
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
@@ -333,7 +334,7 @@ async def set_click_through():
 		windll.user32.SetWindowLongW(hwnd, -20, styles)
 	except Exception as e:
 		print(f"An error occured during transparency setting: {e}")
-async def is_battery_saver_on(on_val, off_val):
+async def batterySaverEnabled(on_val, off_val):
 	class SYSTEM_POWER_STATUS(Structure):
 		_fields_ = [
 			("ACLineStatus", c_byte),
@@ -356,7 +357,7 @@ async def transparency_check(root:Tk):
 			root.wm_attributes("-alpha", settings.alpha["default"])
 		elif await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.10: 
 			root.wm_attributes("-alpha", settings.alpha["onHover"])
-		await asyncio.sleep(await is_battery_saver_on(1, 0.1))
+		await asyncio.sleep(await batterySaverEnabled(1, 0.1))
 async def get_rn(): return datetime.now() if dummy_date is None else dummy_date
 async def startup(root:Tk):
 	global transparency_task, update_cycle_task
@@ -376,11 +377,11 @@ async def startup(root:Tk):
 	mainlabel = tk.Label(root, init_data, font=font_size(20))
 	mainlabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
 	mainlabel.grid_rowconfigure(0, weight=1)
-	timelabel = tk.Label(root, init_data, font=font_size(30))
+	timelabel = tk.Label(root, init_data, font=font_size(30), anchor="center")
 	timelabel.grid_rowconfigure(1, weight=1)
 	separator = Separator(root, orient="horizontal")
 	separator.grid_rowconfigure(2, weight=1)
-	class1label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
+	class1label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center", wraplength=128)
 	class1label.grid_rowconfigure(3, weight=1)
 	class2label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
 	loc2label = tk.Label(root, init_data, font=font_size(10), padx=5, anchor="center", justify="center")
@@ -394,12 +395,12 @@ async def startup(root:Tk):
 	root.columnconfigure(0, weight=1)
 	root.columnconfigure(1, weight=0)
 	root.columnconfigure(2, weight=1)
-	root.update()
 	update_cycle_task = asyncio.create_task(update_cycle(mainlabel, timelabel, class1label, class2label, loc1label, loc2label, root, vert_separator, separator, schedule, aux_label))
 	root.protocol("WM_DELETE_WINDOW", root.withdraw)
 	logger.info("Startup complete")
 async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, schedule:Schedule, aux_label:tk.Label):
-	async def set_dynamic_size():
+	def set_dynamic_size():
+		logger.debug(f"Setting dynamic size ({root.winfo_screenwidth()-root.winfo_width()})")
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
 	prev_day:datetime = (await get_rn()).date()
@@ -449,7 +450,6 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 					loc1label.grid_configure(columnspan=3)
 					loc1label.config(text=_class.room, wraplength=loc1label.winfo_width())
 				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-				await set_dynamic_size()
 				break
 			elif ((_class.end_datetime + timedelta(seconds=delay)).time() > now_time):
 				tmp = datetime.combine((await get_rn()), _class.end) - datetime.combine((await get_rn()).date(), now_time) + timedelta(seconds=delay)
@@ -459,7 +459,7 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 				if tmp_class is not None:
 					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
 					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-					if (tmp.seconds > 60*10):
+					if (tmp.seconds > 60*10 or num == len(schedule.classes-1)):
 						if aux_label.winfo_ismapped(): 
 							aux_label.grid_forget()
 							root.rowconfigure(4, weight=0, minsize=0)
@@ -490,12 +490,12 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 							if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
 					if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 				else:
-					if (tmp.seconds > 60*10):
-						if class2label is not None: class2label = class2label.grid_forget()
-						if loc2label is not None: loc2label = loc2label.grid_forget()
+					if (tmp.seconds > 60*10 or num == len(schedule.classes)-1):
+						if class2label.winfo_ismapped(): class2label.grid_forget()
+						if loc2label.winfo_ismapped(): loc2label.grid_forget()
 						class1label.grid_configure(columnspan=3)
 						loc1label.grid_configure(columnspan=3)
-						class1label.config(text=f"{_class.classname}", anchor="center")
+						class1label.config(text=f"{_class.classname}", anchor="center", wraplength=len(_class.classname))
 						loc1label.config(text=f"{_class.room}")
 						if aux_label.winfo_ismapped():
 							aux_label.grid_forget()
@@ -522,20 +522,17 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 							aux_label.config(text="Következő óra")
 							root.rowconfigure(4, weight=1)
 				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-				await set_dynamic_size()
 				break
 		else:
 			mainlabel.config(text="A napnak vége")
 			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,separator,vert_separator,aux_label] if i.winfo_ismapped()]
-			await set_dynamic_size()
-			root.update()
+			set_dynamic_size()
 			await asyncio.sleep(60)
 			continue
 		class1label.config(wraplength=class1label.winfo_width())
 		class2label.config(wraplength=class2label.winfo_width())
-		root.update()
-		await set_dynamic_size()
-		update_delay = await is_battery_saver_on(5, 1)
+		set_dynamic_size()
+		update_delay = await batterySaverEnabled(5, 1)
 		if dummy_date is not None:
 			dummy_date = dummy_date + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
@@ -565,7 +562,7 @@ def main(_dummy_date:datetime|None = None):
 	filename = f"logs/timer_{datetime.now().date().isoformat().replace('-', '_')}.log"
 	if (not path.isdir("logs")): mkdir("logs")
 	log_format = "%(asctime)s::%(levelname)-8s:%(message)s"
-	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.WARNING, format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
+	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.INFO, format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
 	logger.info(f"Application Starting up (v{VERSION_STRING})")
 	global root, runtime
@@ -578,6 +575,6 @@ def main(_dummy_date:datetime|None = None):
 
 if environ.get('TERM_PROGRAM') == 'vscode':
 	#main()
-	main(datetime(year=2025, month=10, day=3, hour=10, minute=25, second=30))
+	main(datetime(year=2025, month=11, day=5, hour=14, minute=35, second=30))
 else:
 	main()
