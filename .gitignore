@@ -5,3 +5,4 @@ __pycache__
 csengo.exe
 settings_*.json
 output/
+*.spec

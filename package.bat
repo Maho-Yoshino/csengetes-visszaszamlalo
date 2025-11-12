@@ -4,14 +4,17 @@ if not exist ".venv" (
 	echo Virtual environment doesn't exist, running setup
 	call setup
 )
-cd %~dp0
+cd /d "%~dp0"
 echo [Packager] Starting Packager
-%~dp0.venv\Scripts\python.exe -m PyInstaller -y -F -w --distpath "%~dp0" --workpath "%~dp0\output\work" -i "%~dp0\icon.ico" -n "csengo"  --clean "%~dp0\csengo.py"
-if not exist "output" (
+set "ROOT=%~dp0"
+set "ROOT=%ROOT:~0,-1%"
+"%ROOT%\.venv\Scripts\python.exe" -m PyInstaller --log-level ERROR -y -F -w --distpath "%ROOT%" --workpath "%ROOT%\output\work" -i "%ROOT%\icon.ico" -n "csengo" --clean "%ROOT%\csengo.py"
+if not exist "%ROOT%\output" (
 	echo An error happened while creating package.
 )
-if exist "output" (
-	del output
+if exist "%ROOT%\output" (
+	rmdir /s /q output
+	del csengo.spec
 	echo Package Made (it can be found in the root directory)
 )
 pause

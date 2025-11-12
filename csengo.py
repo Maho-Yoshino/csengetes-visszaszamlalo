@@ -16,7 +16,7 @@ from github import Github
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
-VERSION_STRING:str="v3.0.1"
+VERSION_STRING:str="3.0.0"
 windowHandle:str = u"Csengetés időzítő"
 
 # region Setting PATH
@@ -190,6 +190,7 @@ class Settings:
 		self._data["display_next_time"] = value
 		self.save()
 delayRoot:Tk|None = None
+delayWindowTask:asyncio.Task
 async def setup_tray(root:Tk):
 	def on_quit(icon, item):
 		logger.info("Closing application")
@@ -201,10 +202,11 @@ async def setup_tray(root:Tk):
 		runtime.stop()
 	def settings_callback(): runtime.create_task(open_settings(root))
 	def setDelayWindow(icon, item):
-		global delayRoot
+		global delayRoot, delayWindowTask
 		async def CreateWindow():
 			def saveValue(event=None):
 				settings.delay = int(val.get())
+				delayWindowTask.cancel()
 				delayRoot.destroy()
 			delayRoot = tk.Toplevel(root)
 			delayRoot.title("Delay Time Input")
@@ -218,7 +220,7 @@ async def setup_tray(root:Tk):
 			tk.Button(delayRoot, text="Save", command=saveValue).grid(row=5, column=0)
 			delayRoot.focus_force()
 			delayRoot.bind('<Return>', saveValue)
-			asyncio.create_task(updateFast(delayRoot))
+			delayWindowTask = asyncio.create_task(updateFast(delayRoot))
 		runtime.create_task(CreateWindow())
 	def ScheduleWindow(icon, item):
 		async def CreateWindow():
@@ -463,7 +465,7 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 				if tmp_class is not None:
 					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
 					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-					if (tmp.seconds > 60*10 or num == len(schedule.classes-1)):
+					if (tmp.seconds > 60*10 or num == len(schedule.classes)-1):
 						if aux_label.winfo_ismapped(): 
 							aux_label.grid_forget()
 							root.rowconfigure(4, weight=0, minsize=0)
@@ -542,13 +544,16 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
 		await asyncio.sleep(delay)
 # endregion
+# region update handler
+def check_update():
+	user = Github()
+	user.get_repo("Maho-Yoshino/csengetes-visszaszamlalo").get_releases()
+	...
+# endregion
 runtime:asyncio.AbstractEventLoop
 dummy_date:datetime|None = None
 MAX_LOGS:int=5
 def main(_dummy_date:datetime|None = None):
-	def check_update():
-		
-		...
 	if environ.get('TERM_PROGRAM') == 'vscode':
 		check_update()
 	if _dummy_date is not None:
@@ -579,6 +584,6 @@ def main(_dummy_date:datetime|None = None):
 
 if environ.get('TERM_PROGRAM') == 'vscode':
 	main()
-	#main(datetime(year=2025, month=11, day=5, hour=14, minute=35, second=30))
+	#main(datetime(year=2025, month=11, day=12, hour=12, minute=20, second=30))
 else:
 	main()
