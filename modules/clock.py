@@ -80,7 +80,7 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 			if len(state.schedule.classes) == 0: await asyncio.sleep(60*30)
 		now = (await get_rn())
 		now_time = now.time()
-		if all([not i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
+		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
 			class1label.grid(row=3, column=0, sticky="nsew")
 			loc1label.grid(row=4, column=0, sticky="nsew")
 			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
@@ -197,8 +197,8 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 		class2label.config(wraplength=class2label.winfo_width())
 		set_dynamic_size()
 		update_delay = await batterySaverEnabled(5, 1)
-		if dummy_date is not None:
-			dummy_date = dummy_date + timedelta(seconds=1)
+		if state.dummy_date is not None:
+			state.dummy_date = state.dummy_date + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
 		await asyncio.sleep(delay)
 def font_size(size:int): return Font(size=size)
