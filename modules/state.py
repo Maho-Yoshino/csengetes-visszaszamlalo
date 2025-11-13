@@ -16,3 +16,8 @@ update_cycle_task:Optional[asyncio.Task] = None
 transparency_task:Optional[asyncio.Task] = None
 windowHandle:str = u"Csengetés időzítő"
 dummy_date:Optional[datetime] = None
+
+async def updateFast(_root:Tk):
+	while True:
+		_root.update()
+		await asyncio.sleep(0.01)

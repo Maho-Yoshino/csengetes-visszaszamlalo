@@ -6,7 +6,8 @@ from datetime import datetime
 from os import path, chdir, mkdir, environ
 from pathlib import Path
 from github import Github
-from modules.settings import Settings, setup_tray
+from modules.settings import Settings
+from modules.tray import setup_tray
 from modules.clock import update_cycle, Schedule, set_click_through, font_size, transparency_check
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
