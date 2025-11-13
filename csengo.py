@@ -97,7 +97,7 @@ def main(_dummy_date:datetime|None = None):
 	state.runtime.close()
 
 if environ.get('TERM_PROGRAM') == 'vscode':
-	main()
-	#main(datetime(year=2025, month=11, day=12, hour=12, minute=20, second=30))
+	#main()
+	main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30))
 else:
 	main()

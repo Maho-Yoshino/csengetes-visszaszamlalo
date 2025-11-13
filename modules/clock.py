@@ -69,7 +69,6 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 		root.update()
 	prev_day:datetime = (await get_rn()).date()
 	state.schedule = Schedule()
-	global dummy_date
 	while True:
 		_start = perf_counter()
 		delay = state.settings.delay
