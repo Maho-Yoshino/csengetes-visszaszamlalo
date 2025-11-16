@@ -6,7 +6,7 @@ import asyncio, tkinter as tk, pystray, modules.state as state, logging
 from tkinter import Tk
 from threading import Thread
 from PIL import Image
-from modules.clock import get_rn
+from modules.clock import getTime
 from datetime import datetime
 logger = logging.getLogger(__name__)
 
@@ -14,10 +14,10 @@ async def setup_tray(root:Tk):
 	def on_quit(icon, item):
 		logger.info("Closing application")
 		icon.stop()
-		if (state.update_cycle_task is not None):
-			state.update_cycle_task.cancel()
-		if (state.transparency_task is not None):
-			state.transparency_task.cancel()
+		if (state.updateCycleTask is not None):
+			state.updateCycleTask.cancel()
+		if (state.transparencyTask is not None):
+			state.transparencyTask.cancel()
 		state.root.quit()
 		state.runtime.stop()
 	def settings_callback(): state.runtime.create_task(state.settings.open_settings(root))
@@ -46,9 +46,9 @@ async def setup_tray(root:Tk):
 		async def CreateWindow():
 			scheduleRoot = tk.Toplevel(root)
 			scheduleRoot.title("Schedule")
-			windowHeight = max([len(i) for i in state.settings.default_schedule], [len(val) for key, val in state.settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V")])
+			windowHeight = max([len(i) for i in state.settings.default_schedule], [len(val) for key, val in state.settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await getTime()).strftime("%V")])
 			windowWidth = len(state.settings.default_schedule)
-			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await get_rn()).strftime("%V") for key in state.settings.special_days.keys()]):
+			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await getTime()).strftime("%V") for key in state.settings.special_days.keys()]):
 				windowWidth += 1
 			scheduleRoot.grid(windowWidth, windowHeight, 300, 150)
 			frames:list[list[tk.Frame]] = []

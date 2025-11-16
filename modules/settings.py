@@ -7,7 +7,7 @@ from tkinter import Tk
 from json import load as jload, dump as jdump
 from typing import Any, Optional, Literal
 from datetime import datetime, date
-from modules.clock import font_size
+from modules.clock import fontSize
 logger = logging.getLogger(__name__)
 
 class Settings:
@@ -26,7 +26,7 @@ class Settings:
 		# TODO: Finish implementing the settings menu
 		menu.add_command(label="Not implemented yet")
 		_settings.config(menu=menu)
-		tk.Label(_settings, text="Settings window", font=font_size(20)).grid(row=0, column=0, columnspan=10)
+		tk.Label(_settings, text="Settings window", font=fontSize(20)).grid(row=0, column=0, columnspan=10)
 		await state.updateFast(_settings)
 	def load_settings(self):
 		try:
@@ -182,6 +182,9 @@ class Settings:
 	def display_next_time(self, value: int):
 		self._data["display_next_time"] = value
 		self.save()
+	@property # version
+	def version(self) -> int:
+		return self._data["version"]
 
 if __name__ == "__main__": 
 	from csengo import main

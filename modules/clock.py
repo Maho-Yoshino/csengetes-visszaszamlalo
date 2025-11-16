@@ -44,7 +44,7 @@ class Schedule:
 			self._date = other_date.date()
 			weekday = self._date.weekday()
 		else:
-			self._date = (datetime.now() if state.dummy_date is None else state.dummy_date).date()
+			self._date = (datetime.now() if state.dummyDate is None else state.dummyDate).date()
 			weekday = self._date.weekday()
 		self.special_day = any([datetime.strptime(day, "") == self._date for day in state.settings.special_days.keys()])
 		if weekday in [5,6] and not self.special_day:
@@ -61,23 +61,46 @@ class Schedule:
 			else:
 				self.classes.append(self.ClassData(classinfo, ind, self))
 		logger.debug("Initialized Schedule class")
-async def get_rn(): return datetime.now() if state.dummy_date is None else state.dummy_date
-async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
-	def set_dynamic_size():
+async def getTime(): return datetime.now() if state.dummyDate is None else state.dummyDate
+async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
+	def setDynamicSize():
 		logger.debug(f"Setting dynamic size ({root.winfo_screenwidth()-root.winfo_width()})")
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
-	prev_day:datetime = (await get_rn()).date()
+	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
+		class1label.config(text=f"{A_class.classname}", anchor="center")
+		loc1label.config(text=f"{A_class.room}")
+		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
+		if B_class is not None:
+			if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
+			if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
+			if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
+			class1label.grid_configure(columnspan=1)
+			loc1label.grid_configure(columnspan=1)
+			class2label.config(text=f"{B_class.classname}", anchor="center", wraplength=root.winfo_width()//2)
+			loc1label.config(wraplength=root.winfo_width()//2)
+			loc2label.config(text=f"{B_class.room}", wraplength=root.winfo_width()//2)
+			class1label.config(wraplength=root.winfo_width()//2)
+			class2label.config(wraplength=root.winfo_width()//2)
+		else:
+			if class2label.winfo_ismapped(): class2label.grid_forget()
+			if loc2label.winfo_ismapped(): loc2label.grid_forget()
+			if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
+			class1label.grid_configure(columnspan=3)
+			loc1label.grid_configure(columnspan=3)
+			class1label.config(wraplength=root.winfo_width())
+			loc1label.config(wraplength=root.winfo_width())
+	prev_day:datetime = (await getTime()).date()
 	state.schedule = Schedule()
 	while True:
 		_start = perf_counter()
 		delay = state.settings.delay
 		if prev_day != state.schedule._date:
-			prev_day = (await get_rn()).date()
+			prev_day = (await getTime()).date()
 			logger.debug("Day changed since last cycle")
 			state.schedule = Schedule()
 			if len(state.schedule.classes) == 0: await asyncio.sleep(60*30)
-		now = (await get_rn())
+		now = (await getTime())
 		now_time = now.time()
 		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
 			class1label.grid(row=3, column=0, sticky="nsew")
@@ -85,123 +108,67 @@ async def update_cycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.La
 			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 		for num, _class in enumerate(state.schedule.classes):
 			tmp_class:Schedule.ClassData|None = None
-			if isinstance(_class, list):
+			if isinstance(_class, list): # If 2 classes then split in 2
 				tmp_class = _class[1]
 				_class = _class[0]
 			if ((_class.begin_datetime + timedelta(seconds=delay)).time() > now_time):
-				tmp = datetime.combine((await get_rn()), _class.begin) - datetime.combine((await get_rn()), now_time) + timedelta(seconds=delay)
+				tmp = datetime.combine((await getTime()), _class.begin) - datetime.combine((await getTime()), now_time) + timedelta(seconds=delay)
 				mainlabel.config(text=f"Szünet végéig")
 				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-				class1label.config(text=f"{_class.classname}", anchor="center")
 				if aux_label.winfo_ismapped():
 					aux_label.grid_forget()
 					root.rowconfigure(4, weight=0, minsize=0)
-				if tmp_class is not None:
-					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
-					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-					if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-					class1label.grid_configure(columnspan=1)
-					loc1label.grid_configure(columnspan=1)
-					class2label.config(text=f"{tmp_class.classname}", anchor="center", wraplength=class2label.winfo_width())
-					loc1label.config(text=f"{_class.room}", wraplength=loc1label.winfo_width())
-					loc2label.config(text=f"{tmp_class.room}", wraplength=loc2label.winfo_width())
-				else:
-					if class2label.winfo_ismapped(): class2label.grid_forget()
-					if loc2label.winfo_ismapped(): loc2label.grid_forget()
-					if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
-					class1label.grid_configure(columnspan=3)
-					loc1label.grid_configure(columnspan=3)
-					loc1label.config(text=_class.room, wraplength=loc1label.winfo_width())
-				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
+				setClassLabels(_class, tmp_class)
 				break
-			elif ((_class.end_datetime + timedelta(seconds=delay)).time() > now_time):
-				tmp = datetime.combine((await get_rn()), _class.end) - datetime.combine((await get_rn()).date(), now_time) + timedelta(seconds=delay)
+			elif ((_class.end_datetime + timedelta(seconds=delay)).time() > now_time): # if class ends after now
+				tmp = datetime.combine((await getTime()), _class.end) - datetime.combine((await getTime()).date(), now_time) + timedelta(seconds=delay)
 				mainlabel.config(text=f"{num+1}. Óra végéig")
 				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-				class1label.config(text=f"{_class.classname}", anchor="center")
-				if tmp_class is not None:
-					if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
-					if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1):
+				if tmp_class is not None: # If split class
+					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 mins left, or last class
 						if aux_label.winfo_ismapped(): 
 							aux_label.grid_forget()
 							root.rowconfigure(4, weight=0, minsize=0)
-						if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-						class1label.grid_configure(columnspan=1)
-						loc1label.grid_configure(columnspan=1)
-						class2label.config(text=f"{tmp_class.classname}", anchor="center")
-						loc1label.config(text=f"{_class.room}")
-						loc2label.config(text=f"{tmp_class.room}")
-					else:
+						setClassLabels(_class, tmp_class)
+					else: # Less than 10 mins left
 						if not aux_label.winfo_ismapped():
 							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
 							aux_label.config(text="Következő óra")
 							root.rowconfigure(4, weight=1)
-						if isinstance(next_class := state.schedule.classes[num+1], list) and len(next_class) > 1:
-							if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-							class1label.config(text=f"{next_class[0].classname}", anchor="center")
-							class2label.config(text=f"{next_class[1].classname}", anchor="center")
-							loc1label.config(text=f"{next_class[0].room}")
-							loc2label.config(text=f"{next_class[1].room}")
-						else:
-							if class2label.winfo_ismapped(): class2label.grid_forget()
-							if loc2label.winfo_ismapped(): loc2label.grid_forget()
-							class1label.grid_configure(columnspan=3)
-							loc1label.grid_configure(columnspan=3)
-							class1label.config(text=f"{next_class.classname}", anchor="center")
-							loc1label.config(text=f"{next_class.room}")
-							if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
-					if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-				else:
-					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1):
-						if class2label.winfo_ismapped(): class2label.grid_forget()
-						if loc2label.winfo_ismapped(): loc2label.grid_forget()
-						class1label.grid_configure(columnspan=3)
-						loc1label.grid_configure(columnspan=3)
-						class1label.config(text=f"{_class.classname}", anchor="center", wraplength=len(_class.classname))
-						loc1label.config(text=f"{_class.room}")
+						if isinstance(next_class := state.schedule.classes[num+1], list): # If next class is split
+							setClassLabels(next_class[0], next_class[1])
+						else: # Next class is together
+							setClassLabels(next_class[0], None)
+				else: # If class is together
+					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 minutes left or last class
 						if aux_label.winfo_ismapped():
 							aux_label.grid_forget()
 							root.rowconfigure(4, weight=0, minsize=0)
-					else:
-						if isinstance(next_class := state.schedule.classes[num+1], list) and len(next_class) > 1:
-							if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
-							if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-							class1label.config(text=f"{next_class[0].classname}", anchor="center")
-							class2label.config(text=f"{next_class[1].classname}", anchor="center")
-							loc1label.config(text=f"{next_class[0].room}")
-							loc2label.config(text=f"{next_class[1].room}")
-							if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-						else:
-							if class2label.winfo_ismapped(): class2label.grid_forget()
-							if loc2label.winfo_ismapped(): loc2label.grid_forget()
-							class1label.grid_configure(columnspan=3)
-							class1label.config(text=f"{next_class.classname}", anchor="center")
-							loc1label.config(text=f"{next_class.room}")
-							loc1label.grid_configure(columnspan=3)
-							if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
+						setClassLabels(_class, tmp_class)
+					else: # Less than 10 minutes
+						if isinstance(next_class := state.schedule.classes[num+1], list): # Next class is split
+							setClassLabels(next_class[0], next_class[1])
+						else: # Next class is together
+							setClassLabels(next_class, None)
 						if not aux_label.winfo_ismapped():
 							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
 							aux_label.config(text="Következő óra")
 							root.rowconfigure(4, weight=1)
-				if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 				break
-		else:
+		else: # No class ends after now (No If branch broke the loop)
 			mainlabel.config(text="A napnak vége")
 			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,separator,vert_separator,aux_label] if i.winfo_ismapped()]
-			set_dynamic_size()
+			setDynamicSize()
 			await asyncio.sleep(60)
 			continue
-		class1label.config(wraplength=class1label.winfo_width())
-		class2label.config(wraplength=class2label.winfo_width())
-		set_dynamic_size()
+		setDynamicSize()
 		update_delay = await batterySaverEnabled(5, 1)
-		if state.dummy_date is not None:
-			state.dummy_date = state.dummy_date + timedelta(seconds=1)
+		if state.dummyDate is not None:
+			state.dummyDate = state.dummyDate + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
 		await asyncio.sleep(delay)
-def font_size(size:int): return Font(size=size)
-async def set_click_through():
+def fontSize(size:int): return Font(size=size)
+async def setClickThrough():
 	if platform != "win32":
 		return logger.warning(f"User is not on windows. ({platform} instead)")
 	logger.info("Setting click-through window")
@@ -229,16 +196,16 @@ async def batterySaverEnabled(on_val, off_val):
 	if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
 		return off_val # Failed to get status, assume OFF
 	return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
-async def transparency_check(root:Tk):
-	async def is_cursor_over_window(root:Tk):
+async def transparencyCheck(root:Tk):
+	async def isCursorOverWindow(root:Tk):
 		win_x = root.winfo_rootx()
 		win_y = root.winfo_rooty()
 		return (win_x <= root.winfo_pointerx() <= win_x + root.winfo_width() and 
 				win_y <= root.winfo_pointery() <= win_y + root.winfo_height())
 	while True:
-		if not await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.65: 
+		if not await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.65: 
 			root.wm_attributes("-alpha", state.settings.alpha["default"])
-		elif await is_cursor_over_window(root) and root.wm_attributes("-alpha") != 0.10: 
+		elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
 			root.wm_attributes("-alpha", state.settings.alpha["onHover"])
 		await asyncio.sleep(await batterySaverEnabled(1, 0.1))
 
