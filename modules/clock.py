@@ -15,52 +15,56 @@ logger = logging.getLogger(__name__)
 class Schedule:
 	classes:list["ClassData", list["ClassData"]] = []
 	_date:date = None
-	special_day:bool = False
+	specialDay:bool = False
 	class ClassData:
 		begin:time
 		end:time
 		begin_datetime:datetime
 		end_datetime:datetime
-		classname:str = None 
-		room:str = None 
-		teacher:str = None
-		def __init__(self, _class:str|None, index:int, parent:"Schedule"):
-			tmp = state.settings.classlist.get(_class, [])
-			if len(parent.classes) > 0:
-				self.begin_datetime = (parent.classes[-1].end_datetime if not isinstance(parent.classes[-1], list) else parent.classes[-1][0].end_datetime) + timedelta(minutes=(state.settings.special_breaktimes[parent._date] if parent.special_day else state.settings.breaktimes)[index-1])
-				self.begin = self.begin_datetime.time()
-			else:
-				temp = (state.settings.special_begintimes.get(parent._date) if parent.special_day else state.settings.classes_begin)
-				self.begin_datetime = datetime.strptime(f"{parent._date.strftime("%Y.%m.%d")} {temp//100}:{temp%100}", "%Y.%m.%d %H:%M")
-				self.begin = self.begin_datetime.time()
-			self.end_datetime = (self.begin_datetime + timedelta(minutes=(state.settings.special_classtimes if parent.special_day else state.settings.classtimes)[index]))
+		name:str|None = None 
+		room:str|None = None 
+		teacher:str|None = None
+		def __init__(self, classID:str|None, times:str):
+			classData:dict[str, str] = state.settings.classlist.get(classID, {})
+			times:list[str] = times.split("-", 1)
+			self.begin_datetime = datetime.strptime(times[0], "%H:%M")
+			self.end_datetime = datetime.strptime(times[1], "%H:%M")
+			self.begin = self.begin_datetime.time()
 			self.end = self.end_datetime.time()
-			if tmp:
-				self.classname = tmp[0]
-				self.room = tmp[1]
-				self.teacher = state.settings.teacherlist.get(_class, None)
+			self.name = classData.get("name", None)
+			self.room = classData.get("room", None)
+			self.teacher = classData.get("teacher", None)
 	def __init__(self, other_date:datetime|None=None):
 		if other_date is not None:
 			self._date = other_date.date()
-			weekday = self._date.weekday()
 		else:
 			self._date = (datetime.now() if state.dummyDate is None else state.dummyDate).date()
-			weekday = self._date.weekday()
-		self.special_day = any([datetime.strptime(day, "") == self._date for day in state.settings.special_days.keys()])
-		if weekday in [5,6] and not self.special_day:
+		weekday = self._date.weekday()
+		weeknum = int(self._date.strftime("%W"))
+		self.specialDay = any([datetime.strptime(day, "%Y-%m-%d").date() == self._date for day in state.settings.specialDays.keys()])
+		if weekday in [5,6] and not self.specialDay:
 			return
-		if self.special_day:
-			tmp = state.settings.special_days.get(self._date)
+		schedule:list[dict[str, str|list[str]]] = state.settings.defaultSchedule
+		if weeknum % 2 == 1 and str(weekday) in state.settings.secondarySchedule:
+			for times, classID in state.settings.secondarySchedule[str(weekday)].items():
+				if times in state.settings.defaultSchedule[weekday]:
+					schedule[weekday][times] = classID
+		if self.specialDay:
+			tmp = state.settings.specialDays.get(self._date.strftime("%Y-%m-%d"), None)
 			if tmp is None:
-				tmp = state.settings.default_schedule[weekday]
+				tmp = schedule[weekday]
 		else: 
-			tmp = state.settings.default_schedule[weekday]
-		for ind, classinfo in enumerate(tmp):
-			if classinfo is not None and isinstance(classinfo, list):
-				self.classes.append([self.ClassData(_, ind, self) for _ in classinfo])
+			tmp = schedule[weekday]
+		times = list(schedule[weekday].keys())
+		for classinfo in tmp.items():
+			if classinfo[0] is not None and isinstance(classinfo[1], list):
+				self.classes.append([self.ClassData(_, classinfo[0]) for _ in classinfo[1]])
 			else:
-				self.classes.append(self.ClassData(classinfo, ind, self))
+				self.classes.append(self.ClassData(classinfo[1], classinfo[0]))
 		logger.debug("Initialized Schedule class")
+	def parseTimes(times:str) -> tuple[time]:
+		times:list[str] = times.split("-", 1)
+		return datetime.strptime(times[0], "%H:%M"), datetime.strptime(times[1], "%H:%M")
 async def getTime(): return datetime.now() if state.dummyDate is None else state.dummyDate
 async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
 	def setDynamicSize():
@@ -68,7 +72,7 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
-		class1label.config(text=f"{A_class.classname}", anchor="center")
+		class1label.config(text=f"{A_class.name}", anchor="center")
 		loc1label.config(text=f"{A_class.room}")
 		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 		if B_class is not None:
@@ -77,7 +81,7 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 			if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
 			class1label.grid_configure(columnspan=1)
 			loc1label.grid_configure(columnspan=1)
-			class2label.config(text=f"{B_class.classname}", anchor="center", wraplength=root.winfo_width()//2)
+			class2label.config(text=f"{B_class.name}", anchor="center", wraplength=root.winfo_width()//2)
 			loc1label.config(wraplength=root.winfo_width()//2)
 			loc2label.config(text=f"{B_class.room}", wraplength=root.winfo_width()//2)
 			class1label.config(wraplength=root.winfo_width()//2)
@@ -138,7 +142,7 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 						if isinstance(next_class := state.schedule.classes[num+1], list): # If next class is split
 							setClassLabels(next_class[0], next_class[1])
 						else: # Next class is together
-							setClassLabels(next_class[0], None)
+							setClassLabels(next_class, None)
 				else: # If class is together
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 minutes left or last class
 						if aux_label.winfo_ismapped():
