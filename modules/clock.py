@@ -138,7 +138,7 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 						if isinstance(next_class := state.schedule.classes[num+1], list): # If next class is split
 							setClassLabels(next_class[0], next_class[1])
 						else: # Next class is together
-							setClassLabels(next_class[0], None)
+							setClassLabels(next_class, None)
 				else: # If class is together
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 minutes left or last class
 						if aux_label.winfo_ismapped():
