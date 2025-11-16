@@ -1,8 +1,11 @@
-if __name__ == "__main__":
-	from sys import path as sp
-	from os import path
-	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
-import logging, tkinter as tk, asyncio, modules.state as state
+if __name__ == "__main__": 
+	from pathlib import Path
+	from sys import path
+	ROOT = Path(__file__).resolve().parent.parent
+	if str(ROOT) not in path:
+		path.insert(0, str(ROOT))
+import logging, tkinter as tk, asyncio
+import modules.state as state
 from datetime import datetime, time, date, timedelta
 from tkinter import Tk
 from tkinter.font import Font
@@ -40,9 +43,9 @@ class Schedule:
 		else:
 			self._date = (datetime.now() if state.dummyDate is None else state.dummyDate).date()
 		weekday = self._date.weekday()
-		weeknum = int(self._date.strftime("%W"))
+		weeknum = self._date.isocalendar().week
 		self.specialDay = any([datetime.strptime(day, "%Y-%m-%d").date() == self._date for day in state.settings.specialDays.keys()])
-		if weekday in [5,6] and not self.specialDay:
+		if weekday not in range(len(state.settings.defaultSchedule)-1) and not self.specialDay:
 			return
 		schedule:list[dict[str, str|list[str]]] = state.settings.defaultSchedule
 		if weeknum % 2 == 1 and str(weekday) in state.settings.secondarySchedule:
@@ -68,9 +71,9 @@ class Schedule:
 async def getTime(): return datetime.now() if state.dummyDate is None else state.dummyDate
 async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
 	def setDynamicSize():
-		logger.debug(f"Setting dynamic size ({root.winfo_screenwidth()-root.winfo_width()})")
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
+		logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
 		class1label.config(text=f"{A_class.name}", anchor="center")
 		loc1label.config(text=f"{A_class.room}")
@@ -96,6 +99,7 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 			loc1label.config(wraplength=root.winfo_width())
 	prev_day:datetime = (await getTime()).date()
 	state.schedule = Schedule()
+	windowInit:bool = False
 	while True:
 		_start = perf_counter()
 		delay = state.settings.delay
@@ -106,15 +110,18 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 			if len(state.schedule.classes) == 0: await asyncio.sleep(60*30)
 		now = (await getTime())
 		now_time = now.time()
-		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
-			class1label.grid(row=3, column=0, sticky="nsew")
-			loc1label.grid(row=4, column=0, sticky="nsew")
-			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 		for num, _class in enumerate(state.schedule.classes):
+			if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
+				class1label.grid(row=3, column=0, sticky="nsew")
+				loc1label.grid(row=4, column=0, sticky="nsew")
+				timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
+			windowInit = True
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list): # If 2 classes then split in 2
 				tmp_class = _class[1]
 				_class = _class[0]
+			if tmp_class is None and _class.name is None and _class.room is None and _class.teacher is None:
+				continue
 			if ((_class.begin_datetime + timedelta(seconds=delay)).time() > now_time):
 				tmp = datetime.combine((await getTime()), _class.begin) - datetime.combine((await getTime()), now_time) + timedelta(seconds=delay)
 				mainlabel.config(text=f"Szünet végéig")
@@ -161,9 +168,17 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 				break
 		else: # No class ends after now (No If branch broke the loop)
 			mainlabel.config(text="A napnak vége")
-			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,separator,vert_separator,aux_label] if i.winfo_ismapped()]
+			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,aux_label] if i.winfo_ismapped()]
+			if separator.winfo_ismapped():
+				separator.grid_forget()
+			if vert_separator.winfo_ismapped():
+				vert_separator.grid_forget()
+			if not windowInit:
+				setDynamicSize()
+				await asyncio.sleep(5)
+				windowInit = True
 			setDynamicSize()
-			await asyncio.sleep(60)
+			await asyncio.sleep(10)
 			continue
 		setDynamicSize()
 		update_delay = await batterySaverEnabled(5, 1)
@@ -215,4 +230,4 @@ async def transparencyCheck(root:Tk):
 
 if __name__ == "__main__": 
 	from csengo import main
-	main()
+	main(datetime(year=2025, month=11, day=12, hour=12, minute=21, second=30))

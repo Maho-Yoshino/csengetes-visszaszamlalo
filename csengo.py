@@ -1,4 +1,5 @@
-import tkinter as tk, asyncio, logging, modules.state as state
+import tkinter as tk, asyncio, logging
+import modules.state as state
 from tkinter import Tk
 from tkinter.ttk import Separator
 from sys import executable, argv
@@ -8,7 +9,7 @@ from pathlib import Path
 from github import Github
 from modules.settings import Settings
 from modules.tray import setup_tray
-from modules.clock import updateCycle, Schedule, setClickThrough, fontSize, transparencyCheck
+from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
@@ -29,7 +30,6 @@ def checkUpdate():
 	...
 # endregion
 state.settings = Settings()
-state.schedule = Schedule()
 async def startup(root:Tk):
 	state.root.configure(background="black")
 	state.root.attributes("-topmost", True)
@@ -96,9 +96,10 @@ def main(dummyDate:datetime|None = None):
 	state.runtime.run_forever()
 	state.runtime.close()
 
-if environ.get('TERM_PROGRAM') == 'vscode':
-	#main()
-	#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
-	main(datetime(year=2025, month=11, day=14, hour=12, minute=21, second=30)) # Flashing class
-else:
-	main()
+if __name__ == "__main__":
+	if environ.get('TERM_PROGRAM') == 'vscode':
+		#main()
+		#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
+		main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
+	else:
+		main()

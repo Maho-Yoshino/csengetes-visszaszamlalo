@@ -2,7 +2,8 @@ if __name__ == "__main__":
 	from sys import path as sp
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
-import logging, tkinter as tk, modules.state as state
+import logging, tkinter as tk
+import modules.state as state
 from tkinter import Tk
 from json import load as jload, dump as jdump
 from typing import Any, Literal
@@ -20,7 +21,7 @@ class Settings:
 		self._data: dict[str, Any] = {}
 		self.load_settings()
 	_settings:tk.Toplevel|None = None 
-	async def open_settings(root:Tk):
+	async def open_settings(self, root:Tk):
 		global _settings
 		_settings = tk.Toplevel(root)
 		_settings.title("Settings")
