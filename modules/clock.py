@@ -103,7 +103,6 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 			loc1label.config(wraplength=root.winfo_width())
 	prev_day:datetime = (await getTime()).date()
 	state.schedule = Schedule()
-	windowInit:bool = False
 	while True:
 		_start = perf_counter()
 		delay = state.settings.delay
@@ -115,7 +114,6 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 		now = (await getTime())
 		now_time = now.time()
 		for num, _class in enumerate(state.schedule.classes):
-			windowInit = True
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list): # If 2 classes then split in 2
 				tmp_class = _class[1]
@@ -173,10 +171,6 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 				separator.grid_forget()
 			if vert_separator.winfo_ismapped():
 				vert_separator.grid_forget()
-			if not windowInit:
-				setDynamicSize()
-				await asyncio.sleep(5)
-				windowInit = True
 			setDynamicSize()
 			await asyncio.sleep(10)
 			continue
