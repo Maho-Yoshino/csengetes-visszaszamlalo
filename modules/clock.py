@@ -75,6 +75,10 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 		root.update()
 		logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
+		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
+			class1label.grid(row=3, column=0, sticky="nsew")
+			loc1label.grid(row=4, column=0, sticky="nsew")
+			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 		class1label.config(text=f"{A_class.name}", anchor="center")
 		loc1label.config(text=f"{A_class.room}")
 		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
@@ -111,10 +115,6 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 		now = (await getTime())
 		now_time = now.time()
 		for num, _class in enumerate(state.schedule.classes):
-			if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
-				class1label.grid(row=3, column=0, sticky="nsew")
-				loc1label.grid(row=4, column=0, sticky="nsew")
-				timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
 			windowInit = True
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list): # If 2 classes then split in 2
