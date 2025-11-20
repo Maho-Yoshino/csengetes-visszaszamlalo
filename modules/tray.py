@@ -2,7 +2,8 @@ if __name__ == "__main__":
 	from sys import path as sp
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
-import asyncio, tkinter as tk, pystray, modules.state as state, logging
+import asyncio, tkinter as tk, pystray, logging
+import modules.state as state
 from tkinter import Tk
 from threading import Thread
 from PIL import Image

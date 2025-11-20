@@ -2,14 +2,18 @@ if __name__ == "__main__":
 	from sys import path as sp
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
-import logging, tkinter as tk, modules.state as state
+import logging, tkinter as tk
+import modules.state as state
 from tkinter import Tk
 from json import load as jload, dump as jdump
-from typing import Any, Optional, Literal
-from datetime import datetime, date
+from typing import Any, Literal
+from datetime import datetime, time
 from modules.clock import fontSize
 logger = logging.getLogger(__name__)
+CURRENT_VERSION:int = 2
 
+def clamp(num:int|float, _min:int|float, _max:int|float):
+	return max(_min, min(num, _max))
 class Settings:
 	def __init__(self, filename: str = "settings.json", encoding:str="utf-8"):
 		self.filename = filename
@@ -17,7 +21,7 @@ class Settings:
 		self._data: dict[str, Any] = {}
 		self.load_settings()
 	_settings:tk.Toplevel|None = None 
-	async def open_settings(root:Tk):
+	async def open_settings(self, root:Tk):
 		global _settings
 		_settings = tk.Toplevel(root)
 		_settings.title("Settings")
@@ -38,129 +42,74 @@ class Settings:
 			with open(self.filename, "x", encoding=self.encoding) as f:
 				jdump({
 					"classlist":{},
-					"teacherlist":{},
-					"default_schedule": [{},{},{},{},{}],
+					"defaultSchedule": [{},{},{},{},{}],
+					"secondarySchedule": {},
 					"showTeacher":False,
-					"special_days":{},
-					"special_begintimes":{},
-					"classes_begin":800,
+					"specialDays":{},
 					"delay":0,
 					"alpha": {
 						"default":0.75, 
 						"onHover":0.25
-					}
+					},
+					"version":1
 				}, f, indent=4)
 			with open(self.filename, "r", encoding=self.encoding) as f:
 				self._data = jload(f)
 				logger.info("Settings file created successfully")
 		# Set default values if missing
-		self._data.setdefault("teacherlist", {})
-		self._data.setdefault("special_days", None)
+		self._data.setdefault("classlist", {})
+		self._data.setdefault("defaultSchedule", [{},{},{},{},{}])
+		self._data.setdefault("secondarySchedule", {})
+		self._data.setdefault("showTeacher", False)
+		self._data.setdefault("specialDays", {})
 		self._data.setdefault("debug", False)
-		self._data.setdefault("special_classtimes", {})
-		self._data.setdefault("special_breaktimes", {})
-		self._data.setdefault("special_begintimes", {})
 		self._data.setdefault("delay", 0)
-		self._data.setdefault("classes_begin", 800)
 		self._data.setdefault("alpha", {"default":0.75,"onHover":0.25})
-		self._data.setdefault("version", 1)
+		self._data.setdefault("version", 0)
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
 	@property # classlist
-	def classlist(self) -> dict[str, list[str]]:
+	def classlist(self) -> dict[str, dict[str, str]]:
 		return self._data["classlist"]
-	@classlist.setter
-	def classlist(self, value: dict[str, list[str]]):
-		self._data["classlist"] = value
+	def setClasslist(self, _class:str, key:str, value:str):
+		if _class not in self._data["classlist"]:
+			self._data["classlist"][_class] = {}
+		self._data["classlist"][_class][key] = value
 		self.save()
-	@property # default_schedule
-	def default_schedule(self) -> list[list[str]]:
-		return self._data["default_schedule"]
-	@default_schedule.setter
-	def default_schedule(self, value: list[list[str]]):
-		self._data["default_schedule"] = value
+	@property # defaultSchedule
+	def defaultSchedule(self) -> list[dict[str, str|list[str]|None]]:
+		return self._data["defaultSchedule"]
+	def setDefaultSchedule(self, day:int, value:dict[str, str|list[str]|None]):
+		while len(self.defaultSchedule) <= day:
+			self.defaultSchedule.append({})
+		self.defaultSchedule[day] = value
 		self.save()
-	@property # teacherlist
-	def teacherlist(self) -> dict[str, str]:
-		return self._data["teacherlist"]
-	@teacherlist.setter
-	def teacherlist(self, key: str, value: str):
-		if self._data["teacherlist"].get(key, None) is not None:
-			self._data["teacherlist"][key] = value
-		else:
-			self._data["teacherlist"].update({key:value})
+	@property # secondarySchedule
+	def secondarySchedule(self) -> dict[int, dict[str, str|list[str]|None]]:
+		return self._data["secondarySchedule"]
+	def setSecondarySchedule(self, index:int, value:dict[str, str|list[str]|None]):
+		self.secondarySchedule[index] = value
 		self.save()
-	@property # special_days
-	def special_days(self) -> Optional[dict[str, list[str]]]:
-		return self._data["special_days"]
-	@special_days.setter
-	def special_days(self, value: Optional[dict[str, list[str]]]):
-		self._data["special_days"] = value
+	@property # showTeacher
+	def showTeacher(self) -> bool:
+		return self._data["showTeacher"]
+	@showTeacher.setter
+	def setShowTeacher(self, value:bool):
+		self.showTeacher = value
+		self.save()
+	@property # specialDays
+	def specialDays(self) -> dict[datetime, dict[str, str|list[str]|None]]:
+		return {
+			datetime.strptime(date_str, "%Y-%m-%d"):schedule
+			for date_str, schedule in self._data["specialDays"].items()
+		}
+	def setSpecialDays(self, day:datetime, schedule:dict[str, str|list[str]|None]):
+		self._data["specialDays"][day.strftime("%Y-%m-%d")] = schedule
 		self.save()
 	@property # debug
 	def debug(self) -> bool:
 		return self._data["debug"]
-	@property # classtimes
-	def classtimes(self) -> list[int]:
-		return self._data["classtimes"]
-	@classtimes.setter
-	def classtimes(self, value: list[int]):
-		self._data["classtimes"] = value
-		self.save()
-	@property # breaktimes
-	def breaktimes(self) -> list[int]:
-		return self._data["breaktimes"]
-	@breaktimes.setter
-	def breaktimes(self, value: list[int]):
-		self._data["breaktimes"] = value
-		self.save()
-	@property # special_classtimes
-	def special_classtimes(self) -> dict[date, list[int]]:
-		return {
-			datetime.strptime(_date, "%Y-%m-%d").date(): values
-			for _date, values in self._data["special_classtimes"].items()
-   		}
-	@special_classtimes.setter
-	def special_classtimes(self, value: dict[date, list[int]]):
-		serializable: dict[str, list[int]] = {
-			d.strftime("%Y-%m-%d"): values for d, values in value.items()
-		}
-		self._data["special_classtimes"] = serializable
-		self.save()
-	@property # special_breaktimes
-	def special_breaktimes(self) -> dict[date, list[int]]:
-		return {
-			datetime.strptime(_date, "%Y-%m-%d").date(): values
-			for _date, values in self._data["special_breaktimes"].items()
-   		}
-	@special_breaktimes.setter
-	def special_breaktimes(self, value: dict[date, list[int]]):
-		serializable: dict[str, list[int]] = {
-			d.strftime("%Y-%m-%d"): values for d, values in value.items()
-		}
-		self._data["special_breaktimes"] = serializable
-		self.save()
-	@property # special_begintimes
-	def special_begintimes(self) -> dict[date, list[int]]:
-		return {
-			datetime.strptime(_date, "%Y-%m-%d").date(): values
-			for _date, values in self._data["special_begintimes"].items()
-   		}
-	@special_begintimes.setter
-	def special_begintimes(self, value: dict[date, list[int]]):
-		serializable: dict[str, list[int]] = {
-			d.strftime("%Y-%m-%d"): values for d, values in value.items()
-		}
-		self._data["special_begintimes"] = serializable
-		self.save()
-	@property # classes_begin
-	def classes_begin(self) -> list[int]:
-		return self._data["classes_begin"]
-	@classes_begin.setter
-	def classes_begin(self, value: list[int]):
-		self._data["classes_begin"] = value
-		self.save()
 	@property # delay
 	def delay(self) -> int:
 		return self._data["delay"]
@@ -169,18 +118,10 @@ class Settings:
 		self._data["delay"] = value
 		self.save()
 	@property # alpha
-	def alpha(self) -> dict[Literal["onHover"]|Literal["default"], float]:
+	def alpha(self) -> dict[str, float]:
 		return self._data["alpha"]
-	@alpha.setter
-	def alpha(self, key:Literal["onHover"]|Literal["default"], value: float):
-		self._data["alpha"][key] = value
-		self.save()
-	@property # display_next_time
-	def display_next_time(self) -> int:
-		return self._data["display_next_time"]
-	@display_next_time.setter
-	def display_next_time(self, value: int):
-		self._data["display_next_time"] = value
+	def setAlpha(self, _type:Literal["default"]|Literal["onHover"], value:float):
+		self._data["alpha"][_type] = clamp(value,0,1)
 		self.save()
 	@property # version
 	def version(self) -> int:
