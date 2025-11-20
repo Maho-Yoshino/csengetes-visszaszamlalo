@@ -34,9 +34,18 @@ class Schedule:
 			self.end_datetime = datetime.strptime(times[1], "%H:%M")
 			self.begin = self.begin_datetime.time()
 			self.end = self.end_datetime.time()
+			if (state.settings.classlist.get(classID, None) is None and classID is not None):
+				logger.warning(f"Class '{classID}' does not exist in classlist. Ignoring in countdown.")
+				return
 			self.name = classData.get("name", None)
+			if (self.name is None and classID is not None):
+				logger.warning(f"Parameter 'name' of class '{classID}' does not exist")
 			self.room = classData.get("room", None)
+			if (self.room is None and classID is not None):
+				logger.warning(f"Parameter 'room' of class '{classID}' does not exist")
 			self.teacher = classData.get("teacher", None)
+			if (self.teacher is None and classID is not None):
+				logger.warning(f"Parameter 'teacher' of class '{classID}' does not exist")
 	def __init__(self, other_date:datetime|None=None):
 		if other_date is not None:
 			self._date = other_date.date()
