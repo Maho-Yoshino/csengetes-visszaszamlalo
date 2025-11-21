@@ -1,20 +1,19 @@
 import tkinter as tk, asyncio, logging
 import modules.state as state
-from tkinter import Tk
+from tkinter import Tk, messagebox
 from tkinter.ttk import Separator
-from sys import executable, argv
+from sys import executable, argv, platform
 from datetime import datetime
 from os import path, chdir, mkdir, environ
 from pathlib import Path
-from github import Github
+from github import Github, Repository, GitRelease
+from ctypes import windll, wintypes
 from modules.settings import Settings
 from modules.tray import setup_tray
 from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
-logging.getLogger("settings")
-VERSION_STRING:str="3.0.0"
 
 # region Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
@@ -24,6 +23,48 @@ else:
 chdir(current_dir)
 # endregion
 # region update handler
+class Version:
+	"""Uses the principle of 'semantic versioning' (https://semver.org)"""
+	major:int
+	minor:int = 0
+	patch:int = 0
+	# 0 - Release
+	# 1 - Pre-release
+	# 2 - Beta
+	# 3 - Alpha
+	subversion:int 
+	__subver_map = {
+		"release": 0,
+		"pre-release": 1,
+		"beta": 2,
+		"alpha": 3
+	}
+	__inv_subver_map = {v: k for k, v in __subver_map.items()}
+	def __init__(self, ver:str):
+		self.subversion = 0
+		tmp = ver.split(".")
+		if len(tmp) > 0:
+			self.major = int(tmp[0])
+		if len(tmp) > 1:
+			self.minor = int(tmp[1])
+		if len(tmp) > 2 and "-" in tmp[2]: 
+			tmp2 = tmp[2].split("-")
+			self.patch = int(tmp2[0])
+			self.subversion = self.__subver_map.get(tmp2[1], 0)
+		elif len(tmp) > 2:
+			self.patch = int(tmp[2])
+	def __str__(self):
+		return f"{self.major}.{self.minor}.{self.patch}{f"-{self.__inv_subver_map[self.subversion]}" if self.subversion != 0 else ""}"
+	def __gt__(self, version:"Version"):
+		return (self.major, self.minor, self.patch, -self.subversion) > \
+		       (version.major, version.minor, version.patch, -version.subversion)
+	def __lt__(self, version:"Version"):
+		return (self.major, self.minor, self.patch, -self.subversion) < \
+		       (version.major, version.minor, version.patch, -version.subversion)
+	def __eq__(self, version:"Version"):
+		return (self.major, self.minor, self.patch, self.subversion) == \
+		       (version.major, version.minor, version.patch, version.subversion)
+VERSION:"Version" = Version("3.0.0")
 def checkUpdate():
 	user = Github()
 	user.get_repo("Maho-Yoshino/csengetes-visszaszamlalo").get_releases()
@@ -69,9 +110,23 @@ async def startup(root:Tk):
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
 	logger.info("Startup complete")
 MAX_LOGS:int=5
+def findInstance(name:str) -> bool:
+	k32 = windll.kernel32
+	mutex = k32.CreateMutexW(None, wintypes.BOOL(True), name)
+	if k32.GetLastError() == 183:
+		return True
+	return False
 def main(dummyDate:datetime|None = None):
-	if environ.get('TERM_PROGRAM') == 'vscode':
-		...#checkUpdate()
+	if (platform != "win32"):
+		logger.critical(f"User is not using windows (platform: {platform})")
+		messagebox.showerror("User not using windows", "This program can only run on windows due to technical limitation", icon="error")
+		return
+	if (findInstance(state.windowHandle)):
+		logger.critical("Another instance is already running.\nClosing application.")
+		messagebox.showerror("Another instance detected", "This program can only run once on a single computer at the same time due to technical limitations\nClosing application.", icon="error")
+		return
+	if state.settings.ignoreUpdates == False:
+		checkUpdate()
 	if dummyDate is not None:
 		state.dummyDate = dummyDate
 		del dummyDate
@@ -88,7 +143,7 @@ def main(dummyDate:datetime|None = None):
 	logFormat = "%(asctime)s::%(levelname)-8s:%(message)s"
 	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.INFO, format=logFormat, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
-	logger.info(f"Application Starting up (v{VERSION_STRING})")
+	logger.info(f"Application Starting up (v{VERSION})")
 	state.root = Tk()
 	state.runtime = asyncio.new_event_loop()
 	asyncio.set_event_loop(state.runtime)
@@ -98,8 +153,8 @@ def main(dummyDate:datetime|None = None):
 
 if __name__ == "__main__":
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		#main()
+		main()
 		#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
-		main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
+		#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
 	else:
 		main()
