@@ -12,7 +12,6 @@ from tkinter.font import Font
 from tkinter.ttk import Separator
 from ctypes import windll, c_byte, byref, Structure
 from time import perf_counter
-from sys import platform
 logger = logging.getLogger(__name__)
 
 class Schedule:
@@ -191,8 +190,6 @@ async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Lab
 		await asyncio.sleep(delay)
 def fontSize(size:int): return Font(size=size)
 async def setClickThrough():
-	if platform != "win32":
-		return logger.warning(f"User is not on windows. ({platform} instead)")
 	logger.info("Setting click-through window")
 	try:
 		while True:
