@@ -195,8 +195,8 @@ async def setClickThrough():
 		return logger.warning(f"User is not on windows. ({platform} instead)")
 	logger.info("Setting click-through window")
 	try:
-		hwnd = state.root.winfo_id()  # Get correct window handle
 		while True:
+			hwnd = windll.user32.FindWindowW(None, state.root.title())
 			styles = windll.user32.GetWindowLongW(hwnd, -20)
 			styles |= 0x00000020  # WS_EX_LAYERED (Allows transparency)	
 			styles |= 0x00000080  # WS_EX_TRANSPARENT (Click-through)
@@ -233,4 +233,4 @@ async def transparencyCheck(root:Tk):
 
 if __name__ == "__main__": 
 	from csengo import main
-	main(datetime(year=2025, month=11, day=12, hour=12, minute=21, second=30))
+	main()
