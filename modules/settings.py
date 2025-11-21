@@ -68,6 +68,7 @@ class Settings:
 		self._data.setdefault("version", 0)
 		self._data.setdefault("ignoreUpdates", False)
 		self._data.setdefault("alertTimes", [])
+		self._data.setdefault("logLevel", 10)
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
@@ -149,6 +150,19 @@ class Settings:
 			for i in values
 		]
 		self.save()
+	@property # logLevel
+	def logLevel(self) -> Literal[10, 20, 30, 40, 50]:
+		"""
+		Logging levels:
+		------------
+		0 - Unset  
+		10 - DEBUG  
+		20 - INFO  
+		30 - WARNING / WARN  
+		40 - ERROR  
+		50 - FATAL / CRITICAL  
+		"""
+		return self._data["logLevel"]
 
 if __name__ == "__main__": 
 	from csengo import main

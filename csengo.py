@@ -141,7 +141,7 @@ def main(dummyDate:datetime|None = None):
 	filename = f"logs/timer_{datetime.now().date().isoformat().replace('-', '_')}.log"
 	if (not path.isdir("logs")): mkdir("logs")
 	logFormat = "%(asctime)s::%(levelname)-8s:%(message)s"
-	logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG if environ.get('TERM_PROGRAM') == 'vscode' else logging.INFO, format=logFormat, datefmt="%Y-%m-%dT%H:%M:%S")
+	logging.basicConfig(filename=filename, encoding='utf-8', level=state.settings.logLevel, format=logFormat, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
 	logger.info(f"Application Starting up (v{VERSION})")
 	state.root = Tk()
@@ -153,8 +153,8 @@ def main(dummyDate:datetime|None = None):
 
 if __name__ == "__main__":
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		main()
-		#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
+		#main()
+		main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
 		#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
 	else:
 		main()
