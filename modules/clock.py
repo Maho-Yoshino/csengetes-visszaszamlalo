@@ -54,7 +54,7 @@ class Schedule:
 		weekday = self._date.weekday()
 		weeknum = self._date.isocalendar().week
 		self.specialDay = any([datetime.strptime(day, "%Y-%m-%d").date() == self._date for day in state.settings.specialDays.keys()])
-		if weekday not in range(len(state.settings.defaultSchedule)-1) and not self.specialDay:
+		if weekday not in range(len(state.settings.defaultSchedule)) and not self.specialDay:
 			return
 		schedule:list[dict[str, str|list[str]]] = state.settings.defaultSchedule
 		if weeknum % 2 == 1 and str(weekday) in state.settings.secondarySchedule:
