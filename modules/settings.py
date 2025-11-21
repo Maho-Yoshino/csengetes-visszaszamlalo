@@ -7,7 +7,7 @@ import modules.state as state
 from tkinter import Tk
 from json import load as jload, dump as jdump
 from typing import Any, Literal
-from datetime import datetime, time
+from datetime import datetime
 from modules.clock import fontSize
 logger = logging.getLogger(__name__)
 CURRENT_VERSION:int = 2
@@ -66,6 +66,8 @@ class Settings:
 		self._data.setdefault("delay", 0)
 		self._data.setdefault("alpha", {"default":0.75,"onHover":0.25})
 		self._data.setdefault("version", 0)
+		self._data.setdefault("ignoreUpdates", False)
+		self._data.setdefault("alertTimes", [])
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
@@ -126,6 +128,27 @@ class Settings:
 	@property # version
 	def version(self) -> int:
 		return self._data["version"]
+	@property # ignoreUpdates
+	def ignoreUpdates(self) -> bool:
+		return self._data["ignoreUpdates"]
+	@ignoreUpdates.setter
+	def ignoreUpdates(self, value:bool):
+		self.ignoreUpdates = value
+		self.save()
+	@property # alertTimes
+	def alertTimes(self) -> list[datetime]:
+		return [
+			datetime.strptime(i, "%Y-%m-%dT%H:%M") 
+			for i in self._data["alertTimes"] 
+			if datetime.strptime(i, "%Y-%m-%dT%H:%M") < (datetime.now() if state.dummyDate is None else state.dummyDate)
+		]
+	@alertTimes.setter
+	def alertTimes(self, values:list[datetime]):
+		self.alertTimes = [
+			i.strftime("%Y-%m-%dT%H:%M")
+			for i in values
+		]
+		self.save()
 
 if __name__ == "__main__": 
 	from csengo import main
