@@ -78,10 +78,13 @@ class Schedule:
 		return datetime.strptime(times[0], "%H:%M"), datetime.strptime(times[1], "%H:%M")
 async def getTime(): return datetime.now() if state.dummyDate is None else state.dummyDate
 async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
+	lastWidth:int = root.winfo_width()
 	def setDynamicSize():
+		if (lastWidth != root.winfo_width()):
+			logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
+			lastWidth = root.winfo_width()
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
-		logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
 		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
 			class1label.grid(row=3, column=0, sticky="nsew")
