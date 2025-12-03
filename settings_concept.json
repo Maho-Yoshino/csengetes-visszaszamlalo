@@ -50,11 +50,20 @@
     },
     "version": 0,
     "ignoreUpdates": false,
-    "alertTimes": {
-		"2025-11-24;8:40": {
-			"message": "Reminder: Class ends in 5 minutes.",
-			"keep":false,
-			"minutes":5
+    "alertTimes": [
+		{
+			"date": "2025-11-24", 
+			"time":"8:40",
+			"message": "Reminder: Class ends in 5 minutes."
+		},
+		{
+			"time": "13:20",
+			"message": "Class is ending in 5 minutes.",
+			"keep": true
+		},
+		{
+			"time": "12:20",
+			"message": "Class is ending in 5 minutes."
 		}
-	}
+	]
 }

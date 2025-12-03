@@ -7,8 +7,9 @@ import modules.state as state
 from tkinter import Tk
 from json import load as jload, dump as jdump
 from typing import Any, Literal
-from datetime import datetime
+from datetime import datetime, time
 from modules.clock import fontSize
+from pathlib import Path
 logger = logging.getLogger(__name__)
 CURRENT_VERSION:int = 2
 
@@ -33,46 +34,45 @@ class Settings:
 		tk.Label(_settings, text="Settings window", font=fontSize(20)).grid(row=0, column=0, columnspan=10)
 		await state.updateFast(_settings)
 	def load_settings(self):
-		try:
-			with open(self.filename, "r", encoding=self.encoding) as f:
-				self._data = jload(f)
-				logger.info("Settings loaded properly")
-		except FileNotFoundError:
+		if (not Path("settings.json").exists()):
 			logger.warning("Settings file not found, creating a default one.")
 			with open(self.filename, "x", encoding=self.encoding) as f:
-				jdump({
-					"classlist":{},
-					"defaultSchedule": [{},{},{},{},{}],
-					"secondarySchedule": {},
-					"showTeacher":False,
-					"specialDays":{},
-					"delay":0,
-					"alpha": {
-						"default":0.75, 
-						"onHover":0.25
-					},
-					"version":1
-				}, f, indent=4)
-			with open(self.filename, "r", encoding=self.encoding) as f:
-				self._data = jload(f)
-				logger.info("Settings file created successfully")
+				logger.info("Created default settings file")
+		with open(self.filename, "r", encoding=self.encoding) as f:
+			self._data = jload(f)
+			logger.info("Settings loaded properly")
 		# Set default values if missing
-		self._data.setdefault("classlist", {})
-		self._data.setdefault("defaultSchedule", [{},{},{},{},{}])
-		self._data.setdefault("secondarySchedule", {})
-		self._data.setdefault("showTeacher", False)
-		self._data.setdefault("specialDays", {})
-		self._data.setdefault("debug", False)
-		self._data.setdefault("delay", 0)
-		self._data.setdefault("alpha", {"default":0.75,"onHover":0.25})
-		self._data.setdefault("version", 0)
-		self._data.setdefault("ignoreUpdates", False)
-		self._data.setdefault("alertTimes", [])
-		self._data.setdefault("logLevel", 10)
+		defaults = {
+			"classlist": {}, 
+			# ex. 
+			# "ID": {
+			#	 "name": "...",
+			#	 "teacher": "...",
+			#	 "location": "...",
+			# }
+			"defaultSchedule": [{},{},{},{},{}], 
+			"secondarySchedule": {}, # ex. "3": {"13:25-14:15": "MAT"} (0 = Monday, 1 = Tuesday, etc.; "MAT" = ID defined in classlist) 
+			"offsetSecondarySchedule": False,
+			"showTeacher": False,
+			"specialDays": {}, # ex. "2023-12-24": {"09:00-10:00": "ANG"} ("ANG" = ID defined in classlist)
+			"delay": 0, # Delay of the bell in minutes (positive = late, negative = early)
+			"alpha": {"default":0.75,"onHover":0.25}, # Values between 1 and 0
+			"version": CURRENT_VERSION,
+			"ignoreUpdates": False, # If true, update checks will be ignored
+			"alertTimes": {} # ex. (During 5th class on 2025.11.05, show alert 10 minutes before end of class, and delete alert afterward)
+			# "2025-11-05; 5": {
+			# 	"minutes":10,
+			# 	"keep": False
+			# } 
+		}
+		for key, value in defaults.items():
+			self._data.setdefault(key, value)
+		self.save()
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
-	@property # classlist
+	# region classlist
+	@property
 	def classlist(self) -> dict[str, dict[str, str]]:
 		return self._data["classlist"]
 	def setClasslist(self, _class:str, key:str, value:str):
@@ -80,28 +80,38 @@ class Settings:
 			self._data["classlist"][_class] = {}
 		self._data["classlist"][_class][key] = value
 		self.save()
-	@property # defaultSchedule
+	# endregion
+	# region defaultSchedule
+	@property
 	def defaultSchedule(self) -> list[dict[str, str|list[str]|None]]:
 		return self._data["defaultSchedule"]
 	def setDefaultSchedule(self, day:int, value:dict[str, str|list[str]|None]):
-		while len(self.defaultSchedule) <= day:
+		if day not in range(7):
+			raise IndexError("Day must be between 0 (Monday) and 6 (Sunday).")
+		while len(self.defaultSchedule) < day+1:
 			self.defaultSchedule.append({})
 		self.defaultSchedule[day] = value
 		self.save()
-	@property # secondarySchedule
+	# endregion
+	# region secondarySchedule
+	@property
 	def secondarySchedule(self) -> dict[int, dict[str, str|list[str]|None]]:
 		return self._data["secondarySchedule"]
 	def setSecondarySchedule(self, index:int, value:dict[str, str|list[str]|None]):
 		self.secondarySchedule[index] = value
 		self.save()
-	@property # showTeacher
+	# endregion
+	# region showTeacher
+	@property
 	def showTeacher(self) -> bool:
 		return self._data["showTeacher"]
 	@showTeacher.setter
 	def setShowTeacher(self, value:bool):
 		self.showTeacher = value
 		self.save()
-	@property # specialDays
+	# endregion
+	# region specialDays
+	@property 
 	def specialDays(self) -> dict[datetime, dict[str, str|list[str]|None]]:
 		return {
 			datetime.strptime(date_str, "%Y-%m-%d"):schedule
@@ -110,22 +120,30 @@ class Settings:
 	def setSpecialDays(self, day:datetime, schedule:dict[str, str|list[str]|None]):
 		self._data["specialDays"][day.strftime("%Y-%m-%d")] = schedule
 		self.save()
-	@property # debug
+	# endregion
+	# region debug
+	@property
 	def debug(self) -> bool:
-		return self._data["debug"]
-	@property # delay
+		return self._data.get("debug", False)
+	# endregion
+	# region delay
+	@property
 	def delay(self) -> int:
 		return self._data["delay"]
 	@delay.setter
 	def delay(self, value: int):
 		self._data["delay"] = value
 		self.save()
-	@property # alpha
+	# endregion
+	# region alpha
+	@property
 	def alpha(self) -> dict[str, float]:
 		return self._data["alpha"]
 	def setAlpha(self, _type:Literal["default"]|Literal["onHover"], value:float):
 		self._data["alpha"][_type] = clamp(value,0,1)
 		self.save()
+	# endregion
+	# region version & updates
 	@property # version
 	def version(self) -> int:
 		return self._data["version"]
@@ -136,20 +154,42 @@ class Settings:
 	def ignoreUpdates(self, value:bool):
 		self.ignoreUpdates = value
 		self.save()
+	# endregion
+	# region alertTimes
 	@property # alertTimes
-	def alertTimes(self) -> list[datetime]:
-		return [
-			datetime.strptime(i, "%Y-%m-%dT%H:%M") 
-			for i in self._data["alertTimes"] 
-			if datetime.strptime(i, "%Y-%m-%dT%H:%M") < (datetime.now() if state.dummyDate is None else state.dummyDate)
-		]
-	@alertTimes.setter
-	def alertTimes(self, values:list[datetime]):
-		self.alertTimes = [
-			i.strftime("%Y-%m-%dT%H:%M")
-			for i in values
-		]
+	def alertTimes(self) -> list[dict[str, int|bool|str]]:
+		change:bool = False
+		newAlerts = []
+		for alert in self._data["alertTimes"]:
+			alert:dict[str, int|bool|str]
+			new = {
+				"message":alert["message"],
+				"time":alert["time"],
+				"keep":alert.get("keep", False)
+			}
+			if (_date := alert.get("date", None)) is not None:
+				new.update({"date": _date})
+				if not datetime.strptime(_date, "%Y-%m-%d") > state.getTime():
+					newAlerts.append(new)
+				else:
+					change = True
+			else:
+				...
+		if change:
+			self.save()
+		return self._data["alertTimes"]
+	def setAlertTime(self, time:time, *, day:datetime=datetime.fromtimestamp(0), keep:bool=False, message:str="Értesítés ideje elérkezett!"):
+		tmp = {
+			"message": message,
+			"keep": keep,
+			"time": time.strftime("%H:%M")
+		}
+		if day is not None:
+			tmp.update({"date": day.strftime("%Y-%m-%d")})
+		self.alertTimes.append()
 		self.save()
+	# endregion
+	# region logLevel
 	@property # logLevel
 	def logLevel(self) -> Literal[10, 20, 30, 40, 50]:
 		"""
@@ -162,7 +202,8 @@ class Settings:
 		40 - ERROR  
 		50 - FATAL / CRITICAL  
 		"""
-		return self._data["logLevel"]
+		return self._data.get("logLevel", 10)	
+	# endregion
 
 if __name__ == "__main__": 
 	from csengo import main

@@ -7,7 +7,6 @@ import modules.state as state
 from tkinter import Tk
 from threading import Thread
 from PIL import Image
-from modules.clock import getTime
 from datetime import datetime
 logger = logging.getLogger(__name__)
 
@@ -47,9 +46,9 @@ async def setup_tray(root:Tk):
 		async def CreateWindow():
 			scheduleRoot = tk.Toplevel(root)
 			scheduleRoot.title("Schedule")
-			windowHeight = max([len(i) for i in state.settings.default_schedule], [len(val) for key, val in state.settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await getTime()).strftime("%V")])
+			windowHeight = max([len(i) for i in state.settings.default_schedule], [len(val) for key, val in state.settings.special_days.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")])
 			windowWidth = len(state.settings.default_schedule)
-			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (await getTime()).strftime("%V") for key in state.settings.special_days.keys()]):
+			if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V") for key in state.settings.special_days.keys()]):
 				windowWidth += 1
 			scheduleRoot.grid(windowWidth, windowHeight, 300, 150)
 			frames:list[list[tk.Frame]] = []

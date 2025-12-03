@@ -7,7 +7,8 @@ from datetime import datetime
 from os import path, chdir, mkdir, environ
 from pathlib import Path
 from github import Github, Repository, GitRelease
-from ctypes import windll, wintypes
+from ctypes import windll
+from ctypes.wintypes import BOOL
 from modules.settings import Settings
 from modules.tray import setup_tray
 from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
@@ -66,9 +67,30 @@ class Version:
 		       (version.major, version.minor, version.patch, version.subversion)
 VERSION:"Version" = Version("3.0.0")
 def checkUpdate():
-	user = Github()
-	user.get_repo("Maho-Yoshino/csengetes-visszaszamlalo").get_releases()
-	...
+	logger.info("Checking for updates...")
+	repo:Repository = Github().get_repo("Maho-Yoshino/csengetes-visszaszamlalo")
+	latest_release:GitRelease = repo.get_releases()[0]
+	tag = latest_release.tag_name.lstrip("v")
+	latest_version = Version(tag)
+	logger.info(f"Latest version online: {latest_version}")
+	logger.info(f"Current version: {VERSION}")
+	if latest_version > VERSION:
+		logger.warning("Update available!")
+		return {
+			"update_available": True,
+			"current": str(VERSION),
+			"latest": str(latest_version),
+			"url": latest_release.html_url,
+			"notes": latest_release.body,
+		}
+	else:
+		logger.info("You're running the newest version.")
+		return {
+			"update_available": False,
+			"current": str(VERSION),
+			"latest": str(latest_version),
+		}
+
 # endregion
 state.settings = Settings()
 async def startup(root:Tk):
@@ -85,19 +107,21 @@ async def startup(root:Tk):
 		"bg":"black",
 		"fg":"white"
 	}
-	mainlabel = tk.Label(state.root, init_data, font=fontSize(20))
-	mainlabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
-	mainlabel.grid_rowconfigure(0, weight=1)
-	timelabel = tk.Label(state.root, init_data, font=fontSize(30), anchor="center")
-	timelabel.grid_rowconfigure(1, weight=1)
+	mainLabel = tk.Label(state.root, init_data, font=fontSize(20))
+	mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
+	mainLabel.grid_rowconfigure(0, weight=1)
+	timeLabel = tk.Label(state.root, init_data, font=fontSize(30), anchor="center")
+	timeLabel.grid_rowconfigure(1, weight=1)
 	separator = Separator(state.root, orient="horizontal")
 	separator.grid_rowconfigure(2, weight=1)
-	class1label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
-	class1label.grid_rowconfigure(3, weight=1)
-	class2label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc2label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc1label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	aux_label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	class1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
+	class1Label.grid_rowconfigure(3, weight=1)
+	class2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	loc2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	loc1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	teacher1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	teacher2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	auxLabel = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
 	vertSeparator = Separator(state.root, orient="vertical")
 	asyncio.create_task(setClickThrough())
 	state.transparencyTask = asyncio.create_task(transparencyCheck(state.root))
@@ -106,13 +130,14 @@ async def startup(root:Tk):
 	state.root.columnconfigure(0, weight=1)
 	state.root.columnconfigure(1, weight=0)
 	state.root.columnconfigure(2, weight=1)
-	state.updateCycleTask = asyncio.create_task(updateCycle(mainlabel, timelabel, class1label, class2label, loc1label, loc2label, state.root, vertSeparator, separator, aux_label))
+	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label))
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
 	logger.info("Startup complete")
 MAX_LOGS:int=5
 def findInstance(name:str) -> bool:
+	"""Check if another instance of the application is running, and returns `True` if there is, otherwise `False`"""
 	k32 = windll.kernel32
-	mutex = k32.CreateMutexW(None, wintypes.BOOL(True), name)
+	mutex = k32.CreateMutexW(None, BOOL(True), name)
 	if k32.GetLastError() == 183:
 		return True
 	return False
@@ -154,7 +179,8 @@ def main(dummyDate:datetime|None = None):
 if __name__ == "__main__":
 	if environ.get('TERM_PROGRAM') == 'vscode':
 		#main()
-		main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
+		#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
 		#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
+		main()
 	else:
 		main()

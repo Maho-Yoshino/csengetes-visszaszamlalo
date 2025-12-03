@@ -21,3 +21,4 @@ async def updateFast(_root:Tk):
 	while True:
 		_root.update()
 		await asyncio.sleep(0.01)
+def getTime(): return datetime.now() if dummyDate is None else dummyDate

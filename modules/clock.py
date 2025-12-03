@@ -4,10 +4,10 @@ if __name__ == "__main__":
 	ROOT = Path(__file__).resolve().parent.parent
 	if str(ROOT) not in path:
 		path.insert(0, str(ROOT))
-import logging, tkinter as tk, asyncio
+import logging, tkinter as tk, asyncio 
 import modules.state as state
 from datetime import datetime, time, date, timedelta
-from tkinter import Tk
+from tkinter import Tk, messagebox
 from tkinter.font import Font
 from tkinter.ttk import Separator
 from ctypes import windll, c_byte, byref, Structure
@@ -21,18 +21,32 @@ class Schedule:
 	class ClassData:
 		begin:time
 		end:time
-		begin_datetime:datetime
-		end_datetime:datetime
+		beginDatetime:datetime
+		endDatetime:datetime
 		name:str|None = None 
 		room:str|None = None 
 		teacher:str|None = None
-		def __init__(self, classID:str|None, times:str):
+		def __init__(self, classID:str|dict[str, str]|None, times:str):
+			if isinstance(classID, dict):
+				self.begin, self.end = Schedule.parseTimes(times)
+				self.beginDatetime = datetime.combine((state.getTime()).date(), self.begin)
+				self.endDatetime = datetime.combine((state.getTime()).date(), self.end)
+				self.name = classID.get("name", None)
+				if (self.name is None):
+					logger.warning(f"Parameter 'name' of direct class at time '{times}' does not exist")
+				self.room = classID.get("room", None)
+				if (self.room is None):
+					logger.warning(f"Parameter 'room' of direct class at time '{times}' does not exist")
+				self.teacher = classID.get("teacher", None)
+				if (self.teacher is None):
+					logger.warning(f"Parameter 'teacher' of direct class at time '{times}' does not exist")
+				return
 			classData:dict[str, str] = state.settings.classlist.get(classID, {})
 			times:list[str] = times.split("-", 1)
-			self.begin_datetime = datetime.strptime(times[0], "%H:%M")
-			self.end_datetime = datetime.strptime(times[1], "%H:%M")
-			self.begin = self.begin_datetime.time()
-			self.end = self.end_datetime.time()
+			self.beginDatetime = datetime.strptime(times[0], "%H:%M")
+			self.endDatetime = datetime.strptime(times[1], "%H:%M")
+			self.begin = self.beginDatetime.time()
+			self.end = self.endDatetime.time()
 			if (state.settings.classlist.get(classID, None) is None and classID is not None):
 				logger.warning(f"Class '{classID}' does not exist in classlist. Ignoring in countdown.")
 				return
@@ -46,10 +60,7 @@ class Schedule:
 			if (self.teacher is None and classID is not None):
 				logger.warning(f"Parameter 'teacher' of class '{classID}' does not exist")
 	def __init__(self, other_date:datetime|None=None):
-		if other_date is not None:
-			self._date = other_date.date()
-		else:
-			self._date = (datetime.now() if state.dummyDate is None else state.dummyDate).date()
+		self._date = (other_date if other_date is not None else state.getTime()).date()
 		weekday = self._date.weekday()
 		weeknum = self._date.isocalendar().week
 		self.specialDay = any([datetime.strptime(day, "%Y-%m-%d").date() == self._date for day in state.settings.specialDays.keys()])
@@ -75,113 +86,145 @@ class Schedule:
 		logger.debug("Initialized Schedule class")
 	def parseTimes(times:str) -> tuple[time]:
 		times:list[str] = times.split("-", 1)
-		return datetime.strptime(times[0], "%H:%M"), datetime.strptime(times[1], "%H:%M")
-async def getTime(): return datetime.now() if state.dummyDate is None else state.dummyDate
-async def updateCycle(mainlabel:tk.Label, timelabel:tk.Label, class1label:tk.Label, class2label:tk.Label, loc1label:tk.Label, loc2label:tk.Label, root:Tk, vert_separator:Separator, separator:Separator, aux_label:tk.Label):
+		return datetime.strptime(times[0], "%H:%M").time(), datetime.strptime(times[1], "%H:%M").time()
+async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Label, class2Label:tk.Label, loc1Label:tk.Label, loc2label:tk.Label, root:Tk, vertSep:Separator, separator:Separator, auxLabel:tk.Label, teacher1Label:tk.Label, teacher2Label:tk.Label):
 	lastWidth:int = root.winfo_width()
 	def setDynamicSize():
+		nonlocal lastWidth
 		if (lastWidth != root.winfo_width()):
 			logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 			lastWidth = root.winfo_width()
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
 		root.update()
-	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None):
-		if not all([i.winfo_ismapped() for i in [class1label,loc1label,timelabel]]):
-			class1label.grid(row=3, column=0, sticky="nsew")
-			loc1label.grid(row=4, column=0, sticky="nsew")
-			timelabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
-		class1label.config(text=f"{A_class.name}", anchor="center")
-		loc1label.config(text=f"{A_class.room}")
+	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None, aux:bool = False):
+		if not all([i.winfo_ismapped() for i in [class1Label,loc1Label,timeLabel]]):
+			class1Label.grid(row=3, column=0, sticky="nsew")
+			loc1Label.grid(row=4, column=0, sticky="nsew")
+			timeLabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
+		class1Label.config(text=f"{A_class.name}", anchor="center")
+		loc1Label.config(text=f"{A_class.room}")
+		if not aux and auxLabel.winfo_ismapped():
+			auxLabel.grid_forget()
+			root.rowconfigure(6, weight=0, minsize=0)
+		elif aux and not auxLabel.winfo_ismapped():
+			auxLabel.grid(row=6, column=0, sticky="nsew", columnspan=3)
+			auxLabel.config(text="Következő óra")
+			root.rowconfigure(6, weight=1)
 		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-		if B_class is not None:
-			if not class2label.winfo_ismapped(): class2label.grid(row=3, column=2, sticky="nsew")
-			if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
-			if not vert_separator.winfo_ismapped(): vert_separator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-			class1label.grid_configure(columnspan=1)
-			loc1label.grid_configure(columnspan=1)
-			class2label.config(text=f"{B_class.name}", anchor="center", wraplength=root.winfo_width()//2)
-			loc1label.config(wraplength=root.winfo_width()//2)
-			loc2label.config(text=f"{B_class.room}", wraplength=root.winfo_width()//2)
-			class1label.config(wraplength=root.winfo_width()//2)
-			class2label.config(wraplength=root.winfo_width()//2)
+		if state.settings.showTeacher:
+			root.rowconfigure(5, weight=1, minsize=20)
+			if B_class is None:
+				if teacher2Label.winfo_ismapped():
+					teacher2Label.grid_forget()
+				if not teacher1Label.winfo_ismapped(): 
+					teacher1Label.grid(row=5, column=0, sticky="nsew", columnspan=3)
+				else:
+					teacher1Label.grid_configure(columnspan=3)
+				teacher1Label.config(text=f"{A_class.teacher}", anchor="center", wraplength=root.winfo_width())
+			else:
+				if not teacher2Label.winfo_ismapped(): 
+					teacher2Label.grid(row=5, column=2, sticky="nsew")
+				if not teacher1Label.winfo_ismapped(): 
+					teacher1Label.grid(row=5, column=0, sticky="nsew", columnspan=1)
+				else:
+					teacher1Label.grid_configure(columnspan=1)
+				teacher2Label.config(text=f"{B_class.teacher}", anchor="center", wraplength=root.winfo_width()//2)
+				teacher1Label.config(text=f"{A_class.teacher}", anchor="center", wraplength=root.winfo_width()//2)
 		else:
-			if class2label.winfo_ismapped(): class2label.grid_forget()
+			root.rowconfigure(5, weight=0, minsize=0)
+		if B_class is not None:
+			if not class2Label.winfo_ismapped(): class2Label.grid(row=3, column=2, sticky="nsew")
+			if not loc2label.winfo_ismapped(): loc2label.grid(row=4, column=2, sticky="nsew")
+			if not vertSep.winfo_ismapped(): vertSep.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
+			class1Label.grid_configure(columnspan=1)
+			loc1Label.grid_configure(columnspan=1)
+			class2Label.config(text=f"{B_class.name}", anchor="center", wraplength=root.winfo_width()//2)
+			loc1Label.config(wraplength=root.winfo_width()//2)
+			loc2label.config(text=f"{B_class.room}", wraplength=root.winfo_width()//2)
+			class1Label.config(wraplength=root.winfo_width()//2)
+			class2Label.config(wraplength=root.winfo_width()//2)
+		else:
+			if class2Label.winfo_ismapped(): class2Label.grid_forget()
 			if loc2label.winfo_ismapped(): loc2label.grid_forget()
-			if vert_separator.winfo_ismapped(): vert_separator.grid_forget()
-			class1label.grid_configure(columnspan=3)
-			loc1label.grid_configure(columnspan=3)
-			class1label.config(wraplength=root.winfo_width())
-			loc1label.config(wraplength=root.winfo_width())
-	prev_day:datetime = (await getTime()).date()
+			if vertSep.winfo_ismapped(): vertSep.grid_forget()
+			class1Label.grid_configure(columnspan=3)
+			loc1Label.grid_configure(columnspan=3)
+			class1Label.config(wraplength=root.winfo_width())
+			loc1Label.config(wraplength=root.winfo_width())
+	alerted:datetime = datetime.fromtimestamp(0)
+	def sendAlert():
+		nonlocal alerted
+		if len(list(state.settings.alertTimes.keys())) == 0:
+			return
+		for time, i in state.settings.alertTimes.items():
+			try:
+				time = datetime.strptime(time, "%Y-%m-%d;%H:%M")
+			except ValueError:
+				time = datetime.strptime(time, "%w;%H:%M")
+			if (
+				alerted-timedelta(minutes=1) < (rn := state.getTime().replace(second=0, microsecond=0, year=1970, month=1, day=1)) and 
+	   			time.replace(second=0, microsecond=0, year=1970, month=1, day=1) == rn
+				):
+				async def msg():
+					messagebox.showinfo("Értesítés", f"{i.get("message", "Értesítés ideje elérkezett!")}")
+				asyncio.create_task(msg())
+				logger.info(f"Sent alert at '{time.strftime("%H:%M")}' with message: '{i.get("message", "Értesítés ideje elérkezett!")}'")
+				alerted = state.getTime().replace(second=0, microsecond=0)
+	prev_day:datetime = state.getTime().date()
 	state.schedule = Schedule()
 	while True:
 		_start = perf_counter()
 		delay = state.settings.delay
 		if prev_day != state.schedule._date:
-			prev_day = (await getTime()).date()
+			prev_day = state.getTime().date()
 			logger.debug("Day changed since last cycle")
 			state.schedule = Schedule()
 			if len(state.schedule.classes) == 0: await asyncio.sleep(60*30)
-		now = (await getTime())
+		now = state.getTime()
 		now_time = now.time()
+		sendAlert()
 		for num, _class in enumerate(state.schedule.classes):
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list): # If 2 classes then split in 2
 				tmp_class = _class[1]
 				_class = _class[0]
 			if tmp_class is None and _class.name is None and _class.room is None and _class.teacher is None:
+				sendAlert()
 				continue
-			if ((_class.begin_datetime + timedelta(seconds=delay)).time() > now_time):
-				tmp = datetime.combine((await getTime()), _class.begin) - datetime.combine((await getTime()), now_time) + timedelta(seconds=delay)
-				mainlabel.config(text=f"Szünet végéig")
-				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-				if aux_label.winfo_ismapped():
-					aux_label.grid_forget()
-					root.rowconfigure(4, weight=0, minsize=0)
+			if ((_class.beginDatetime + timedelta(seconds=delay)).time() > now_time):
+				tmp = datetime.combine(state.getTime(), _class.begin) - datetime.combine(state.getTime(), now_time) + timedelta(seconds=delay)
+				mainLabel.config(text=f"Szünet végéig")
+				timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				setClassLabels(_class, tmp_class)
 				break
-			elif ((_class.end_datetime + timedelta(seconds=delay)).time() > now_time): # if class ends after now
-				tmp = datetime.combine((await getTime()), _class.end) - datetime.combine((await getTime()).date(), now_time) + timedelta(seconds=delay)
-				mainlabel.config(text=f"{num+1}. Óra végéig")
-				timelabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
+			elif ((_class.endDatetime + timedelta(seconds=delay)).time() > now_time): # if class ends after now
+				tmp = datetime.combine(state.getTime(), _class.end) - datetime.combine(state.getTime().date(), now_time) + timedelta(seconds=delay)
+				mainLabel.config(text=f"{num+1}. Óra végéig")
+				timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				if tmp_class is not None: # If split class
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 mins left, or last class
-						if aux_label.winfo_ismapped(): 
-							aux_label.grid_forget()
-							root.rowconfigure(4, weight=0, minsize=0)
 						setClassLabels(_class, tmp_class)
 					else: # Less than 10 mins left
-						if not aux_label.winfo_ismapped():
-							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
-							aux_label.config(text="Következő óra")
-							root.rowconfigure(4, weight=1)
 						if isinstance(next_class := state.schedule.classes[num+1], list): # If next class is split
-							setClassLabels(next_class[0], next_class[1])
+							setClassLabels(next_class[0], next_class[1], True)
 						else: # Next class is together
-							setClassLabels(next_class, None)
+							setClassLabels(next_class, None, True)
 				else: # If class is together
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 minutes left or last class
-						if aux_label.winfo_ismapped():
-							aux_label.grid_forget()
-							root.rowconfigure(4, weight=0, minsize=0)
 						setClassLabels(_class, tmp_class)
 					else: # Less than 10 minutes
 						if isinstance(next_class := state.schedule.classes[num+1], list): # Next class is split
-							setClassLabels(next_class[0], next_class[1])
+							setClassLabels(next_class[0], next_class[1], True)
 						else: # Next class is together
-							setClassLabels(next_class, None)
-						if not aux_label.winfo_ismapped():
-							aux_label.grid(row=5, column=0, sticky="nsew", columnspan=3)
-							aux_label.config(text="Következő óra")
-							root.rowconfigure(4, weight=1)
+							setClassLabels(next_class, None, True)
 				break
 		else: # No class ends after now (No If branch broke the loop)
-			mainlabel.config(text="A napnak vége")
-			[i.grid_forget() for i in [timelabel,class1label,class2label,loc1label,loc2label,aux_label] if i.winfo_ismapped()]
+			mainLabel.config(text="A napnak vége")
+			[i.grid_forget() for i in [timeLabel,class1Label,class2Label,loc1Label,loc2label,auxLabel,teacher1Label,teacher2Label] if i.winfo_ismapped()]
 			if separator.winfo_ismapped():
 				separator.grid_forget()
-			if vert_separator.winfo_ismapped():
-				vert_separator.grid_forget()
+			if vertSep.winfo_ismapped():
+				vertSep.grid_forget()
 			setDynamicSize()
 			await asyncio.sleep(10)
 			continue
