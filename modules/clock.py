@@ -189,7 +189,6 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 				tmp_class = _class[1]
 				_class = _class[0]
 			if tmp_class is None and _class.name is None and _class.room is None and _class.teacher is None:
-				sendAlert()
 				continue
 			if ((_class.beginDatetime + timedelta(seconds=delay)).time() > now_time):
 				tmp = datetime.combine(state.getTime(), _class.begin) - datetime.combine(state.getTime(), now_time) + timedelta(seconds=delay)

@@ -59,9 +59,10 @@ class Settings:
 			"alpha": {"default":0.75,"onHover":0.25}, # Values between 1 and 0
 			"version": CURRENT_VERSION,
 			"ignoreUpdates": False, # If true, update checks will be ignored
-			"alertTimes": {} # ex. (During 5th class on 2025.11.05, show alert 10 minutes before end of class, and delete alert afterward)
-			# "2025-11-05; 5": {
-			# 	"minutes":10,
+			"alertTimes": [] # ex. (During 1st class on 2025.11.05, show alert 5 minutes before end of class, and delete alert afterward)
+			# "; 5": {
+			#	"date":"2025-11-05",
+			# 	"time":"8:40",
 			# 	"keep": False
 			# } 
 		}
@@ -174,7 +175,9 @@ class Settings:
 				else:
 					change = True
 			else:
-				...
+				rn = state.getTime()
+				if (datetime.strptime(new["time"], "%H:%M").time() > rn.time()):
+					newAlerts.append(new)
 		if change:
 			self.save()
 		return self._data["alertTimes"]
