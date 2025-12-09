@@ -7,7 +7,7 @@ import modules.state as state
 from tkinter import Tk
 from json import load as jload, dump as jdump
 from typing import Any, Literal
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, date
 from modules.clock import fontSize
 from pathlib import Path
 logger = logging.getLogger(__name__)
@@ -157,40 +157,73 @@ class Settings:
 		self.save()
 	# endregion
 	# region alertTimes
+	alertTimesShownError:bool = False
 	@property # alertTimes
 	def alertTimes(self) -> list[dict[str, int|bool|str]]:
-		change:bool = False
-		newAlerts = []
-		for alert in self._data["alertTimes"]:
-			alert:dict[str, int|bool|str]
-			new = {
-				"message":alert["message"],
-				"time":alert["time"],
-				"keep":alert.get("keep", False)
-			}
-			if (_date := alert.get("date", None)) is not None:
-				new.update({"date": _date})
-				if not datetime.strptime(_date, "%Y-%m-%d") > state.getTime():
-					newAlerts.append(new)
+		try:
+			change:bool = False
+			newAlerts:list[dict[str, int|bool|str]] = []
+			for alert in self._data["alertTimes"]:
+				alert:dict[str, int|bool|str]
+				new = {
+					"message":alert["message"],
+					"time":alert["time"],
+					"keep":alert.get("keep", False)
+				}
+				if (weekday := alert.get("weekday", None)) is not None:
+					new.update({"weekday": weekday})
+				if (_date := alert.get("date", None)) is not None:
+					new.update({"date": _date})
+					if datetime.strptime(f"{_date} {new['time']}", "%Y-%m-%d %H:%M") >= state.getTime():
+						newAlerts.append(new)
+					else:
+						change = True
 				else:
-					change = True
-			else:
-				rn = state.getTime()
-				if (datetime.strptime(new["time"], "%H:%M").time() > rn.time()):
-					newAlerts.append(new)
-		if change:
-			self.save()
-		return self._data["alertTimes"]
-	def setAlertTime(self, time:time, *, day:datetime=datetime.fromtimestamp(0), keep:bool=False, message:str="Értesítés ideje elérkezett!"):
+					rn = state.getTime()
+					alert_time = datetime.strptime(new["time"], "%H:%M").time()
+					if "weekday" in new:
+						alert_dt = datetime.combine((rn.date() + timedelta(days=(new["weekday"] - rn.weekday())%7)), alert_time)
+					else:
+						alert_dt = datetime.combine(rn.date(), alert_time)
+						if alert_dt < rn:
+							alert_dt += timedelta(days=1)
+					if alert_dt >= rn:
+						newAlerts.append(new)
+					else:
+						change = True
+			if change:
+				self._data["alertTimes"] = newAlerts
+				self.save()
+			return newAlerts
+		except Exception as e:
+			if not self.alertTimesShownError:
+				logger.exception("Error loading alert times")
+				self.alertTimesShownError = True
+			return []
+	def setAlertTime(self, time:time, *, day:date|int=None, keep:bool=False, message:str="Értesítés ideje elérkezett!"):
 		tmp = {
 			"message": message,
 			"keep": keep,
 			"time": time.strftime("%H:%M")
 		}
-		if day is not None:
+		if isinstance(day, datetime):
 			tmp.update({"date": day.strftime("%Y-%m-%d")})
-		self.alertTimes.append()
+		elif isinstance(day, int):
+			tmp.update({"weekday": day})
+		self.alertTimes.append(tmp)
 		self.save()
+	def delAlertTime(self, time:time, *, day:date|int=None):
+		keep = []
+		change = False
+		for alert in self.alertTimes:
+			if datetime.strptime(alert["time"], "%H:%M").time() != time:
+				keep.append(alert)
+			else:
+				if (isinstance(day, int) and day == alert.get("weekday", None)) or (alert.get("date", None) is not None and isinstance(day, date) and day == alert["date"]):
+					change = True
+		if change:
+			self.alertTimes = keep
+			self.save()
 	# endregion
 	# region logLevel
 	@property # logLevel

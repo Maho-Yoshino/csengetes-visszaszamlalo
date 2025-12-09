@@ -6,3 +6,4 @@ csengo.exe
 settings_*.json
 output/
 *.spec
+.vscode

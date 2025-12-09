@@ -154,21 +154,25 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 	alerted:datetime = datetime.fromtimestamp(0)
 	def sendAlert():
 		nonlocal alerted
-		if len(list(state.settings.alertTimes.keys())) == 0:
+		async def msg(alert:dict[str, str]):
+			messagebox.showinfo("Értesítés", f"{alert.get("message", "Értesítés ideje elérkezett!")}")
+		if len(state.settings.alertTimes) == 0:
 			return
-		for time, i in state.settings.alertTimes.items():
-			try:
-				time = datetime.strptime(time, "%Y-%m-%d;%H:%M")
-			except ValueError:
-				time = datetime.strptime(time, "%w;%H:%M")
+		for alert in state.settings.alertTimes:
+			date = None
+			if (tmp := alert.get("date", None)) is not None:
+				date = datetime.strptime(tmp, "%Y-%m-%d")
+			time = datetime.combine(state.getTime().date(), datetime.strptime(alert["time"], "%H:%M").time())
 			if (
-				alerted-timedelta(minutes=1) < (rn := state.getTime().replace(second=0, microsecond=0, year=1970, month=1, day=1)) and 
-	   			time.replace(second=0, microsecond=0, year=1970, month=1, day=1) == rn
-				):
-				async def msg():
-					messagebox.showinfo("Értesítés", f"{i.get("message", "Értesítés ideje elérkezett!")}")
-				asyncio.create_task(msg())
-				logger.info(f"Sent alert at '{time.strftime("%H:%M")}' with message: '{i.get("message", "Értesítés ideje elérkezett!")}'")
+				alerted < (rn := state.getTime().replace(second=0, microsecond=0)) and 
+	   			time.replace(second=0, microsecond=0) == rn and 
+				(
+					(date is not None and date.date() == rn.date()) or 
+					date is None
+				)
+			):
+				asyncio.create_task(msg(alert))
+				logger.info(f"Sent alert with message: '{alert.get("message", "Értesítés ideje elérkezett!")}'")
 				alerted = state.getTime().replace(second=0, microsecond=0)
 	prev_day:datetime = state.getTime().date()
 	state.schedule = Schedule()
@@ -247,19 +251,22 @@ async def setClickThrough():
 				break
 			await asyncio.sleep(0.5)
 	except Exception as e:
-		logger.error(f"An error occured during transparency setting: {e}")
+		logger.exception(f"An error occured during setting transparency setting")
 async def batterySaverEnabled(on_val, off_val):
-	class SYSTEM_POWER_STATUS(Structure):
-		_fields_ = [
-			("ACLineStatus", c_byte),
-			("BatteryFlag", c_byte),
-			("BatteryLifePercent", c_byte),
-			("SystemStatusFlag", c_byte)
-		]
-	status = SYSTEM_POWER_STATUS()
-	if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
-		return off_val # Failed to get status, assume OFF
-	return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
+	try:
+		class SYSTEM_POWER_STATUS(Structure):
+			_fields_ = [
+				("ACLineStatus", c_byte),
+				("BatteryFlag", c_byte),
+				("BatteryLifePercent", c_byte),
+				("SystemStatusFlag", c_byte)
+			]
+		status = SYSTEM_POWER_STATUS()
+		if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
+			return off_val # Failed to get status, assume OFF
+		return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
+	except Exception:
+		logger.exception("An error occurred while checking battery saver status.") 
 async def transparencyCheck(root:Tk):
 	async def isCursorOverWindow(root:Tk):
 		win_x = root.winfo_rootx()
@@ -267,11 +274,14 @@ async def transparencyCheck(root:Tk):
 		return (win_x <= root.winfo_pointerx() <= win_x + root.winfo_width() and 
 				win_y <= root.winfo_pointery() <= win_y + root.winfo_height())
 	while True:
-		if not await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.65: 
-			root.wm_attributes("-alpha", state.settings.alpha["default"])
-		elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
-			root.wm_attributes("-alpha", state.settings.alpha["onHover"])
-		await asyncio.sleep(await batterySaverEnabled(1, 0.1))
+		try:
+			if not await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.65: 
+				root.wm_attributes("-alpha", state.settings.alpha["default"])
+			elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
+				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
+			await asyncio.sleep(await batterySaverEnabled(1, 0.1))
+		except:
+			logger.exception("An error happened during transparency check")
 
 if __name__ == "__main__": 
 	from csengo import main
