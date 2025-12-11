@@ -10,7 +10,7 @@ from github import Github, Repository, GitRelease
 from ctypes import windll
 from ctypes.wintypes import BOOL
 from modules.settings import Settings
-from modules.tray import setup_tray
+from modules.tray import traySetup
 from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
@@ -123,15 +123,16 @@ async def startup(root:Tk):
 	teacher2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
 	auxLabel = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
 	vertSeparator = Separator(state.root, orient="vertical")
-	asyncio.create_task(setClickThrough())
+	state.setClickThroughTask = asyncio.create_task(setClickThrough())
 	state.transparencyTask = asyncio.create_task(transparencyCheck(state.root))
 	del init_data
-	await setup_tray(state.root)
+	state.tray = traySetup(root)
 	state.root.columnconfigure(0, weight=1)
 	state.root.columnconfigure(1, weight=0)
 	state.root.columnconfigure(2, weight=1)
 	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label))
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
+	state.runtime.create_task(state.tkPump(state.root))
 	logger.info("Startup complete")
 MAX_LOGS:int=5
 def findInstance(name:str) -> bool:

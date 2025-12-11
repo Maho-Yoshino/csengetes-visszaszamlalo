@@ -95,7 +95,7 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 			lastWidth = root.winfo_width()
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
-		root.update()
+		#root.update()
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None, aux:bool = False):
 		if not all([i.winfo_ismapped() for i in [class1Label,loc1Label,timeLabel]]):
 			class1Label.grid(row=3, column=0, sticky="nsew")

@@ -28,8 +28,10 @@ class Settings:
 		_settings.title("Settings")
 		_settings.grid(10, 10, 50, 25)
 		menu = tk.Menu(_settings)
-		# TODO: Finish implementing the settings menu
-		menu.add_command(label="Not implemented yet")
+		menu.add_command(label="Schedule")
+		menu.add_command(label="Special days")
+		menu.add_command(label="Alerts")
+		menu.add_command(label="General")
 		_settings.config(menu=menu)
 		tk.Label(_settings, text="Settings window", font=fontSize(20)).grid(row=0, column=0, columnspan=10)
 		await state.updateFast(_settings)

@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 import asyncio
 from tkinter import Tk
+import tkinter as tk
 
 if TYPE_CHECKING:
+	from modules.tray import traySetup
 	from modules.settings import Settings
 	from modules.clock import Schedule
 
@@ -14,11 +16,17 @@ settings:Optional["Settings"] = None
 schedule:Optional["Schedule"] = None
 updateCycleTask:Optional[asyncio.Task] = None
 transparencyTask:Optional[asyncio.Task] = None
+setClickThroughTask: Optional[asyncio.Task] = None
 windowHandle:str = u"Csengetés időzítő"
 dummyDate:Optional[datetime] = None
+tray:Optional[traySetup] = None
 
-async def updateFast(_root:Tk):
+async def tkPump(root: Tk):
 	while True:
-		_root.update()
-		await asyncio.sleep(0.01)
+		try:
+			root.update_idletasks()
+			root.update()
+		except tk.TclError:
+			break
+		await asyncio.sleep(0.00166667) # 60 FPS
 def getTime(): return datetime.now() if dummyDate is None else dummyDate
