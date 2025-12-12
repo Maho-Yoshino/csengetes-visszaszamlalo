@@ -94,6 +94,7 @@ def checkUpdate():
 # endregion
 state.settings = Settings()
 async def startup(root:Tk):
+	state.tray = traySetup(root)
 	state.root.configure(background="black")
 	state.root.attributes("-topmost", True)
 	state.root.title(state.windowHandle)
@@ -126,13 +127,12 @@ async def startup(root:Tk):
 	state.setClickThroughTask = asyncio.create_task(setClickThrough())
 	state.transparencyTask = asyncio.create_task(transparencyCheck(state.root))
 	del init_data
-	state.tray = traySetup(root)
 	state.root.columnconfigure(0, weight=1)
 	state.root.columnconfigure(1, weight=0)
 	state.root.columnconfigure(2, weight=1)
 	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label))
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
-	state.runtime.create_task(state.tkPump(state.root))
+	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
 	logger.info("Startup complete")
 MAX_LOGS:int=5
 def findInstance(name:str) -> bool:
@@ -166,7 +166,7 @@ def main(dummyDate:datetime|None = None):
 			oldFile.unlink()
 	filename = f"logs/timer_{datetime.now().date().isoformat().replace('-', '_')}.log"
 	if (not path.isdir("logs")): mkdir("logs")
-	logFormat = "%(asctime)s::%(levelname)-8s:%(message)s"
+	logFormat = "%(asctime)s::%(name)-15s:%(funcName)-20s:%(lineno)-3d:%(levelname)-7s:%(message)s"
 	logging.basicConfig(filename=filename, encoding='utf-8', level=state.settings.logLevel, format=logFormat, datefmt="%Y-%m-%dT%H:%M:%S")
 	cleanup_old_logs()
 	logger.info(f"Application Starting up (v{VERSION})")

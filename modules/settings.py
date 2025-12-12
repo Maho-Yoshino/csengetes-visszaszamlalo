@@ -13,28 +13,25 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 CURRENT_VERSION:int = 2
 
-def clamp(num:int|float, _min:int|float, _max:int|float):
-	return max(_min, min(num, _max))
+def clamp(num:int|float, _min:int|float, _max:int|float): return max(_min, min(num, _max))
 class Settings:
 	def __init__(self, filename: str = "settings.json", encoding:str="utf-8"):
 		self.filename = filename
 		self.encoding = encoding
 		self._data: dict[str, Any] = {}
 		self.load_settings()
-	_settings:tk.Toplevel|None = None 
+	settingsWindow:tk.Toplevel|None = None 
 	async def open_settings(self, root:Tk):
-		global _settings
-		_settings = tk.Toplevel(root)
-		_settings.title("Settings")
-		_settings.grid(10, 10, 50, 25)
-		menu = tk.Menu(_settings)
+		self.settingsWindow = tk.Toplevel(root)
+		self.settingsWindow.title("Settings")
+		self.settingsWindow.grid(10, 10, 50, 25)
+		menu = tk.Menu(self.settingsWindow)
 		menu.add_command(label="Schedule")
 		menu.add_command(label="Special days")
 		menu.add_command(label="Alerts")
 		menu.add_command(label="General")
-		_settings.config(menu=menu)
-		tk.Label(_settings, text="Settings window", font=fontSize(20)).grid(row=0, column=0, columnspan=10)
-		await state.updateFast(_settings)
+		self.settingsWindow.config(menu=menu)
+		tk.Label(self.settingsWindow, text="Settings window", font=fontSize(20)).grid(row=0, column=0, columnspan=10)
 	def load_settings(self):
 		if (not Path("settings.json").exists()):
 			logger.warning("Settings file not found, creating a default one.")

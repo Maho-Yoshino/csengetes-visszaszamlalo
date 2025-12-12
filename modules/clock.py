@@ -95,7 +95,6 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 			lastWidth = root.winfo_width()
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
-		#root.update()
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None, aux:bool = False):
 		if not all([i.winfo_ismapped() for i in [class1Label,loc1Label,timeLabel]]):
 			class1Label.grid(row=3, column=0, sticky="nsew")
@@ -265,6 +264,8 @@ async def batterySaverEnabled(on_val, off_val):
 		if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
 			return off_val # Failed to get status, assume OFF
 		return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
+	except ImportError:
+		return
 	except Exception:
 		logger.exception("An error occurred while checking battery saver status.") 
 async def transparencyCheck(root:Tk):
@@ -280,7 +281,9 @@ async def transparencyCheck(root:Tk):
 			elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
 				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
 			await asyncio.sleep(await batterySaverEnabled(1, 0.1))
-		except:
+		except ImportError:
+			return
+		except Exception:
 			logger.exception("An error happened during transparency check")
 
 if __name__ == "__main__": 

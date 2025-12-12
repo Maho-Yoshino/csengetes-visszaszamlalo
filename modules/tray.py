@@ -51,19 +51,38 @@ class traySetup:
 	def __init__(self, root:Tk):
 		self.root = root
 		self.icon = pystray.Icon("Csengetés időzítő", imgopen("icon.ico"), menu=pystray.Menu(
-			pystray.MenuItem(lambda item: f"Delay: {state.settings.delay}", lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.delayWindow(self.root))),
-			pystray.MenuItem("Fullscreen Schedule", lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.scheduleWindow(self.root))),
-			pystray.MenuItem("Settings", lambda icon, item: state.runtime.call_soon_threadsafe(self.settings_callback())),
-			pystray.MenuItem("Quit", lambda icon, item: self.quit())
+			pystray.MenuItem(
+				lambda item: f"Delay: {state.settings.delay}", 
+				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.delayWindow(self.root))
+			),
+			pystray.MenuItem(
+				"Fullscreen Schedule",
+				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.scheduleWindow(self.root))
+			),
+			pystray.MenuItem(
+				"Settings",
+				lambda icon, item: state.runtime.call_soon_threadsafe(self.settings_callback)
+			),
+			pystray.MenuItem(
+				"Quit",
+				lambda icon, item: state.runtime.call_soon_threadsafe(self.quit)
+			)
 		))
 		self.icon.run_detached()
 	def settings_callback(self): state.runtime.create_task(state.settings.open_settings(self.root))
 	def quit(self):
 		logger.info("Closing application")
 		self.icon.stop()
-		if (state.updateCycleTask is not None):
-			state.updateCycleTask.cancel()
-		if (state.transparencyTask is not None):
-			state.transparencyTask.cancel()
+		state.runtime.create_task(self._shutdown())
+	async def _shutdown(self):
+		tasks = []
+		for task in (state.updateCycleTask, state.transparencyTask, state.tkPumpTask):
+			if task and not task.done():
+				task.cancel()
+				tasks.append(task)
+		if tasks:
+			await asyncio.gather(*tasks, return_exceptions=True)
 		state.root.quit()
 		state.runtime.stop()
+
+

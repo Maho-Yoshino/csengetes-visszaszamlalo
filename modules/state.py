@@ -17,16 +17,20 @@ schedule:Optional["Schedule"] = None
 updateCycleTask:Optional[asyncio.Task] = None
 transparencyTask:Optional[asyncio.Task] = None
 setClickThroughTask: Optional[asyncio.Task] = None
+tkPumpTask: Optional[asyncio.Task] = None
 windowHandle:str = u"Csengetés időzítő"
 dummyDate:Optional[datetime] = None
 tray:Optional[traySetup] = None
 
 async def tkPump(root: Tk):
-	while True:
-		try:
-			root.update_idletasks()
-			root.update()
-		except tk.TclError:
-			break
-		await asyncio.sleep(0.00166667) # 60 FPS
+	try:
+		while True:
+			try:
+				root.update_idletasks()
+				root.update()
+			except tk.TclError:
+				break
+			await asyncio.sleep(1/60) # 60 FPS
+	except asyncio.CancelledError:
+		pass
 def getTime(): return datetime.now() if dummyDate is None else dummyDate
