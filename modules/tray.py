@@ -7,13 +7,14 @@ import asyncio, tkinter as tk, logging, modules.state as state
 from tkinter import Tk
 from PIL.Image import open as imgopen
 from datetime import datetime
+from modules.clock import fontSize
 logger = logging.getLogger(__name__)
 
 class traySetup:
 	class delayWindow:
 		root:tk.Toplevel
-		def __init__(self, mainroot:Tk):
-			self.root = tk.Toplevel(mainroot)
+		def __init__(self):
+			self.root = tk.Toplevel(state.root)
 			self.root.title("Delay Time Input")
 			self.root.geometry(f"+{self.root.winfo_screenwidth()//2-25}+{self.root.winfo_screenheight()//2-25}")
 			self.root.resizable(False, False)
@@ -30,8 +31,8 @@ class traySetup:
 			self.root.destroy()
 	class scheduleWindow:
 		root:tk.Toplevel
-		def __init__(self, mainroot:Tk):
-			self.root = tk.Toplevel(mainroot)
+		def __init__(self):
+			self.root = tk.Toplevel(state.root)
 			self.root.title("Schedule")
 			windowHeight = max(max([len(i) for i in state.settings.defaultSchedule]), max([len(val) for key, val in state.settings.specialDays.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")]))
 			windowWidth = len(state.settings.defaultSchedule)
@@ -48,20 +49,46 @@ class traySetup:
 			for num, frame in enumerate(frames):
 				# TODO: Finish fullscreen schedule
 				...
-	def __init__(self, root:Tk):
-		self.root = root
+	class settingsWindow:
+		root:tk.Toplevel|None = None 
+		def __init__(self):
+			self.root = tk.Toplevel(state.root)
+			self.root.title("Settings")
+			self.root.grid(10, 10, 50, 25)
+			menu = tk.Menu(self.root)
+			menu.add_command(label="Schedule", command=self.openSchedule)
+			menu.add_command(label="Special days", command=self.openSpecialDays)
+			menu.add_command(label="Alerts", command=self.openAlerts)
+			menu.add_command(label="General", command=self.openGeneral)
+			menu.activate(0)
+			self.root.config(menu=menu)
+			self.content = tk.Frame(self.root)
+			self.content.grid(row=0, column=0, sticky="nsew")
+		def _clearContent(self, title:str) -> None:
+			for child in self.content.winfo_children():
+				child.destroy()
+			tk.Label(self.content, text=title, font=fontSize(20)).grid(row=0, column=0, columnspan=3)
+		def openSchedule(self):
+			self._clearContent("Schedule Settings")
+		def openSpecialDays(self):
+			self._clearContent("Special Days")
+		def openAlerts(self):
+			self._clearContent("Alerts")
+		def openGeneral(self):
+			self._clearContent("General settings")
+	def __init__(self):
 		self.icon = pystray.Icon("Csengetés időzítő", imgopen("icon.ico"), menu=pystray.Menu(
 			pystray.MenuItem(
 				lambda item: f"Delay: {state.settings.delay}", 
-				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.delayWindow(self.root))
+				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.delayWindow())
 			),
 			pystray.MenuItem(
 				"Fullscreen Schedule",
-				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.scheduleWindow(self.root))
+				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.scheduleWindow())
 			),
 			pystray.MenuItem(
 				"Settings",
-				lambda icon, item: state.runtime.call_soon_threadsafe(self.settings_callback)
+				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: self.settingsWindow())
 			),
 			pystray.MenuItem(
 				"Quit",
@@ -69,7 +96,6 @@ class traySetup:
 			)
 		))
 		self.icon.run_detached()
-	def settings_callback(self): state.runtime.create_task(state.settings.open_settings(self.root))
 	def quit(self):
 		logger.info("Closing application")
 		self.icon.stop()

@@ -4,7 +4,5 @@ if not exist ".venv" (
 	echo .venv does not exist. Please run setup.bat first.
 	exit
 )
-call .\.venv\Scripts\activate
-python .\csengo.py
-deactivate
+.\.venv\Scripts\python .\csengo.py
 exit

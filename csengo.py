@@ -94,7 +94,7 @@ def checkUpdate():
 # endregion
 state.settings = Settings()
 async def startup(root:Tk):
-	state.tray = traySetup(root)
+	state.tray = traySetup()
 	state.root.configure(background="black")
 	state.root.attributes("-topmost", True)
 	state.root.title(state.windowHandle)
