@@ -15,6 +15,7 @@ from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCh
 logger = logging.getLogger(__name__)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 # region Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
