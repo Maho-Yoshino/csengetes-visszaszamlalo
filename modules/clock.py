@@ -249,7 +249,7 @@ async def setClickThrough():
 			if (windll.user32.GetWindowLongW(hwnd, -20)) & 0x00000080 == 0x00000080:
 				break
 			await asyncio.sleep(0.5)
-	except Exception as e:
+	except Exception:
 		logger.exception(f"An error occured during setting transparency setting")
 async def batterySaverEnabled(on_val, off_val):
 	try:
@@ -281,11 +281,5 @@ async def transparencyCheck(root:Tk):
 			elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
 				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
 			await asyncio.sleep(await batterySaverEnabled(1, 0.1))
-		except ImportError:
-			return
 		except Exception:
 			logger.exception("An error happened during transparency check")
-
-if __name__ == "__main__": 
-	from csengo import main
-	main()

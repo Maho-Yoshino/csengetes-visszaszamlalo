@@ -226,7 +226,3 @@ class Settings:
 		"""
 		return self._data.get("logLevel", 10)	
 	# endregion
-
-if __name__ == "__main__": 
-	from csengo import main
-	main()

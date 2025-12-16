@@ -10,17 +10,19 @@ if TYPE_CHECKING:
 	from modules.settings import Settings
 	from modules.clock import Schedule
 
-runtime:Optional[asyncio.AbstractEventLoop] = None
-root:Optional[Tk] = None
 settings:Optional["Settings"] = None
 schedule:Optional["Schedule"] = None
-updateCycleTask:Optional[asyncio.Task] = None
-transparencyTask:Optional[asyncio.Task] = None
+tray:Optional[traySetup] = None
+
+windowHandle:str = u"Csengetés időzítő"
+root:Optional[Tk] = None
+dummyDate:Optional[datetime] = None
+
+runtime:Optional[asyncio.AbstractEventLoop] = None
 setClickThroughTask: Optional[asyncio.Task] = None
 tkPumpTask: Optional[asyncio.Task] = None
-windowHandle:str = u"Csengetés időzítő"
-dummyDate:Optional[datetime] = None
-tray:Optional[traySetup] = None
+updateCycleTask:Optional[asyncio.Task] = None
+transparencyTask:Optional[asyncio.Task] = None
 
 async def tkPump(root: Tk):
 	try:
