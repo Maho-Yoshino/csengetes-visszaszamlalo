@@ -283,7 +283,8 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 		await asyncio.sleep(delay)
 def fontSize(size:int): return Font(size=size)
 async def setClickThrough():
-	logger.info("Setting click-through window")
+	logger.debug("Setting click-through 8window")
+	state.root.wait_visibility()
 	try:
 		while True:
 			hwnd = windll.user32.FindWindowW(None, state.root.title())
@@ -292,10 +293,11 @@ async def setClickThrough():
 			styles |= 0x00000080  # WS_EX_TRANSPARENT (Click-through)
 			windll.user32.SetWindowLongW(hwnd, -20, styles)
 			if (windll.user32.GetWindowLongW(hwnd, -20)) & 0x00000080 == 0x00000080:
+				logger.debug("Click-through successfully set")
 				break
 			await asyncio.sleep(0.5)
 	except Exception:
-		logger.exception(f"An error occured during setting transparency setting")
+		logger.exception(f"An error occured while setting transparency setting")
 async def batterySaverEnabled(on_val, off_val):
 	try:
 		class SYSTEM_POWER_STATUS(Structure):
