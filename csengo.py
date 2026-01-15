@@ -1,18 +1,20 @@
+import sys
+sys.dont_write_bytecode = True # Prevent '__pycache__' creation
 import tkinter as tk, asyncio, logging
-import modules.state as state
+from logging.handlers import TimedRotatingFileHandler
 from tkinter import Tk, messagebox
 from tkinter.ttk import Separator
 from sys import executable, argv, platform
 from datetime import datetime
-from os import path, chdir, mkdir, environ
-from pathlib import Path
+from os import path, chdir, environ
 from github import Github, Repository, GitRelease
 from ctypes import windll
 from ctypes.wintypes import BOOL
+import modules.state as state
 from modules.settings import Settings
 from modules.tray import traySetup
 from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("pystray").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -94,26 +96,30 @@ def checkUpdate():
 
 # endregion
 state.settings = Settings()
-async def startup(root:Tk):
-	state.tray = traySetup()
-	state.root.configure(background="black")
+async def startup():
+	state.root.configure(bg=f"#{state.settings.background:06x}")
 	state.root.attributes("-topmost", True)
 	state.root.title(state.windowHandle)
 	state.root.resizable(False, False)
 	state.root.overrideredirect(True)
 	state.root.wm_attributes("-alpha", state.settings.alpha["default"])
-	state.root.grid(3, 5, root.winfo_screenwidth()//4, root.winfo_screenheight()//8)
+	state.root.grid(3, 5, state.root.winfo_screenwidth()//4, state.root.winfo_screenheight()//8)
 	state.root.config(padx=15, pady=15, border=1, borderwidth=1)
 	init_data = {
 		"text":"Initializing...",
-		"bg":"black",
-		"fg":"white"
+		"bg":f"#{state.settings.background:06x}",
+		"fg":f"#{state.settings.foreground:06x}"
 	}
 	mainLabel = tk.Label(state.root, init_data, font=fontSize(20))
 	mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
 	mainLabel.grid_rowconfigure(0, weight=1)
-	timeLabel = tk.Label(state.root, init_data, font=fontSize(30), anchor="center")
-	timeLabel.grid_rowconfigure(1, weight=1)
+	timeFrame = tk.Frame(state.root, bg=f"#{hex(state.settings.background).removeprefix("0x"):06s}")
+	timeFrame.grid(column=0, row=1, columnspan=4)
+	timeFrame.grid_rowconfigure(0, weight=0)
+	timeFrame.grid_rowconfigure(1, weight=1)
+	timeLabel = tk.Label(timeFrame, init_data, font=fontSize(30), anchor="center")
+	timeLabel.grid(column=1)
+	timeLabel.grid_columnconfigure(1, weight=1)
 	separator = Separator(state.root, orient="horizontal")
 	separator.grid_rowconfigure(2, weight=1)
 	class1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
@@ -126,16 +132,16 @@ async def startup(root:Tk):
 	auxLabel = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
 	vertSeparator = Separator(state.root, orient="vertical")
 	state.setClickThroughTask = asyncio.create_task(setClickThrough())
-	state.transparencyTask = asyncio.create_task(transparencyCheck(state.root))
+	state.transparencyTask = asyncio.create_task(transparencyCheck())
 	del init_data
 	state.root.columnconfigure(0, weight=1)
 	state.root.columnconfigure(1, weight=0)
 	state.root.columnconfigure(2, weight=1)
-	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label))
+	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label, timeFrame))
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
 	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
+	state.tray = traySetup()
 	logger.info("Startup complete")
-MAX_LOGS:int=5
 def findInstance(name:str) -> bool:
 	"""Check if another instance of the application is running, and returns `True` if there is, otherwise `False`"""
 	k32 = windll.kernel32
@@ -152,37 +158,54 @@ def main(dummyDate:datetime|None = None):
 		logger.critical("Another instance is already running.\nClosing application.")
 		messagebox.showerror("Another instance detected", "This program can only run once on a single computer at the same time due to technical limitations\nClosing application.", icon="error")
 		return
+	debug:bool
+	# region Debug mode setup
+	if __name__ == "__main__":
+		debug = environ.get('TERM_PROGRAM') == 'vscode'
+		if not debug:
+			from argparse import ArgumentParser
+			parser = ArgumentParser()
+			parser.add_argument("-d", "--debug", help="Debug mode switch", action="store_true")
+			debug = parser.parse_args().debug
+	else:
+		debug = True # Not ran from this file directly, a.k.a. testing another module, Always True
+	# endregion
 	if state.settings.ignoreUpdates == False:
 		checkUpdate()
 	if dummyDate is not None:
 		state.dummyDate = dummyDate
 		del dummyDate
-	def cleanup_old_logs(logFolder: str = "logs", prefix: str = "timer_"):
-		"""Delete old log files, keeping only the last MAX_LOGS."""
-		folder = Path(logFolder)
-		# get all files that start with prefix and end with .log
-		logFiles = sorted(folder.glob(f"{prefix}*.log"), key=lambda f: f.stat().st_mtime, reverse=True)
-		# keep only the first MAX_LOGS, delete the rest
-		for oldFile in logFiles[MAX_LOGS:]:
-			oldFile.unlink()
-	filename = f"logs/timer_{datetime.now().date().isoformat().replace('-', '_')}.log"
-	if (not path.isdir("logs")): mkdir("logs")
-	logFormat = "%(asctime)s::%(name)-15s:%(funcName)-20s:%(lineno)-3d:%(levelname)-7s:%(message)s"
-	logging.basicConfig(filename=filename, encoding='utf-8', level=state.settings.logLevel, format=logFormat, datefmt="%Y-%m-%dT%H:%M:%S")
-	cleanup_old_logs()
+	def log_namer(default_name:str):
+		dirname = path.dirname(default_name)
+		filename = path.basename(default_name)
+		_, _, date = filename.rpartition(".")
+		return path.join(dirname, f"{date}.log")
+	handler = TimedRotatingFileHandler("logs/latest.log", when="midnight", interval=1, utc=True, backupCount=5)
+	handler.suffix = "%Y-%m-%d"
+	formatter = logging.Formatter(f"%(asctime)s:%(name)-15s:%(funcName)-15s:%(lineno)-3d:%(levelname)-7s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+	handler.setFormatter(formatter)
+	handler.namer = log_namer
+	logger.addHandler(handler)
+	logger.setLevel(logging.DEBUG if debug else logging.INFO)
 	logger.info(f"Application Starting up (v{VERSION})")
 	state.root = Tk()
 	state.runtime = asyncio.new_event_loop()
 	asyncio.set_event_loop(state.runtime)
-	state.runtime.create_task(startup(state.root))
+	state.runtime.create_task(startup())
 	state.runtime.run_forever()
 	state.runtime.close()
 
 if __name__ == "__main__":
-	if environ.get('TERM_PROGRAM') == 'vscode':
-		#main()
-		#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
-		#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
-		main()
-	else:
-		main()
+	try:
+		if environ.get('TERM_PROGRAM') == 'vscode':
+			#main()
+			#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
+			#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
+			main(datetime(year=2026, month=1, day=15, hour=12))
+		else:
+			main()
+	except KeyboardInterrupt:
+		logger.info("Shutting down due to keyboard interrupt")
+	except:
+		logger.exception("An error occurred during runtime")
+		raise

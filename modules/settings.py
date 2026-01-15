@@ -18,6 +18,7 @@ class Settings:
 		self.filename = filename
 		self.encoding = encoding
 		self._data: dict[str, Any] = {}
+		self.datetime_fmt = "%Y-%m-%d"
 		self.load_settings()
 	def load_settings(self):
 		if (not Path("settings.json").exists()):
@@ -45,12 +46,16 @@ class Settings:
 			"alpha": {"default":0.75,"onHover":0.25}, # Values between 1 and 0
 			"version": CURRENT_VERSION,
 			"ignoreUpdates": False, # If true, update checks will be ignored
-			"alertTimes": [] # ex. (During 1st class on 2025.11.05, show alert 5 minutes before end of class, and delete alert afterward)
-			# "; 5": {
+			"alertTimes": [], # ex. (During 1st class on 2025.11.05, show alert 5 minutes before end of class, and delete alert afterward)
+			# {
 			#	"date":"2025-11-05",
 			# 	"time":"8:40",
 			# 	"keep": False
 			# } 
+			"exams": {}, 
+			"homework": {},
+			"background": "000000", # Hex value of bg color
+			"foreground": "FFFFFF"	# Hex value of fg color
 		}
 		for key, value in defaults.items():
 			self._data.setdefault(key, value)
@@ -101,11 +106,11 @@ class Settings:
 	@property 
 	def specialDays(self) -> dict[datetime, dict[str, str|list[str]|None]]:
 		return {
-			datetime.strptime(date_str, "%Y-%m-%d"):schedule
+			datetime.strptime(date_str, self.datetime_fmt):schedule
 			for date_str, schedule in self._data["specialDays"].items()
 		}
 	def setSpecialDays(self, day:datetime, schedule:dict[str, str|list[str]|None]):
-		self._data["specialDays"][day.strftime("%Y-%m-%d")] = schedule
+		self._data["specialDays"][day.strftime(self.datetime_fmt)] = schedule
 		self.save()
 	# endregion
 	# region debug
@@ -160,7 +165,7 @@ class Settings:
 					new.update({"weekday": weekday})
 				if (_date := alert.get("date", None)) is not None:
 					new.update({"date": _date})
-					if datetime.strptime(f"{_date} {new['time']}", "%Y-%m-%d %H:%M") >= state.getTime():
+					if datetime.strptime(f"{_date} {new['time']}", f"{self.datetime_fmt} %H:%M") >= state.getTime():
 						newAlerts.append(new)
 					else:
 						change = True
@@ -168,7 +173,7 @@ class Settings:
 					rn = state.getTime()
 					alert_time = datetime.strptime(new["time"], "%H:%M").time()
 					if "weekday" in new:
-						alert_dt = datetime.combine((rn.date() + timedelta(days=(new["weekday"] - rn.weekday())%7)), alert_time)
+						alert_dt = datetime.combine((rn.date() + timedelta(days=(new["weekday"] - rn.weekday()))), alert_time)
 					else:
 						alert_dt = datetime.combine(rn.date(), alert_time)
 						if alert_dt < rn:
@@ -193,7 +198,7 @@ class Settings:
 			"time": time.strftime("%H:%M")
 		}
 		if isinstance(day, datetime):
-			tmp.update({"date": day.strftime("%Y-%m-%d")})
+			tmp.update({"date": day.strftime(self.datetime_fmt)})
 		elif isinstance(day, int):
 			tmp.update({"weekday": day})
 		self.alertTimes.append(tmp)
@@ -225,4 +230,91 @@ class Settings:
 		50 - FATAL / CRITICAL  
 		"""
 		return self._data.get("logLevel", 10)	
+	# endregion
+	# region exams
+	@property
+	def exams(self) -> dict[datetime, list[dict[datetime, str|int]]]:
+		tmp = {}
+		today:date = state.getTime().date()
+		change:bool = False
+		for day, items in self._data["exams"].items():
+			examDay = datetime.strptime(day, self.datetime_fmt)
+			if today > examDay.date():
+				change = True
+				continue
+			tmp.update({datetime.strptime(day, self.datetime_fmt):items})
+		if change:
+			self._data["exams"] = tmp
+			self.save()
+		return tmp
+	def setExam(self, _date:datetime, _class:int, topic:str):
+		if datestr := _date.strftime(self.datetime_fmt) not in self._data["exams"].keys():
+			self._data["exams"].update({datestr:[]})
+		self._data["exams"][datestr].append({
+			"class":_class,
+			"topic":topic
+		})
+		self.save()
+	def current_exam(self) -> bool:
+		if state.currentClassIndex is None:
+			return False
+		today = state.getTime().date()
+		exams = self.exams.get(
+			datetime.combine(today, time()),
+			[]
+		)
+		return any(e["class"] == state.currentClassIndex for e in exams)
+
+	# endregion
+	# region homework
+	@property
+	def homework(self) -> dict[str, list[dict[datetime, str|int]]]:
+		tmp = {}
+		today:date = state.getTime().date()
+		change:bool = False
+		for day, items in self._data["homework"].items():
+			examDay = datetime.strptime(day, self.datetime_fmt)
+			if today < examDay:
+				change = True
+				continue
+			tmp.update({datetime.strptime(day, self.datetime_fmt):items})
+		if change:
+			self._data["homework"] = tmp
+			self.save()
+		return tmp
+	def setHomework(self, _date:datetime, _class:int, topic:str):
+		if datestr := _date.strftime(self.datetime_fmt) not in self._data["homework"].keys():
+			self._data["homework"].update({datestr:[]})
+		self._data["homework"][datestr].append({
+			"class":_class,
+			"topic":topic
+		})
+		self.save()
+	def current_homework(self) -> bool:
+		if state.currentClassIndex is None:
+			return False
+		today = state.getTime().date()
+		homework = self.homework.get(
+			datetime.combine(today, time()),
+			[]
+		)
+		return any(e["class"] == state.currentClassIndex for e in homework)
+	# endregion
+	# region Background color
+	@property
+	def background(self) -> int:
+		return int(self._data["background"], 16)
+	@background.setter
+	def background(self, value:int):
+		self._data["background"] = f"{value:06X}"
+		self.save()
+	# endregion
+	# region Foreground color
+	@property
+	def foreground(self) -> int:
+		return int(self._data["foreground"], 16)
+	@foreground.setter
+	def foreground(self, value:int):
+		self._data["foreground"] = f"{value:06X}"
+		self.save()
 	# endregion

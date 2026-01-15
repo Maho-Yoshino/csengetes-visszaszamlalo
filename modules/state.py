@@ -24,6 +24,8 @@ tkPumpTask: Optional[asyncio.Task] = None
 updateCycleTask:Optional[asyncio.Task] = None
 transparencyTask:Optional[asyncio.Task] = None
 
+currentClassIndex:int|None = None
+
 async def tkPump(root: Tk):
 	try:
 		while True:

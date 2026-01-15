@@ -82,8 +82,10 @@
 		"2025-12-16": [
 			{
 				"class": 3,
-				"task": "Móricz Zsigmond: Barbárok elolvasása"
+				"topic": "Móricz Zsigmond: Barbárok elolvasása"
 			}
 		]
-	}
+	},
+	"background":"000000",
+	"foreground":"FFFFFF"
 }

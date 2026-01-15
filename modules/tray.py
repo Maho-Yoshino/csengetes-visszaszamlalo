@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class traySetup:
 	def __init__(self):
-		self.icon = pystray.Icon("Csengetés időzítő", imgopen("icon.ico"), menu=pystray.Menu(
+		self.icon = pystray.Icon("Csengetés időzítő", imgopen("assets/icon.ico"), menu=pystray.Menu(
 			pystray.MenuItem(
 				lambda item: f"Delay: {state.settings.delay}", 
 				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: delayGUI())

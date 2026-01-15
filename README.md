@@ -7,9 +7,11 @@ Ez egy visszaszámláló program óra végéig diákok és tanárok számára eg
 	- Név: Akármi lehet  
 	- Trigger = "When I log on" (Amikor bejelentkezek)  
 	- Action = "Start a program" (Program indítása)  
-	- Action > Start a program  
+	- Action > Start a program (If using source code)  
 		- Program/script = "C:\WINDOWS\System32\cmd.exe"  
 		- Add arguments = "/c python {a csengo.py elérési útvonala}"  
+	- Action > Start a program (If using exe file)  
+		- Program/script = "path\to\csengo.exe"  
 ## Build from source  
 - Git clone the repo  
 - run "setup.bat"  
