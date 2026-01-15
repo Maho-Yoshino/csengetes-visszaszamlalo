@@ -12,6 +12,7 @@ from tkinter.font import Font
 from tkinter.ttk import Separator
 from ctypes import windll, c_byte, byref, Structure
 from time import perf_counter
+from tksvg import SvgImage
 logger = logging.getLogger(__name__)
 
 class Schedule:
@@ -87,7 +88,31 @@ class Schedule:
 	def parseTimes(times:str) -> tuple[time]:
 		times:list[str] = times.split("-", 1)
 		return datetime.strptime(times[0], "%H:%M").time(), datetime.strptime(times[1], "%H:%M").time()
-async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Label, class2Label:tk.Label, loc1Label:tk.Label, loc2label:tk.Label, root:Tk, vertSep:Separator, separator:Separator, auxLabel:tk.Label, teacher1Label:tk.Label, teacher2Label:tk.Label):
+async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Label, class2Label:tk.Label, loc1Label:tk.Label, loc2label:tk.Label, root:Tk, vertSep:Separator, separator:Separator, auxLabel:tk.Label, teacher1Label:tk.Label, teacher2Label:tk.Label, timeFrame:tk.Frame):
+	def loadSvg(filename:str) -> SvgImage:
+		try:
+			with open(f"assets/{filename}.svg", "r") as file:
+				svg_text = file.read().replace("<svg ", f"<svg fill='#{state.settings.foreground:06x}' ")
+		except FileNotFoundError:
+			logger.exception(f"File \"assets/{filename}.png\" could not be found")
+			raise
+		return SvgImage(filename, master=timeFrame, data=svg_text, scaletoheight=25)
+	homeworkIcon = loadSvg("homework")
+	homeworkLabel = tk.Label(
+		timeFrame, 
+		image=homeworkIcon, 
+		bg=f"#{state.settings.background:06x}",
+		fg=f"#{state.settings.foreground:06x}"
+	)
+	homeworkLabel.image = homeworkIcon
+	examIcon = loadSvg("exam")
+	examLabel = tk.Label(
+		timeFrame, 
+		image=examIcon, 
+		bg=f"#{state.settings.background:06x}",
+		fg=f"#{state.settings.foreground:06x}"
+	)
+	examLabel.image = examIcon
 	lastWidth:int = root.winfo_width()
 	def setDynamicSize():
 		nonlocal lastWidth
@@ -95,12 +120,24 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			logger.debug(f"window size: {root.winfo_width()}x{root.winfo_height()}+{root.winfo_screenwidth()-root.winfo_width()}+0")
 			lastWidth = root.winfo_width()
 		root.geometry(f"+{root.winfo_screenwidth()-root.winfo_width()}+0")
-		root.update()
 	def setClassLabels(A_class:Schedule.ClassData, B_class:Schedule.ClassData|None = None, aux:bool = False):
 		if not all([i.winfo_ismapped() for i in [class1Label,loc1Label,timeLabel]]):
 			class1Label.grid(row=3, column=0, sticky="nsew")
 			loc1Label.grid(row=4, column=0, sticky="nsew")
 			timeLabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
+		if state.settings.current_exam():
+			if homeworkLabel.winfo_ismapped():
+				homeworkLabel.grid_forget()
+			examLabel.grid(row=1, column=3)
+		elif state.settings.current_homework():
+			if examLabel.winfo_ismapped():
+				examLabel.grid_forget()
+			homeworkLabel.grid(row=1, column=3)
+		else:
+			if examLabel.winfo_ismapped():
+				examLabel.grid_forget()
+			if homeworkLabel.winfo_ismapped():
+				homeworkLabel.grid_forget()
 		class1Label.config(text=f"{A_class.name}", anchor="center")
 		loc1Label.config(text=f"{A_class.room}")
 		if not aux and auxLabel.winfo_ismapped():
@@ -206,16 +243,20 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 				timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				if tmp_class is not None: # If split class
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 mins left, or last class
+						state.currentClassIndex = num + 1
 						setClassLabels(_class, tmp_class)
 					else: # Less than 10 mins left
+						state.currentClassIndex = num + 2
 						if isinstance(next_class := state.schedule.classes[num+1], list): # If next class is split
 							setClassLabels(next_class[0], next_class[1], True)
 						else: # Next class is together
 							setClassLabels(next_class, None, True)
 				else: # If class is together
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 minutes left or last class
+						state.currentClassIndex = num + 1
 						setClassLabels(_class, tmp_class)
 					else: # Less than 10 minutes
+						state.currentClassIndex = num + 2
 						if isinstance(next_class := state.schedule.classes[num+1], list): # Next class is split
 							setClassLabels(next_class[0], next_class[1], True)
 						else: # Next class is together
@@ -223,11 +264,14 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 				break
 		else: # No class ends after now (No If branch broke the loop)
 			mainLabel.config(text="A napnak vége")
-			[i.grid_forget() for i in [timeLabel,class1Label,class2Label,loc1Label,loc2label,auxLabel,teacher1Label,teacher2Label] if i.winfo_ismapped()]
+			state.currentClassIndex = -1
+			[i.grid_forget() for i in [class1Label,class2Label,loc1Label,loc2label,auxLabel,teacher1Label,teacher2Label] if i.winfo_ismapped()]
 			if separator.winfo_ismapped():
 				separator.grid_forget()
 			if vertSep.winfo_ismapped():
 				vertSep.grid_forget()
+			if timeFrame.winfo_ismapped():
+				timeFrame.grid_forget()
 			setDynamicSize()
 			await asyncio.sleep(10)
 			continue
@@ -250,7 +294,7 @@ async def setClickThrough():
 			if (windll.user32.GetWindowLongW(hwnd, -20)) & 0x00000080 == 0x00000080:
 				break
 			await asyncio.sleep(0.5)
-	except Exception as e:
+	except Exception:
 		logger.exception(f"An error occured during setting transparency setting")
 async def batterySaverEnabled(on_val, off_val):
 	try:
@@ -265,24 +309,23 @@ async def batterySaverEnabled(on_val, off_val):
 		if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
 			return off_val # Failed to get status, assume OFF
 		return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
+	except ImportError:
+		return
 	except Exception:
 		logger.exception("An error occurred while checking battery saver status.") 
-async def transparencyCheck(root:Tk):
-	async def isCursorOverWindow(root:Tk):
+async def transparencyCheck():
+	root = state.root
+	async def isCursorOverWindow():
 		win_x = root.winfo_rootx()
 		win_y = root.winfo_rooty()
 		return (win_x <= root.winfo_pointerx() <= win_x + root.winfo_width() and 
 				win_y <= root.winfo_pointery() <= win_y + root.winfo_height())
 	while True:
 		try:
-			if not await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.65: 
+			if not await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.alpha["default"]: 
 				root.wm_attributes("-alpha", state.settings.alpha["default"])
-			elif await isCursorOverWindow(root) and root.wm_attributes("-alpha") != 0.10: 
+			elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.alpha["onHover"]: 
 				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
 			await asyncio.sleep(await batterySaverEnabled(1, 0.1))
-		except:
+		except Exception:
 			logger.exception("An error happened during transparency check")
-
-if __name__ == "__main__": 
-	from csengo import main
-	main()
