@@ -97,7 +97,8 @@ def checkUpdate():
 # endregion
 state.settings = Settings()
 async def startup():
-	state.root.configure(bg=f"#{state.settings.background:06x}")
+	state.root.iconbitmap(default="assets/icon.ico")
+	state.root.configure(bg=f"#{state.settings.background:06x}", )
 	state.root.attributes("-topmost", True)
 	state.root.title(state.windowHandle)
 	state.root.resizable(False, False)

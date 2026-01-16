@@ -157,7 +157,7 @@ class Settings:
 			for alert in self._data["alertTimes"]:
 				alert:dict[str, int|bool|str]
 				new = {
-					"message":alert["message"],
+					"message":alert.get("message", "Set alert has arrived"),
 					"time":alert["time"],
 					"keep":alert.get("keep", False)
 				}
