@@ -6,7 +6,7 @@
 		},
 		"error": {
 			"title": "Hiba",
-			"message": "Egy hiba történt futás alatt. A program be fog záródni. Kérem küldjön hiba visszajelzést a https://github.com/Maho-Yoshino/csengetes-visszaszamlalo/issues linkre, hogy megjavíthassuk a problémát."
+			"message": "Egy hiba történt futás alatt. A program be fog záródni. Kérem küldjön hiba visszajelzést a https://github.com/Maho-Yoshino/countdown-timer/issues linkre, hogy megjavíthassuk a problémát."
 		},
 		"windowsOnly": {
 			"title": "Ön nem Windows-t használ",

@@ -1,26 +1,28 @@
-# csengetes-visszaszamlalo  
-Ez egy visszaszámláló program óra végéig diákok és tanárok számára egyaránt  
+# Countdown timer  
+This is a countdown program until end of class, for both students and teachers  
 
-## Automatikus indulás gépindításkor  
+## Automatically starting on startup  
 - Win+R > "taskschd.msc"  
 - "Create Basic task"  
-	- Név: Akármi lehet  
-	- Trigger = "When I log on" (Amikor bejelentkezek)  
-	- Action = "Start a program" (Program indítása)  
+	- Name: "countdown timer" (or whatever you want)  
+	- Trigger = "When I log on"  
+	- Action = "Start a program"  
 	- Action > Start a program (If using source code)  
 		- Program/script = "C:\WINDOWS\System32\cmd.exe"  
-		- Add arguments = "/c python {a csengo.py elérési útvonala}"  
+		- Add arguments = "/c python path/to/main.py"  
 	- Action > Start a program (If using exe file)  
-		- Program/script = "path\to\csengo.exe"  
-## Build from source  
-- Git clone the repo  
-- run "setup.bat"  
-- If running raw python  
-	- run "csengo.bat"  
-- else if building an exe  
-	- run "package.bat"  
+		- Program/script = "path\to\countdown.exe"  
 # Development  
 [Trello board](https://trello.com/b/SpFVKoKa)  
 ## Requirements  
 - Python 3.12+  
 - Windows 10+  
+## Build from source  
+- Git clone the repo  
+```bat  
+git clone git@github.com:Maho-Yoshino/countdown-timer.git  
+```  
+- Change directory to the new `countdown-timer` folder  
+- run `setup.bat`  
+- If running from source run `countdown-timer.bat"`  
+- else if building an exe run `package.bat`  

@@ -71,7 +71,7 @@ class Version:
 VERSION:"Version" = Version("3.0.0")
 def checkUpdate():
 	logger.info("Checking for updates...")
-	repo:Repository.Repository = Github().get_repo("Maho-Yoshino/csengetes-visszaszamlalo")
+	repo:Repository.Repository = Github().get_repo("Maho-Yoshino/countdown-timer")
 	latest_release:GitRelease.GitRelease = repo.get_releases()[0]
 	tag = latest_release.tag_name.lstrip("v")
 	latest_version = Version(tag)
