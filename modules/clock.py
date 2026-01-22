@@ -4,16 +4,17 @@ if __name__ == "__main__":
 	ROOT = Path(__file__).resolve().parent.parent
 	if str(ROOT) not in path:
 		path.insert(0, str(ROOT))
-import logging, tkinter as tk, asyncio 
+from logging import getLogger
+from asyncio import sleep, create_task 
 import modules.state as state
 from datetime import datetime, time, date, timedelta
-from tkinter import Tk, messagebox
+from tkinter import Tk, messagebox, Label, Frame
 from tkinter.font import Font
 from tkinter.ttk import Separator
 from ctypes import windll, c_byte, byref, Structure
 from time import perf_counter
 from tksvg import SvgImage
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 class Schedule:
 	classes:list["ClassData", list["ClassData"]] = []
@@ -64,7 +65,7 @@ class Schedule:
 		self._date = (other_date if other_date is not None else state.getTime()).date()
 		weekday = self._date.weekday()
 		weeknum = self._date.isocalendar().week
-		self.specialDay = any([datetime.strptime(day, "%Y-%m-%d").date() == self._date for day in state.settings.specialDays.keys()])
+		self.specialDay = any([day.date() == self._date for day in state.settings.specialDays.keys()])
 		if weekday not in range(len(state.settings.defaultSchedule)) and not self.specialDay:
 			return
 		schedule:list[dict[str, str|list[str]]] = state.settings.defaultSchedule
@@ -88,7 +89,7 @@ class Schedule:
 	def parseTimes(times:str) -> tuple[time]:
 		times:list[str] = times.split("-", 1)
 		return datetime.strptime(times[0], "%H:%M").time(), datetime.strptime(times[1], "%H:%M").time()
-async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Label, class2Label:tk.Label, loc1Label:tk.Label, loc2label:tk.Label, root:Tk, vertSep:Separator, separator:Separator, auxLabel:tk.Label, teacher1Label:tk.Label, teacher2Label:tk.Label, timeFrame:tk.Frame):
+async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class2Label:Label, loc1Label:Label, loc2label:Label, root:Tk, vertSep:Separator, separator:Separator, auxLabel:Label, teacher1Label:Label, teacher2Label:Label, timeFrame:Frame):
 	def loadSvg(filename:str) -> SvgImage:
 		try:
 			with open(f"assets/{filename}.svg", "r") as file:
@@ -98,7 +99,7 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			raise
 		return SvgImage(filename, master=timeFrame, data=svg_text, scaletoheight=25)
 	homeworkIcon = loadSvg("homework")
-	homeworkLabel = tk.Label(
+	homeworkLabel = Label(
 		timeFrame, 
 		image=homeworkIcon, 
 		bg=f"#{state.settings.background:06x}",
@@ -106,7 +107,7 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 	)
 	homeworkLabel.image = homeworkIcon
 	examIcon = loadSvg("exam")
-	examLabel = tk.Label(
+	examLabel = Label(
 		timeFrame, 
 		image=examIcon, 
 		bg=f"#{state.settings.background:06x}",
@@ -145,7 +146,7 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			root.rowconfigure(6, weight=0, minsize=0)
 		elif aux and not auxLabel.winfo_ismapped():
 			auxLabel.grid(row=6, column=0, sticky="nsew", columnspan=3)
-			auxLabel.config(text="Következő óra")
+			auxLabel.config(text=state.settings.localization.nextClass)
 			root.rowconfigure(6, weight=1)
 		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
 		if state.settings.showTeacher:
@@ -192,7 +193,8 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 	def sendAlert():
 		nonlocal alerted
 		async def msg(alert:dict[str, str]):
-			messagebox.showinfo("Értesítés", f"{alert.get("message", "Értesítés ideje elérkezett!")}")
+			loc = state.settings.localization
+			messagebox.showinfo(loc.alert.title, f"{alert.get("message", loc.alert.defaultText)}")
 		if len(state.settings.alertTimes) == 0:
 			return
 		for alert in state.settings.alertTimes:
@@ -208,8 +210,8 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 					date is None
 				)
 			):
-				asyncio.create_task(msg(alert))
-				logger.info(f"Sent alert with message: '{alert.get("message", "Értesítés ideje elérkezett!")}'")
+				create_task(msg(alert))
+				logger.debug(f"Sent alert")
 				alerted = state.getTime().replace(second=0, microsecond=0)
 	prev_day:datetime = state.getTime().date()
 	state.schedule = Schedule()
@@ -220,10 +222,12 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			prev_day = state.getTime().date()
 			logger.debug("Day changed since last cycle")
 			state.schedule = Schedule()
-			if len(state.schedule.classes) == 0: await asyncio.sleep(60*30)
+			if len(state.schedule.classes) == 0: await sleep(60*30) # 30 min delay
+			continue
 		now = state.getTime()
 		now_time = now.time()
 		sendAlert()
+		loc = state.settings.localization
 		for num, _class in enumerate(state.schedule.classes):
 			tmp_class:Schedule.ClassData|None = None
 			if isinstance(_class, list): # If 2 classes then split in 2
@@ -233,13 +237,13 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 				continue
 			if ((_class.beginDatetime + timedelta(seconds=delay)).time() > now_time):
 				tmp = datetime.combine(state.getTime(), _class.begin) - datetime.combine(state.getTime(), now_time) + timedelta(seconds=delay)
-				mainLabel.config(text=f"Szünet végéig")
+				mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 				timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				setClassLabels(_class, tmp_class)
 				break
 			elif ((_class.endDatetime + timedelta(seconds=delay)).time() > now_time): # if class ends after now
 				tmp = datetime.combine(state.getTime(), _class.end) - datetime.combine(state.getTime().date(), now_time) + timedelta(seconds=delay)
-				mainLabel.config(text=f"{num+1}. Óra végéig")
+				mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 				timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 				if tmp_class is not None: # If split class
 					if (tmp.seconds > 60*10 or num == len(state.schedule.classes)-1): # More than 10 mins left, or last class
@@ -263,7 +267,7 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 							setClassLabels(next_class, None, True)
 				break
 		else: # No class ends after now (No If branch broke the loop)
-			mainLabel.config(text="A napnak vége")
+			mainLabel.config(text=loc.mainlabel.dayOver)
 			state.currentClassIndex = -1
 			[i.grid_forget() for i in [class1Label,class2Label,loc1Label,loc2label,auxLabel,teacher1Label,teacher2Label] if i.winfo_ismapped()]
 			if separator.winfo_ismapped():
@@ -273,14 +277,14 @@ async def updateCycle(mainLabel:tk.Label, timeLabel:tk.Label, class1Label:tk.Lab
 			if timeFrame.winfo_ismapped():
 				timeFrame.grid_forget()
 			setDynamicSize()
-			await asyncio.sleep(10)
+			await sleep(10)
 			continue
 		setDynamicSize()
-		update_delay = await batterySaverEnabled(5, 1)
+		update_delay = batterySaverEnabled(5, 1)
 		if state.dummyDate is not None:
 			state.dummyDate = state.dummyDate + timedelta(seconds=1)
 		delay = min(max(0, update_delay - (perf_counter() - _start)), 10)
-		await asyncio.sleep(delay)
+		await sleep(delay)
 def fontSize(size:int): return Font(size=size)
 async def setClickThrough():
 	logger.debug("Setting click-through 8window")
@@ -295,10 +299,10 @@ async def setClickThrough():
 			if (windll.user32.GetWindowLongW(hwnd, -20)) & 0x00000080 == 0x00000080:
 				logger.debug("Click-through successfully set")
 				break
-			await asyncio.sleep(0.5)
+			await sleep(0.5)
 	except Exception:
 		logger.exception(f"An error occured while setting transparency setting")
-async def batterySaverEnabled(on_val, off_val):
+def batterySaverEnabled(on_val, off_val):
 	try:
 		class SYSTEM_POWER_STATUS(Structure):
 			_fields_ = [
@@ -328,6 +332,6 @@ async def transparencyCheck():
 				root.wm_attributes("-alpha", state.settings.alpha["default"])
 			elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.alpha["onHover"]: 
 				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
-			await asyncio.sleep(await batterySaverEnabled(1, 0.1))
+			await sleep(batterySaverEnabled(1, 0.1))
 		except Exception:
 			logger.exception("An error happened during transparency check")

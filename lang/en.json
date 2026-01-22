@@ -1,0 +1,65 @@
+{
+	"messages":{
+		"newSettings": {
+			"title": "New settings file",
+			"message": "A new, blank settings file has been generated. Please set up your schedule"
+		},
+		"error": {
+			"title": "Error",
+			"message": "An error occurred during runtime. The countdown timer will close now. Please send an issue ticket to https://github.com/Maho-Yoshino/csengetes-visszaszamlalo/issues to fix this."
+		},
+		"windowsOnly": {
+			"title": "You are not on windows",
+			"message": "Due to technical reasons this program can only be run on Windows."
+		},
+		"anotherInstance": {
+			"title": "The program is already running",
+			"message": "Due to technical reasons, this program can only once at a time.\nThe application is going to close now."
+		},
+		"updatePrompt": {
+			"title": "Update available",
+			"message": "An update is available for this application\nCurrent version: {current}\nNew version: {latest}\nWould you like to update?"
+		}
+	},
+	"classNumbering": {
+		"1":"st",
+		"2":"nd",
+		"3":"rd",
+		"default":"th"
+	},
+	"mainlabel":{
+		"inClass":"Until end of {num} class",
+		"onBreak": "Until end of break",
+		"dayOver": "The day is over"
+	},
+	"alert": {
+		"title": "Alert",
+		"defaultText": "The alert has arrived"
+	},
+	"nextClass": "Next class",
+	"substitute":"Substitute",
+	"delaySetting":{
+		"title":"Delay Time Input",
+		"label":"Set Delay Time (in seconds)",
+		"help":"Negative = Earlier\nPositive = Later",
+		"btn":"Save"
+	},
+	"tray": {
+		"name": "Countdown timer",
+		"delay":"Delay: {time}",
+		"delayMinutesDisplay": "min",
+		"delaySecondsDisplay": "s",
+		"fullscreen_schedule":"Fullscreen schedule",
+		"settings":"Settings",
+		"close":"Exit"
+	},
+	"settings": {
+		"title": "Countdown timer settings",
+		"topbar": {
+			"schedule":"Schedule",
+			"special_days":"Special Days",
+			"alerts": "Alerts",
+			"general": "General"
+		}
+	}
+}

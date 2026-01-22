@@ -1,9 +1,9 @@
 import sys
 sys.dont_write_bytecode = True # Prevent '__pycache__' creation
-import tkinter as tk, asyncio, logging
+from asyncio import new_event_loop, set_event_loop, CancelledError, Task, create_task, sleep
+from logging import getLogger, WARNING, DEBUG, INFO, Formatter
 from logging.handlers import TimedRotatingFileHandler
-from tkinter import Tk, messagebox
-from tkinter.ttk import Separator
+from tkinter import Tk, messagebox, Label, Frame
 from sys import executable, argv, platform
 from datetime import datetime
 from os import path, chdir, environ
@@ -14,10 +14,10 @@ import modules.state as state
 from modules.settings import Settings
 from modules.tray import traySetup
 from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
-logger = logging.getLogger()
-logging.getLogger("PIL").setLevel(logging.WARNING)
-logging.getLogger("pystray").setLevel(logging.WARNING)
-logging.getLogger("asyncio").setLevel(logging.WARNING)
+logger = getLogger()
+getLogger("PIL").setLevel(WARNING)
+getLogger("pystray").setLevel(WARNING)
+getLogger("asyncio").setLevel(WARNING)
 
 # region Setting PATH
 if path.splitext(argv[0])[1].lower() != ".exe":
@@ -61,41 +61,66 @@ class Version:
 		return f"{self.major}.{self.minor}.{self.patch}{f"-{self.__inv_subver_map[self.subversion]}" if self.subversion != 0 else ""}"
 	def __gt__(self, version:"Version"):
 		return (self.major, self.minor, self.patch, -self.subversion) > \
-		       (version.major, version.minor, version.patch, -version.subversion)
+			   (version.major, version.minor, version.patch, -version.subversion)
 	def __lt__(self, version:"Version"):
 		return (self.major, self.minor, self.patch, -self.subversion) < \
-		       (version.major, version.minor, version.patch, -version.subversion)
+			   (version.major, version.minor, version.patch, -version.subversion)
 	def __eq__(self, version:"Version"):
 		return (self.major, self.minor, self.patch, self.subversion) == \
-		       (version.major, version.minor, version.patch, version.subversion)
+			   (version.major, version.minor, version.patch, version.subversion)
 VERSION:"Version" = Version("3.0.0")
 def checkUpdate():
 	logger.info("Checking for updates...")
-	repo:Repository = Github().get_repo("Maho-Yoshino/csengetes-visszaszamlalo")
-	latest_release:GitRelease = repo.get_releases()[0]
+	repo:Repository.Repository = Github().get_repo("Maho-Yoshino/csengetes-visszaszamlalo")
+	latest_release:GitRelease.GitRelease = repo.get_releases()[0]
 	tag = latest_release.tag_name.lstrip("v")
 	latest_version = Version(tag)
-	logger.info(f"Latest version online: {latest_version}")
-	logger.info(f"Current version: {VERSION}")
+	logger.debug(f"Latest version online: {latest_version}")
+	logger.debug(f"Current version: {VERSION}")
 	if latest_version > VERSION:
-		logger.warning("Update available!")
-		return {
-			"update_available": True,
-			"current": str(VERSION),
-			"latest": str(latest_version),
-			"url": latest_release.html_url,
-			"notes": latest_release.body,
-		}
+		logger.warning(f"Update available ({VERSION} -> {latest_version})")
+		loc = state.settings.localization
+		response = messagebox.askyesnocancel(
+			loc.messages.updatePrompt.title, 
+			loc.format(
+				loc.messages.updatePrompt.message, 
+				current=VERSION, 
+				latest=latest_version
+			), 
+			icon="warning", 
+			default=messagebox.YES
+		)
+		if response:
+			logger.info("User accepted automatic update")
+			# TODO: Finish auto-updater
+		elif response is None:
+			logger.info("User asked to not be reminded again")
+			state.settings.ignoreUpdates = True
+		else:
+			logger.info("User denied automatic update")
 	else:
-		logger.info("You're running the newest version.")
-		return {
-			"update_available": False,
-			"current": str(VERSION),
-			"latest": str(latest_version),
-		}
+		logger.info("Running the latest version.")
 
 # endregion
 state.settings = Settings()
+def exc_handler(task: Task):
+	try:
+		task.result()
+	except CancelledError: return
+	except Exception as e:
+		logger.exception("Unhandled async task exception", exc_info=e)
+		def showError(): # Needs a seperate def apparently due to threading
+			messagebox.showerror(
+				state.settings.localization.messages.error.title,
+				state.settings.localization.messages.error.message,
+				icon="error"
+			)
+			state.tray.quit()
+		try:
+			state.root.after(0, showError)
+		except Exception:
+			logger.exception("Failed to schedule Tk error dialog")
+			state.tray.quit()
 async def startup():
 	state.root.iconbitmap(default="assets/icon.ico")
 	state.root.configure(bg=f"#{state.settings.background:06x}", )
@@ -107,42 +132,48 @@ async def startup():
 	state.root.grid(3, 5, state.root.winfo_screenwidth()//4, state.root.winfo_screenheight()//8)
 	state.root.config(padx=15, pady=15, border=1, borderwidth=1)
 	init_data = {
-		"text":"Initializing...",
+		"text":"",
 		"bg":f"#{state.settings.background:06x}",
 		"fg":f"#{state.settings.foreground:06x}"
 	}
-	mainLabel = tk.Label(state.root, init_data, font=fontSize(20))
+	mainLabel = Label(state.root, init_data, font=fontSize(20))
 	mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
 	mainLabel.grid_rowconfigure(0, weight=1)
-	timeFrame = tk.Frame(state.root, bg=f"#{hex(state.settings.background).removeprefix("0x"):06s}")
+	timeFrame = Frame(state.root, bg=init_data["bg"])
 	timeFrame.grid(column=0, row=1, columnspan=4)
 	timeFrame.grid_rowconfigure(0, weight=0)
 	timeFrame.grid_rowconfigure(1, weight=1)
-	timeLabel = tk.Label(timeFrame, init_data, font=fontSize(30), anchor="center")
+	timeLabel = Label(timeFrame, init_data, font=fontSize(30), anchor="center")
 	timeLabel.grid(column=1)
 	timeLabel.grid_columnconfigure(1, weight=1)
-	separator = Separator(state.root, orient="horizontal")
+	separator = Frame(state.root, bg=init_data["fg"], height=1, width=state.root.winfo_width())
 	separator.grid_rowconfigure(2, weight=1)
-	class1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
+	class1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
 	class1Label.grid_rowconfigure(3, weight=1)
-	class2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	teacher1Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	teacher2Label = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	auxLabel = tk.Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	vertSeparator = Separator(state.root, orient="vertical")
-	state.setClickThroughTask = asyncio.create_task(setClickThrough())
-	state.transparencyTask = asyncio.create_task(transparencyCheck())
+	class2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	loc2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	loc1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	teacher1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	teacher2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	auxLabel = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
+	vertSeparator = Frame(state.root, bg=init_data["fg"], width=1, height=state.root.winfo_height())
+	state.setClickThroughTask = create_task(setClickThrough())
+	state.setClickThroughTask.add_done_callback(exc_handler)
+	state.transparencyTask = create_task(transparencyCheck())
+	state.transparencyTask.add_done_callback(exc_handler)
 	del init_data
 	state.root.columnconfigure(0, weight=1)
 	state.root.columnconfigure(1, weight=0)
 	state.root.columnconfigure(2, weight=1)
-	state.updateCycleTask = asyncio.create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label, timeFrame))
+	state.updateCycleTask = create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label, timeFrame))
+	state.updateCycleTask.add_done_callback(exc_handler)
 	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
 	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
+	state.tkPumpTask.add_done_callback(exc_handler)
 	state.tray = traySetup()
 	logger.info("Startup complete")
+	await sleep(0.1)
+
 def findInstance(name:str) -> bool:
 	"""Check if another instance of the application is running, and returns `True` if there is, otherwise `False`"""
 	k32 = windll.kernel32
@@ -151,13 +182,22 @@ def findInstance(name:str) -> bool:
 		return True
 	return False
 def main(dummyDate:datetime|None = None):
+	loc = state.settings.localization
 	if (platform != "win32"):
 		logger.critical(f"User is not using windows (platform: {platform})")
-		messagebox.showerror("User not using windows", "This program can only run on windows due to technical limitation", icon="error")
+		messagebox.showerror(
+			loc.messages.windowsOnly.title, 
+			loc.messages.windowsOnly.message, 
+			icon="error"
+		)
 		return
 	if (findInstance(state.windowHandle)):
 		logger.critical("Another instance is already running.\nClosing application.")
-		messagebox.showerror("Another instance detected", "This program can only run once on a single computer at the same time due to technical limitations\nClosing application.", icon="error")
+		messagebox.showerror(
+			loc.messages.anotherInstance.title, 
+			loc.messages.anotherInstance.message, 
+			icon="error"
+		)
 		return
 	debug:bool
 	# region Debug mode setup
@@ -171,7 +211,7 @@ def main(dummyDate:datetime|None = None):
 	else:
 		debug = True # Not ran from this file directly, a.k.a. testing another module, Always True
 	# endregion
-	if state.settings.ignoreUpdates == False:
+	if not state.settings.ignoreUpdates:
 		checkUpdate()
 	if dummyDate is not None:
 		state.dummyDate = dummyDate
@@ -181,32 +221,35 @@ def main(dummyDate:datetime|None = None):
 		filename = path.basename(default_name)
 		_, _, date = filename.rpartition(".")
 		return path.join(dirname, f"{date}.log")
-	handler = TimedRotatingFileHandler("logs/latest.log", when="midnight", interval=1, utc=True, backupCount=5)
+	handler = TimedRotatingFileHandler("logs/latest.log", when="midnight", interval=1, backupCount=5)
 	handler.suffix = "%Y-%m-%d"
-	formatter = logging.Formatter(f"%(asctime)s:%(name)-15s:%(funcName)-15s:%(lineno)-3d:%(levelname)-7s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+	formatter = Formatter(f"%(asctime)s:%(name)-15s:%(funcName)-15s:%(lineno)-3d:%(levelname)-7s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 	handler.setFormatter(formatter)
 	handler.namer = log_namer
 	logger.addHandler(handler)
-	logger.setLevel(logging.DEBUG if debug else logging.INFO)
+	logger.setLevel(DEBUG if debug else INFO)
 	logger.info(f"Application Starting up (v{VERSION})")
 	state.root = Tk()
-	state.runtime = asyncio.new_event_loop()
-	asyncio.set_event_loop(state.runtime)
-	state.runtime.create_task(startup())
+	state.runtime = new_event_loop()
+	set_event_loop(state.runtime)
+	_ = state.runtime.create_task(startup())
+	_.add_done_callback(exc_handler)
 	state.runtime.run_forever()
-	state.runtime.close()
 
-if __name__ == "__main__":
-	try:
-		if environ.get('TERM_PROGRAM') == 'vscode':
-			#main()
-			#main(datetime(year=2025, month=11, day=13, hour=14, minute=5, second=30)) # Stuck
-			#main(datetime(year=2025, month=11, day=12, hour=12, minute=25, second=30)) # Flashing class
-			main(datetime(year=2026, month=1, day=15, hour=12))
-		else:
-			main()
-	except KeyboardInterrupt:
-		logger.info("Shutting down due to keyboard interrupt")
-	except:
-		logger.exception("An error occurred during runtime")
-		raise
+try:
+	if environ.get('TERM_PROGRAM') == 'vscode':
+		main()
+		#main(datetime(year=2026, month=1, day=15, hour=12))
+	else:
+		main()
+except KeyboardInterrupt: pass
+except Exception as e:
+	logger.exception("An error occurred during runtime", exc_info=e)
+	messagebox.showerror(
+		state.settings.localization.messages.error.title, 
+		state.settings.localization.messages.error.message, 
+		icon="error"
+	)
+finally:
+	if state.tray:
+		state.tray.quit()

@@ -1,0 +1,62 @@
+{
+	"messages":{
+		"newSettings": {
+			"title": "Új beállítások fájl",
+			"message": "Egy új beállítás fájl létre lett hozva. Kérem állítsa be az órarendjét"
+		},
+		"error": {
+			"title": "Hiba",
+			"message": "Egy hiba történt futás alatt. A program be fog záródni. Kérem küldjön hiba visszajelzést a https://github.com/Maho-Yoshino/csengetes-visszaszamlalo/issues linkre, hogy megjavíthassuk a problémát."
+		},
+		"windowsOnly": {
+			"title": "Ön nem Windows-t használ",
+			"message": "Technikai okok miatt a programot csak Windows-on lehet futtatni."
+		},
+		"anotherInstance": {
+			"title": "Az alkalmazás már fut",
+			"message": "Technikai okok miatt a program csak egyszer futhat egyszerre.\nAz alkalmazás most be fog záródni."
+		},
+		"updatePrompt": {
+			"title": "Frissítés elérhető",
+			"message": "Egy frissítés elérhető az alkalmazásra\nJelenlegi verzió: {current}\nÚj verzió: {latest}\nSzeretne frissíteni?"
+		}
+	},
+	"classNumbering": {
+		"default":"."
+	},
+	"mainlabel":{
+		"inClass":"{num} óra végéig",
+		"onBreak": "Szünet végéig",
+		"dayOver": "A napnak vége"
+	},
+	"alert": {
+		"title": "Értesítés",
+		"defaultText": "Értesítés ideje elérkezett"
+	},
+	"nextClass": "Következő óra",
+	"substitute":"Helyettesítő",
+	"delaySetting":{
+		"title":"Késleltetés beállítása",
+		"label":"Késleltetés beállítása (másodpercben)",
+		"help":"Negatív szám = Sietés\nPozitív szám = Késés",
+		"btn":"Mentés"
+	},
+	"tray": {
+		"name": "Csengetés Visszaszámláló",
+		"delay":"Késleltetés: {time}",
+		"delayMinutesDisplay": "p",
+		"delaySecondsDisplay": "mp",
+		"fullscreen_schedule":"Órarend",
+		"settings":"Beállítások",
+		"close":"Kilépés"
+	},
+	"settings": {
+		"title": "Visszaszámláló Beállítások",
+		"topbar": {
+			"schedule":"Órarend",
+			"special_days":"Speciális napok",
+			"alerts": "Értesítések",
+			"general": "Általános"
+		}
+	}
+}

@@ -2,17 +2,132 @@ if __name__ == "__main__":
 	from sys import path as sp
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
-import logging, tkinter as tk
 import modules.state as state
-from tkinter import Tk
+from logging import getLogger
+from tkinter import messagebox
 from json import load as jload, dump as jdump
 from typing import Any, Literal
 from datetime import datetime, time, timedelta, date
 from pathlib import Path
-logger = logging.getLogger(__name__)
+from dataclasses import dataclass
+logger = getLogger(__name__)
 CURRENT_VERSION:int = 2
 
 def clamp(num:int|float, _min:int|float, _max:int|float): return max(_min, min(num, _max))
+def merge(obj: dict, default: dict) -> dict:
+	return {k: obj.get(k, v) for k, v in default.items()}
+class Localization:
+	@dataclass(slots=True)
+	class _trayLoc:
+		name:str
+		delay:str
+		delayMinutesDisplay:str
+		delaySecondsDisplay:str
+		fullscreen_schedule:str
+		settings:str
+		close:str
+		@classmethod
+		def from_dict(cls, obj, default):
+			return cls(**merge(obj, default))
+	class _delaySettingLoc:
+		def __init__(self, obj:dict[str, str], default:dict[str, str]):
+			self.title = obj.get("title", default["title"])
+			self.label = obj.get("label", default["label"])
+			self.help = obj.get("help", default["help"])
+			self.btn = obj.get("btn", default["btn"])
+	class _settingsLoc:
+		topbar:dict[str, str]
+		def __init__(self, obj:dict[str, str|dict[str, str]], default:dict[str, str|dict[str, str]]):
+			self.title = obj.get("title", default["title"])
+			self.topbar = obj.get("topbar", default["topbar"])
+	class _alertLoc:
+		def __init__(self, obj:dict[str, str], default:dict[str, str]):
+			self.title = obj.get("title", default["title"])
+			self.defaultText = obj.get("defaultText", default["defaultText"])
+	class _mainlabelLoc:
+		def __init__(self, obj:dict[str, str], default:dict[str, str]):
+			self.inClass = obj.get("inClass", default["inClass"])
+			self.onBreak = obj.get("onBreak", default["onBreak"])
+			self.dayOver = obj.get("dayOver", default["dayOver"])
+	class _numberingLoc:
+		def __init__(self, obj:dict[str, str]):
+			self.default = obj.get("default")
+			self.values = {k: v for k, v in obj.items() if k != "default"}
+		def getSuffix(self, _class:int) -> str:
+			return self.values.get(str(_class), self.default)
+	class _messagesLoc:
+		newSettings:_message
+		error:_message
+		windowsOnly:_message
+		anotherInstance:_message
+		updatePrompt:_message
+		@dataclass(slots=True)
+		class _message:
+			title:str
+			message:str
+			@classmethod
+			def from_dict(cls, obj:dict, default:dict):
+				return cls(**merge(obj, default))
+		def __init__(self, obj:dict[str, dict[str, str]], default:dict[str, dict[str, str]]):
+			self.newSettings = self._message.from_dict(
+				obj.get("newSettings", {}), 
+				default["newSettings"]
+			)
+			self.error = self._message.from_dict(
+				obj.get("error", {}),
+				default["error"]
+			)
+			self.windowsOnly = self._message.from_dict(
+				obj.get("windowsOnly", {}), 
+				default["windowsOnly"]
+			)
+			self.anotherInstance = self._message.from_dict(
+				obj.get("anotherInstance", {}), 
+				default["anotherInstance"]
+			)
+			self.updatePrompt = self._message.from_dict(
+				obj.get("updatePrompt", {}), 
+				default["updatePrompt"]
+			)
+	_lang_tag:str
+	messages:_messagesLoc
+	classNumbering:_numberingLoc # Only required value is "default"
+	mainlabel:_mainlabelLoc
+	alert:_alertLoc
+	nextClass:str
+	substitute:str
+	delaySetting:_delaySettingLoc
+	tray:_trayLoc
+	settings:_settingsLoc
+	def __init__(self, language:str):
+		if not Path(f"lang\\{language}.json").exists():
+			logger.warning(f"Given locale '{language}.json' does not exist. Defaulting to english.")
+			messagebox.showwarning("Invalid language selected", f"The selected language '{language}' does not exist in the program.\nDefaulting to english.")
+			language = "en"
+		if language == "en" and not Path("lang\\en.json").exists():
+			logger.critical("English locale doesn't exist on user's computer")
+			return
+		with open(f"lang\\{language}.json", "r", encoding="utf-8") as f:
+			self._lang:dict = jload(f)
+			logger.info(f"Locale '{language}' loaded properly")
+		with open(f"lang\\en.json", "r", encoding="utf-8") as f:
+			self._defaults:dict = jload(f)
+		self._lang_tag = language
+		self.messages = self._messagesLoc(self._lang.get("messages", {}), self._defaults["messages"])
+		self.classNumbering = self._numberingLoc(self._lang.get("classNumbering"))
+		self.mainlabel = self._mainlabelLoc(self._lang.get("mainlabel", {}), self._defaults["mainlabel"])
+		self.alert = self._alertLoc(self._lang.get("alert", {}), self._defaults["alert"])
+		self.nextClass = self._lang.get("nextClass", self._defaults["nextClass"])
+		self.substitute = self._lang.get("substitute", self._defaults["substitute"])
+		self.delaySetting = self._delaySettingLoc(self._lang.get("delaySetting", {}), self._defaults["delaySetting"])
+		self.tray = self._trayLoc.from_dict(self._lang.get("tray", {}), self._defaults["tray"])
+		self.settings = self._settingsLoc(self._lang.get("settings", {}), self._defaults["settings"])
+	def format(self, text: str, **values) -> str:
+		try:
+			return text.format_map(values)
+		except KeyError as e:
+			logger.error(f"Missing localization placeholder: {e}")
+			return text
 class Settings:
 	def __init__(self, filename: str = "settings.json", encoding:str="utf-8"):
 		self.filename = filename
@@ -23,6 +138,7 @@ class Settings:
 	def load_settings(self):
 		if (not Path("settings.json").exists()):
 			logger.warning("Settings file not found, creating a default one.")
+			messagebox.showwarning("")
 			with open(self.filename, "x", encoding=self.encoding) as f:
 				logger.info("Created default settings file")
 		with open(self.filename, "r", encoding=self.encoding) as f:
@@ -30,35 +146,26 @@ class Settings:
 			logger.info("Settings loaded properly")
 		# Set default values if missing
 		defaults = {
-			"classlist": {}, 
-			# ex. 
-			# "ID": {
-			#	 "name": "...",
-			#	 "teacher": "...",
-			#	 "location": "...",
-			# }
-			"defaultSchedule": [{},{},{},{},{}], 
-			"secondarySchedule": {}, # ex. "3": {"13:25-14:15": "MAT"} (0 = Monday, 1 = Tuesday, etc.; "MAT" = ID defined in classlist) 
-			"offsetSecondarySchedule": False,
-			"showTeacher": False,
-			"specialDays": {}, # ex. "2023-12-24": {"09:00-10:00": "ANG"} ("ANG" = ID defined in classlist)
+			"classlist": {},
+			"defaultSchedule": [{},{},{},{},{}],
+			"secondarySchedule": {},
+			"offsetSecondarySchedule": False, # Offset the secondary schedule by 1 week (A-B weeks -> B-A weeks essentially)
+			"showTeacher": False, # Whether to show the teacher name on the overlay
+			"specialDays": {}, 
 			"delay": 0, # Delay of the bell in minutes (positive = late, negative = early)
 			"alpha": {"default":0.75,"onHover":0.25}, # Values between 1 and 0
 			"version": CURRENT_VERSION,
-			"ignoreUpdates": False, # If true, update checks will be ignored
-			"alertTimes": [], # ex. (During 1st class on 2025.11.05, show alert 5 minutes before end of class, and delete alert afterward)
-			# {
-			#	"date":"2025-11-05",
-			# 	"time":"8:40",
-			# 	"keep": False
-			# } 
-			"exams": {}, 
+			"ignoreUpdates": False, # If true, github release checks will be ignored
+			"alertTimes": [],
+			"exams": {},
 			"homework": {},
 			"background": "000000", # Hex value of bg color
-			"foreground": "FFFFFF"	# Hex value of fg color
+			"foreground": "FFFFFF",	# Hex value of fg color
+			"lang":"en" # json filename without the extension, defaults to "en" if invalid or missing 
 		}
 		for key, value in defaults.items():
 			self._data.setdefault(key, value)
+		self.localization = Localization(self._data["lang"])
 		self.save()
 	def save(self):
 		with open(self.filename, "w", encoding="utf-8") as f:
@@ -144,7 +251,7 @@ class Settings:
 		return self._data["ignoreUpdates"]
 	@ignoreUpdates.setter
 	def ignoreUpdates(self, value:bool):
-		self.ignoreUpdates = value
+		self._data["ignoreUpdates"] = value
 		self.save()
 	# endregion
 	# region alertTimes
@@ -317,4 +424,9 @@ class Settings:
 	def foreground(self, value:int):
 		self._data["foreground"] = f"{value:06X}"
 		self.save()
+	# endregion
+	# region Localization
+	@property
+	def lang(self) -> str:
+		return self._data["lang"]
 	# endregion
