@@ -1,0 +1,1 @@
+def clamp(num:int|float, _min:int|float, _max:int|float): return max(_min, min(num, _max))

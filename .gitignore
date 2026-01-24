@@ -3,7 +3,7 @@ settings.json
 .venv
 __pycache__
 csengo.exe
-settings_*.json
+config/
 output/
 *.spec
 .vscode

@@ -95,7 +95,7 @@ def checkUpdate():
 			# TODO: Finish auto-updater
 		elif response is None:
 			logger.info("User asked to not be reminded again")
-			state.settings.ignoreUpdates = True
+			state.settings.config.ignoreUpdates = True
 		else:
 			logger.info("User denied automatic update")
 	else:
@@ -123,18 +123,18 @@ def exc_handler(task: Task):
 			state.tray.quit()
 async def startup():
 	state.root.iconbitmap(default="assets/icon.ico")
-	state.root.configure(bg=f"#{state.settings.background:06x}", )
+	state.root.configure(bg=f"#{state.settings.config.background:06x}", )
 	state.root.attributes("-topmost", True)
 	state.root.title(state.windowHandle)
 	state.root.resizable(False, False)
 	state.root.overrideredirect(True)
-	state.root.wm_attributes("-alpha", state.settings.alpha["default"])
+	state.root.wm_attributes("-alpha", state.settings.config.alpha["default"])
 	state.root.grid(3, 5, state.root.winfo_screenwidth()//4, state.root.winfo_screenheight()//8)
 	state.root.config(padx=15, pady=15, border=1, borderwidth=1)
 	init_data = {
 		"text":"",
-		"bg":f"#{state.settings.background:06x}",
-		"fg":f"#{state.settings.foreground:06x}"
+		"bg":f"#{state.settings.config.background:06x}",
+		"fg":f"#{state.settings.config.foreground:06x}"
 	}
 	mainLabel = Label(state.root, init_data, font=fontSize(20))
 	mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
@@ -211,7 +211,7 @@ def main(dummyDate:datetime|None = None):
 	else:
 		debug = True # Not ran from this file directly, a.k.a. testing another module, Always True
 	# endregion
-	if not state.settings.ignoreUpdates:
+	if not state.settings.config.ignoreUpdates:
 		checkUpdate()
 	if dummyDate is not None:
 		state.dummyDate = dummyDate
@@ -238,8 +238,8 @@ def main(dummyDate:datetime|None = None):
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		main()
-		#main(datetime(year=2026, month=1, day=15, hour=12))
+		#main()
+		main(datetime(year=2026, month=1, day=22, hour=12))
 	else:
 		main()
 except KeyboardInterrupt: pass

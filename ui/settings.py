@@ -14,13 +14,14 @@ class settingsGUI:
 		content:Frame
 		def __init__(self):
 			self.root = Toplevel(state.root)
-			self.root.title(state.settings.localization.settings.title)
+			loc = state.settings.localization
+			self.root.title(loc.settings.title)
 			self.root.grid(10, 10, 50, 25)
 			menu = Menu(self.root)
-			menu.add_command(label=state.settings.localization.settings.topbar["schedule"], command=self._openSchedule)
-			menu.add_command(label=state.settings.localization.settings.topbar["special_days"], command=self._openSpecialDays)
-			menu.add_command(label=state.settings.localization.settings.topbar["alerts"], command=self._openAlerts)
-			menu.add_command(label=state.settings.localization.settings.topbar["general"], command=self._openGeneral)
+			menu.add_command(label=loc.settings.topbar["schedule"], command=self._openSchedule)
+			menu.add_command(label=loc.settings.topbar["special_days"], command=self._openSpecialDays)
+			menu.add_command(label=loc.settings.topbar["alerts"], command=self._openAlerts)
+			menu.add_command(label=loc.settings.topbar["general"], command=self._openGeneral)
 			self.root.config(menu=menu)
 			self.content = Frame(self.root)
 			self.content.grid(row=0, column=0, sticky="nsew")

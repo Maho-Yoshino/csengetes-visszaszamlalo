@@ -43,13 +43,13 @@ class Schedule:
 				if (self.teacher is None):
 					logger.warning(f"Parameter 'teacher' of direct class at time '{times}' does not exist")
 				return
-			classData:dict[str, str] = state.settings.classlist.get(classID, {})
+			classData:dict[str, str] = state.settings.classes.get(classID, {})
 			times:list[str] = times.split("-", 1)
 			self.beginDatetime = datetime.strptime(times[0], "%H:%M")
 			self.endDatetime = datetime.strptime(times[1], "%H:%M")
 			self.begin = self.beginDatetime.time()
 			self.end = self.endDatetime.time()
-			if (state.settings.classlist.get(classID, None) is None and classID is not None):
+			if (state.settings.classes.get(classID, None) is None and classID is not None):
 				logger.warning(f"Class '{classID}' does not exist in classlist. Ignoring in countdown.")
 				return
 			self.name = classData.get("name", None)
@@ -65,16 +65,16 @@ class Schedule:
 		self._date = (other_date if other_date is not None else state.getTime()).date()
 		weekday = self._date.weekday()
 		weeknum = self._date.isocalendar().week
-		self.specialDay = any([day.date() == self._date for day in state.settings.specialDays.keys()])
-		if weekday not in range(len(state.settings.defaultSchedule)) and not self.specialDay:
+		self.specialDay = any([day.date() == self._date for day in state.settings.events.specialDays.keys()])
+		if weekday not in range(len(state.settings.schedule.default)) and not self.specialDay:
 			return
-		schedule:list[dict[str, str|list[str]]] = state.settings.defaultSchedule
-		if weeknum % 2 == 1 and str(weekday) in state.settings.secondarySchedule:
-			for times, classID in state.settings.secondarySchedule[str(weekday)].items():
-				if times in state.settings.defaultSchedule[weekday]:
+		schedule:list[dict[str, str|list[str]]] = state.settings.schedule.default
+		if weeknum % 2 == 1 and str(weekday) in state.settings.schedule.secondarySchedule:
+			for times, classID in state.settings.schedule.secondarySchedule[str(weekday)].items():
+				if times in state.settings.schedule.default[weekday]:
 					schedule[weekday][times] = classID
 		if self.specialDay:
-			tmp = state.settings.specialDays.get(self._date.strftime("%Y-%m-%d"), None)
+			tmp = state.settings.events.specialDays.get(self._date.strftime("%Y-%m-%d"), None)
 			if tmp is None:
 				tmp = schedule[weekday]
 		else: 
@@ -93,7 +93,7 @@ async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class
 	def loadSvg(filename:str) -> SvgImage:
 		try:
 			with open(f"assets/{filename}.svg", "r") as file:
-				svg_text = file.read().replace("<svg ", f"<svg fill='#{state.settings.foreground:06x}' ")
+				svg_text = file.read().replace("<svg ", f"<svg fill='#{state.settings.config.foreground:06x}' ")
 		except FileNotFoundError:
 			logger.exception(f"File \"assets/{filename}.png\" could not be found")
 			raise
@@ -102,16 +102,16 @@ async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class
 	homeworkLabel = Label(
 		timeFrame, 
 		image=homeworkIcon, 
-		bg=f"#{state.settings.background:06x}",
-		fg=f"#{state.settings.foreground:06x}"
+		bg=f"#{state.settings.config.background:06x}",
+		fg=f"#{state.settings.config.foreground:06x}"
 	)
 	homeworkLabel.image = homeworkIcon
 	examIcon = loadSvg("exam")
 	examLabel = Label(
 		timeFrame, 
 		image=examIcon, 
-		bg=f"#{state.settings.background:06x}",
-		fg=f"#{state.settings.foreground:06x}"
+		bg=f"#{state.settings.config.background:06x}",
+		fg=f"#{state.settings.config.foreground:06x}"
 	)
 	examLabel.image = examIcon
 	lastWidth:int = root.winfo_width()
@@ -149,7 +149,7 @@ async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class
 			auxLabel.config(text=state.settings.localization.nextClass)
 			root.rowconfigure(6, weight=1)
 		if not separator.winfo_ismapped(): separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-		if state.settings.showTeacher:
+		if state.settings.config.showTeacher:
 			root.rowconfigure(5, weight=1, minsize=20)
 			if B_class is None:
 				if teacher2Label.winfo_ismapped():
@@ -195,9 +195,9 @@ async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class
 		async def msg(alert:dict[str, str]):
 			loc = state.settings.localization
 			messagebox.showinfo(loc.alert.title, f"{alert.get("message", loc.alert.defaultText)}")
-		if len(state.settings.alertTimes) == 0:
+		if len(state.settings.events.alerts) == 0:
 			return
-		for alert in state.settings.alertTimes:
+		for alert in state.settings.events.alerts:
 			date = None
 			if (tmp := alert.get("date", None)) is not None:
 				date = datetime.strptime(tmp, "%Y-%m-%d")
@@ -217,7 +217,7 @@ async def updateCycle(mainLabel:Label, timeLabel:Label, class1Label:Label, class
 	state.schedule = Schedule()
 	while True:
 		_start = perf_counter()
-		delay = state.settings.delay
+		delay = state.settings.schedule.delay
 		if prev_day != state.schedule._date:
 			prev_day = state.getTime().date()
 			logger.debug("Day changed since last cycle")
@@ -328,10 +328,10 @@ async def transparencyCheck():
 				win_y <= root.winfo_pointery() <= win_y + root.winfo_height())
 	while True:
 		try:
-			if not await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.alpha["default"]: 
-				root.wm_attributes("-alpha", state.settings.alpha["default"])
-			elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.alpha["onHover"]: 
-				root.wm_attributes("-alpha", state.settings.alpha["onHover"])
+			if not await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.config.alpha["default"]: 
+				root.wm_attributes("-alpha", state.settings.config.alpha["default"])
+			elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.config.alpha["onHover"]: 
+				root.wm_attributes("-alpha", state.settings.config.alpha["onHover"])
 			await sleep(batterySaverEnabled(1, 0.1))
 		except Exception:
 			logger.exception("An error happened during transparency check")

@@ -12,9 +12,9 @@ class scheduleGUI:
 	def __init__(self):
 		self.root = tk.Toplevel(state.root)
 		self.root.title("Schedule")
-		windowHeight = max(max([len(i) for i in state.settings.defaultSchedule]), max([len(val) for key, val in state.settings.specialDays.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")]))
-		windowWidth = len(state.settings.defaultSchedule)
-		if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V") for key in state.settings.specialDays.keys()]):
+		windowHeight = max(max([len(i) for i in state.settings.schedule.default]), max([len(val) for key, val in state.settings.events.specialDays.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")]))
+		windowWidth = len(state.settings.schedule.default)
+		if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V") for key in state.settings.events.specialDays.keys()]):
 			windowWidth += 1
 		self.root.grid(windowWidth, windowHeight, 300, 150)
 		frames:list[list[tk.Frame]] = []

@@ -18,7 +18,7 @@ class traySetup:
 		loc = state.settings.localization
 		self.icon = pystray.Icon(loc.tray.name, imgopen("assets/icon.ico"), menu=pystray.Menu(
 			pystray.MenuItem(
-				lambda item: loc.format(f"{loc.tray.delay}", time=f"{f"{state.settings.delay//60} {loc.tray.delayMinutesDisplay} " if state.settings.delay >= 60 else ""}{state.settings.delay%60} {loc.tray.delaySecondsDisplay}"), 
+				lambda item: loc.format(f"{loc.tray.delay}", time=f"{f"{state.settings.schedule.delay//60} {loc.tray.delayMinutesDisplay} " if state.settings.schedule.delay >= 60 else ""}{state.settings.schedule.delay%60} {loc.tray.delaySecondsDisplay}"), 
 				lambda icon, item: state.runtime.call_soon_threadsafe(lambda: delayGUI())
 			),
 			pystray.MenuItem(
