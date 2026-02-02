@@ -52,7 +52,7 @@ class Schedule:
 	@property
 	def secondary(self) -> dict[str, dict[str, str|list[str]|None]]:
 		return self._data["secondary"]
-	def setSecondarySchedule(self, index:int, value:dict[str, str|list[str]|None]):
+	def setSecondary(self, index:int, value:dict[str, str|list[str]|None]):
 		self._data["secondary"][str(index)] = value
 	# endregion
 	# region offsetSecondary

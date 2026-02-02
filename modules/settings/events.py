@@ -41,23 +41,28 @@ class Events:
 	
 	# region specialDays
 	@property 
-	def specialDays(self) -> dict[datetime, dict[str, str|list[str]|None|dict[str, str]|list[dict[str, str]]]]:
+	def specialDays(self) -> dict[
+		datetime, dict[
+			str, 
+			str | list[str] | bool | None | dict[str, str] | list[dict[str, str]]
+		]
+	]:
 		return {
 			datetime.strptime(date_str, self.datetime_fmt):schedule
 			for date_str, schedule in self._data["specialDays"].items()
 		}
-	def setSpecialDays(self, day:datetime, schedule:dict[str, str|list[str]|None|dict[str, str]|list[dict[str, str]]]):
+	def setSpecialDay(self, day:datetime, schedule:dict[str, str|list[str]|None|dict[str, str]|list[dict[str, str]]]):
 		self._data["specialDays"][day.strftime(self.datetime_fmt)] = schedule
 		self.save()
 	# endregion
-	# region alertTimes
-	alertTimesShownError:bool = False
-	@property # alertTimes
+	# region alerts
+	alertShownError:bool = False
+	@property # alerts
 	def alerts(self) -> list[dict[str, int|bool|str]]:
 		try:
 			change:bool = False
 			newAlerts:list[dict[str, int|bool|str]] = []
-			for alert in self._data["alertTimes"]:
+			for alert in self._data["alerts"]:
 				alert:dict[str, int|bool|str]
 				new = {
 					"message":alert.get("message", "Set alert has arrived"),
@@ -86,15 +91,17 @@ class Events:
 					else:
 						change = True
 			if change:
-				self._data["alertTimes"] = newAlerts
+				self._data["alerts"] = newAlerts
 				self.save()
 			return newAlerts
 		except Exception as e:
-			if not self.alertTimesShownError:
+			if not self.alertShownError:
 				logger.exception("Error loading alert times")
-				self.alertTimesShownError = True
+				self.alertShownError = True
 			return []
-	def setAlertTime(self, time:time, *, day:date|int=None, keep:bool=False, message:str="Értesítés ideje elérkezett!"):
+	def setAlertTime(self, time:time, *, day:date|int=None, keep:bool=False, message:str=None):
+		if message is None:
+			message = state.settings.localization.alert.defaultText
 		tmp = {
 			"message": message,
 			"keep": keep,
@@ -119,7 +126,6 @@ class Events:
 			self.alerts = keep
 			self.save()
 	# endregion
-	
 	# region exams
 	@property
 	def exams(self) -> dict[datetime, list[dict[datetime, str|int]]]:
@@ -131,13 +137,13 @@ class Events:
 			if today > examDay.date():
 				change = True
 				continue
-			tmp.update({datetime.strptime(day, self.datetime_fmt):items})
+			tmp.update({examDay:items})
 		if change:
 			self._data["exams"] = tmp
 			self.save()
 		return tmp
 	def setExam(self, _date:datetime, _class:int, topic:str):
-		if datestr := _date.strftime(self.datetime_fmt) not in self._data["exams"].keys():
+		if (datestr := _date.strftime(self.datetime_fmt)) not in self._data["exams"].keys():
 			self._data["exams"].update({datestr:[]})
 		self._data["exams"][datestr].append({
 			"class":_class,

@@ -6,7 +6,6 @@ import modules.state as state
 from logging import getLogger
 from tkinter import ttk, Menu, Toplevel, Label, Frame
 from typing import Optional
-from modules.clock import fontSize
 logger = getLogger(__name__)
 
 class settingsGUI:
@@ -29,7 +28,7 @@ class settingsGUI:
 		def _clearContent(self, title:str, colspan:int=3) -> None:
 			for child in self.content.winfo_children():
 				child.destroy()
-			Label(self.content, text=title, font=fontSize(20)).grid(row=0, column=0, columnspan=colspan)
+			Label(self.content, text=title, font=state.fontSize(20)).grid(row=0, column=0, columnspan=colspan)
 		sidebar:Optional[Frame] = None
 		def _openSchedule(self):
 			self._clearContent("Schedule Settings")

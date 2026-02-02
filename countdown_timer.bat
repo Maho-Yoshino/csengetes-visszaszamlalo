@@ -5,5 +5,5 @@ if not exist ".venv" (
 	pause
 	exit
 )
-.\.venv\Scripts\python .\csengo.py
+.\.venv\Scripts\python .\main.py
 exit

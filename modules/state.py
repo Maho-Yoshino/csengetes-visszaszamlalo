@@ -1,40 +1,61 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from datetime import datetime
-import asyncio
-from tkinter import Tk
-import tkinter as tk
+from asyncio import CancelledError, Task, AbstractEventLoop, sleep as asleep
+from tkinter import Tk, TclError, messagebox
+from tkinter.font import Font
+from logging import getLogger
+_logger = getLogger(__name__)
 
 if TYPE_CHECKING:
-	from modules.tray import traySetup
+	from ui.tray import Tray
+	from ui.clock import Clock
 	from modules.settings import Settings
-	from modules.clock import Schedule
+	from modules.schedule import Schedule
 
-settings:Optional["Settings"] = None
-schedule:Optional["Schedule"] = None
-tray:Optional[traySetup] = None
+settings:Settings = None
+schedule:Schedule = None
+tray:Tray = None
+clock:Clock
 
 windowHandle:str = u"Csengetés időzítő"
-root:Optional[Tk] = None
+root:Tk = None
 dummyDate:Optional[datetime] = None
 
-runtime:Optional[asyncio.AbstractEventLoop] = None
-setClickThroughTask: Optional[asyncio.Task] = None
-tkPumpTask: Optional[asyncio.Task] = None
-updateCycleTask:Optional[asyncio.Task] = None
-transparencyTask:Optional[asyncio.Task] = None
+runtime:AbstractEventLoop = None
+tkPumpTask: Task = None
 
 currentClassIndex:int|None = None
 
 async def tkPump(root: Tk):
+	_logger.debug("tkPump started")
 	try:
 		while True:
 			try:
 				root.update_idletasks()
 				root.update()
-			except tk.TclError:
+			except TclError:
 				break
-			await asyncio.sleep(1/60) # 60 FPS
-	except asyncio.CancelledError:
+			await asleep(1/60) # 60 FPS
+	except CancelledError:
 		pass
 def getTime(): return datetime.now() if dummyDate is None else dummyDate
+def exc_handler(task: Task):
+	try:
+		task.result()
+	except CancelledError: return
+	except Exception as e:
+		_logger.exception("Unhandled async task exception", exc_info=e)
+		def showError(): # Needs a seperate def apparently due to threading
+			messagebox.showerror(
+				settings.localization.messages.error.title,
+				settings.localization.messages.error.message,
+				icon="error"
+			)
+			tray.quit()
+		try:
+			root.after(0, showError)
+		except Exception:
+			_logger.exception("Failed to schedule Tk error dialog")
+			tray.quit()
+def fontSize(size:int): return Font(size=size)

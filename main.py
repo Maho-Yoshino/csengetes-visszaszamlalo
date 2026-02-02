@@ -1,9 +1,9 @@
 import sys
 sys.dont_write_bytecode = True # Prevent '__pycache__' creation
-from asyncio import new_event_loop, set_event_loop, CancelledError, Task, create_task, sleep
+from asyncio import new_event_loop, set_event_loop
 from logging import getLogger, WARNING, DEBUG, INFO, Formatter
 from logging.handlers import TimedRotatingFileHandler
-from tkinter import Tk, messagebox, Label, Frame
+from tkinter import Tk, messagebox
 from sys import executable, argv, platform
 from datetime import datetime
 from os import path, chdir, environ
@@ -12,8 +12,8 @@ from ctypes import windll
 from ctypes.wintypes import BOOL
 import modules.state as state
 from modules.settings import Settings
-from modules.tray import traySetup
-from modules.clock import updateCycle, setClickThrough, fontSize, transparencyCheck
+from ui.clock import Clock
+from ui.tray import Tray
 logger = getLogger()
 getLogger("PIL").setLevel(WARNING)
 getLogger("pystray").setLevel(WARNING)
@@ -103,76 +103,6 @@ def checkUpdate():
 
 # endregion
 state.settings = Settings()
-def exc_handler(task: Task):
-	try:
-		task.result()
-	except CancelledError: return
-	except Exception as e:
-		logger.exception("Unhandled async task exception", exc_info=e)
-		def showError(): # Needs a seperate def apparently due to threading
-			messagebox.showerror(
-				state.settings.localization.messages.error.title,
-				state.settings.localization.messages.error.message,
-				icon="error"
-			)
-			state.tray.quit()
-		try:
-			state.root.after(0, showError)
-		except Exception:
-			logger.exception("Failed to schedule Tk error dialog")
-			state.tray.quit()
-async def startup():
-	state.root.iconbitmap(default="assets/icon.ico")
-	state.root.configure(bg=f"#{state.settings.config.background:06x}", )
-	state.root.attributes("-topmost", True)
-	state.root.title(state.windowHandle)
-	state.root.resizable(False, False)
-	state.root.overrideredirect(True)
-	state.root.wm_attributes("-alpha", state.settings.config.alpha["default"])
-	state.root.grid(3, 5, state.root.winfo_screenwidth()//4, state.root.winfo_screenheight()//8)
-	state.root.config(padx=15, pady=15, border=1, borderwidth=1)
-	init_data = {
-		"text":"",
-		"bg":f"#{state.settings.config.background:06x}",
-		"fg":f"#{state.settings.config.foreground:06x}"
-	}
-	mainLabel = Label(state.root, init_data, font=fontSize(20))
-	mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
-	mainLabel.grid_rowconfigure(0, weight=1)
-	timeFrame = Frame(state.root, bg=init_data["bg"])
-	timeFrame.grid(column=0, row=1, columnspan=4)
-	timeFrame.grid_rowconfigure(0, weight=0)
-	timeFrame.grid_rowconfigure(1, weight=1)
-	timeLabel = Label(timeFrame, init_data, font=fontSize(30), anchor="center")
-	timeLabel.grid(column=1)
-	timeLabel.grid_columnconfigure(1, weight=1)
-	separator = Frame(state.root, bg=init_data["fg"], height=1, width=state.root.winfo_width())
-	separator.grid_rowconfigure(2, weight=1)
-	class1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
-	class1Label.grid_rowconfigure(3, weight=1)
-	class2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	loc1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	teacher1Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	teacher2Label = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	auxLabel = Label(state.root, init_data, font=fontSize(10), padx=5, anchor="center", justify="center")
-	vertSeparator = Frame(state.root, bg=init_data["fg"], width=1, height=state.root.winfo_height())
-	state.setClickThroughTask = create_task(setClickThrough())
-	state.setClickThroughTask.add_done_callback(exc_handler)
-	state.transparencyTask = create_task(transparencyCheck())
-	state.transparencyTask.add_done_callback(exc_handler)
-	del init_data
-	state.root.columnconfigure(0, weight=1)
-	state.root.columnconfigure(1, weight=0)
-	state.root.columnconfigure(2, weight=1)
-	state.updateCycleTask = create_task(updateCycle(mainLabel, timeLabel, class1Label, class2Label, loc1Label, loc2Label, state.root, vertSeparator, separator, auxLabel, teacher1Label, teacher2Label, timeFrame))
-	state.updateCycleTask.add_done_callback(exc_handler)
-	state.root.protocol("WM_DELETE_WINDOW", state.root.withdraw)
-	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
-	state.tkPumpTask.add_done_callback(exc_handler)
-	state.tray = traySetup()
-	logger.info("Startup complete")
-	await sleep(0.1)
 
 def findInstance(name:str) -> bool:
 	"""Check if another instance of the application is running, and returns `True` if there is, otherwise `False`"""
@@ -232,14 +162,16 @@ def main(dummyDate:datetime|None = None):
 	state.root = Tk()
 	state.runtime = new_event_loop()
 	set_event_loop(state.runtime)
-	_ = state.runtime.create_task(startup())
-	_.add_done_callback(exc_handler)
+	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
+	state.tkPumpTask.add_done_callback(state.exc_handler)
+	state.tray = Tray()
+	state.clock = Clock()
 	state.runtime.run_forever()
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		#main()
-		main(datetime(year=2026, month=1, day=22, hour=12))
+		main()
+		#main(datetime(year=2026, month=1, day=22, hour=12))
 	else:
 		main()
 except KeyboardInterrupt: pass

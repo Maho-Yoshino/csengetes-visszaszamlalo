@@ -12,7 +12,7 @@ from ui.schedule import scheduleGUI
 from ui.delay import delayGUI
 logger = getLogger(__name__)
 
-class traySetup:
+class Tray:
 	shutting_down:bool = False
 	def __init__(self):
 		loc = state.settings.localization
@@ -47,7 +47,7 @@ class traySetup:
 		state.runtime.create_task(self._shutdown())
 	async def _shutdown(self):
 		tasks = []
-		for task in (state.updateCycleTask, state.transparencyTask, state.tkPumpTask, state.setClickThroughTask):
+		for task in (state.clock.mainloopTask, state.clock.transparencyTask, state.tkPumpTask, state.clock.setClickThroughTask):
 			if task and not task.done():
 				task.cancel()
 				tasks.append(task)
