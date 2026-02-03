@@ -2,9 +2,10 @@ if __name__ == "__main__":
 	from sys import path as sp
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
+from tkinter import Toplevel, Menu, Label, Frame
+from logging import getLogger 
 import modules.state as state
-from logging import getLogger
-from tkinter import ttk, Menu, Toplevel, Label, Frame
+from tkinter import ttk
 from typing import Optional
 logger = getLogger(__name__)
 
@@ -15,7 +16,7 @@ class settingsGUI:
 			self.root = Toplevel(state.root)
 			loc = state.settings.localization
 			self.root.title(loc.settings.title)
-			self.root.grid(10, 10, 50, 25)
+			self.resize(500, 300)
 			menu = Menu(self.root)
 			menu.add_command(label=loc.settings.topbar["schedule"], command=self._openSchedule)
 			menu.add_command(label=loc.settings.topbar["special_days"], command=self._openSpecialDays)
@@ -30,6 +31,8 @@ class settingsGUI:
 				child.destroy()
 			Label(self.content, text=title, font=state.fontSize(20)).grid(row=0, column=0, columnspan=colspan)
 		sidebar:Optional[Frame] = None
+		def resize(self, width:int, height:int):
+			self.root.geometry(f"{width}x{height}+{self.root.winfo_screenwidth()//2-width//2}+{self.root.winfo_screenheight()//2-height//2}")
 		def _openSchedule(self):
 			self._clearContent("Schedule Settings")
 			self.sidebar = Frame(self.content)
