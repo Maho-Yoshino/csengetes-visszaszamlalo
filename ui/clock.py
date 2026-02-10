@@ -1,9 +1,9 @@
 import modules.state as state
 from datetime import datetime, timedelta
-from asyncio import sleep as asleep
+from asyncio import sleep as asleep, CancelledError
 from time import perf_counter
 from logging import getLogger
-from tkinter import Label, Frame, messagebox
+from tkinter import Label, Frame, messagebox, TclError
 from tksvg import SvgImage
 from ctypes import windll, c_byte, byref, Structure
 from modules.schedule import Schedule, _Class
@@ -106,6 +106,7 @@ class Clock:
 					self.logger.debug("Click-through successfully set")
 					break
 				await asleep(0.5)
+		except CancelledError: pass
 		except Exception:
 			self.logger.exception(f"An error occured while setting transparency setting")
 	def batterySaverEnabled(self, on_val, off_val):
@@ -121,7 +122,7 @@ class Clock:
 			if windll.kernel32.GetSystemPowerStatus(byref(status)) == 0:
 				return off_val # Failed to get status, assume OFF
 			return on_val if bool(status.SystemStatusFlag & 1) else off_val  # 1 means Battery Saver is ON
-		except ImportError:
+		except (ImportError, CancelledError):
 			return
 		except Exception:
 			self.logger.exception("An error occurred while checking battery saver status.") 
@@ -139,6 +140,7 @@ class Clock:
 				elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.config.alpha["onHover"]: 
 					root.wm_attributes("-alpha", state.settings.config.alpha["onHover"])
 				await asleep(self.batterySaverEnabled(1, 0.1))
+			except (CancelledError, TclError): pass
 			except Exception:
 				self.logger.exception("An error happened during transparency check")
 	def setClassLabels(self, A_class:_Class, B_class:_Class|None = None, aux:bool = False):			

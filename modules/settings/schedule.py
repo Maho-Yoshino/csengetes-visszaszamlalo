@@ -37,9 +37,9 @@ class Schedule:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
 	# region default
 	@property
-	def default(self) -> str|list[str]|None|dict[str, str]|list[dict[str, str]]:
+	def default(self) -> list[dict[str, str|None|dict[str, str]]]:
 		return self._data["default"]
-	def setDefaultSchedule(self, day:int, value:dict[str, str|list[str]|None|dict[str, str]|list[dict[str, str]]]):
+	def setDefaultSchedule(self, day:int, value:dict[str, str|None|dict[str, str]]):
 		if day not in range(7):
 			raise IndexError("Day must be between 0 (Monday) and 6 (Sunday).")
 		tmp = self._data["default"]

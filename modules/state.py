@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 from asyncio import CancelledError, Task, AbstractEventLoop, sleep as asleep
-from tkinter import Tk, TclError, messagebox
+from tkinter import Tk, TclError, messagebox, Toplevel
 from tkinter.font import Font
 from logging import getLogger
 _logger = getLogger(__name__)
@@ -26,6 +26,7 @@ runtime:AbstractEventLoop = None
 tkPumpTask: Task = None
 
 currentClassIndex:int|None = None
+openGUIs:dict[str, Toplevel] = {}
 
 async def tkPump(root: Tk):
 	_logger.debug("tkPump started")

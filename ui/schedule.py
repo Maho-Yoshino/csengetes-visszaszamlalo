@@ -7,23 +7,26 @@ from tkinter import Toplevel, Frame
 from logging import getLogger
 from tkinter import ttk
 from datetime import datetime
-logger = getLogger(__name__)
 
-class scheduleGUI:
-	root:Toplevel
+class scheduleGUI(Toplevel):
 	def __init__(self):
-		self.root = Toplevel(state.root)
-		self.root.title("Schedule")
+		self.logger = getLogger(__name__)
+		if (obj := state.openGUIs.get("schedule", None)) is not None:
+			self.destroy()
+			obj.focus()
+			return self.logger.debug("Schedule opened more than once. Refocussed on older settings window")
+		super().__init__(state.root)
+		self.title("Schedule")
 		windowHeight = max(max([len(i) for i in state.settings.schedule.default]), max([len(val) for key, val in state.settings.events.specialDays.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")]))
 		windowWidth = len(state.settings.schedule.default)
 		if specialDayThisWeek := any([datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V") for key in state.settings.events.specialDays.keys()]):
 			windowWidth += 1
-		self.root.grid(windowWidth, windowHeight, 300, 150)
+		self.grid(windowWidth, windowHeight, 300, 150)
 		frames:list[list[Frame]] = []
 		for col in range(windowWidth):
 			frames.append([])
 			for row in range(windowHeight):
-				temp = Frame(self.root, highlightbackground="white", highlightcolor="black")
+				temp = Frame(self, highlightbackground="white", highlightcolor="black")
 				temp.grid(row=row, column=col)
 				frames[col].append(temp)
 		for num, frame in enumerate(frames):
