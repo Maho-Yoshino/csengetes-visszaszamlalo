@@ -16,10 +16,10 @@ class settingsGUI(Toplevel):
 		# region Check other window
 		if state.openGUIs.get("settings", None) is not None:
 			state.openGUIs["settings"].focus_force()
-			return self.logger.debug("Settings opened more than once. Refocussed on older settings window")
+			return self.logger.debug("Settings opened more than once. Focus set to older window")
 		super().__init__(state.root)
 		state.openGUIs["settings"] = self
-		self.protocol("WM_DELETE_WINDOW", lambda: state.openGUIs.__setitem__("settings", None))
+		self.protocol("WM_DELETE_WINDOW", self.closeFunc)
 		# endregion
 		# region Styling
 		self.style = ttk.Style()
@@ -41,8 +41,11 @@ class settingsGUI(Toplevel):
 		self.content.grid(row=0, column=0, sticky="nsew")
 		self._openSchedule()
 		# endregion
-	def _clearContent(self) -> None:
 		for child in self.content.winfo_children():
+	def _closeFunc(self):
+		state.openGUIs.pop("settings")
+		self.destroy()
+	def _clearContent(self):
 			child.destroy()
 	def resize(self, width:int, height:int):
 		self.geometry(f"{width}x{height}+{self.winfo_rootx()}+{self.winfo_rooty()}")

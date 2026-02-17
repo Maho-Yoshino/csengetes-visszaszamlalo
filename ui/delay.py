@@ -10,6 +10,11 @@ logger = getLogger(__name__)
 
 class delayGUI(Toplevel):
 	def __init__(self):
+		self.logger = getLogger(__name__)
+		if (obj := state.openGUIs.get("schedule", None)) is not None:
+			self.destroy()
+			obj.focus()
+			return self.logger.debug("Delay window opened more than once. Refocussed on older window")
 		super().__init__(state.root)
 		loc = state.settings.localization
 		self.title(loc.delaySetting.title)
@@ -25,6 +30,11 @@ class delayGUI(Toplevel):
 		self.bind('<Up>', lambda _: self.delayvar.set(self.delayvar.get() + 1))
 		self.bind('<Down>', lambda _: self.delayvar.set(self.delayvar.get() - 1))
 		self.bind('<Return>', lambda _: self.saveValue())
+		self.protocol("WM_DELETE_WINDOW", self.closeWindow)
+		state.openGUIs["delay"] = self
 	def saveValue(self):
 		state.settings.schedule.delay = self.delayvar.get()
+		self.closeWindow()
+	def closeWindow(self):
 		self.destroy()
+		state.openGUIs.pop("delay")

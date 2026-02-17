@@ -42,6 +42,8 @@ class Tray:
 		self.shutting_down = True
 		logger.info("Closing application")
 		self.icon.stop()
+		for level in state.openGUIs.values():
+			level.destroy()
 		state.root.quit()
 		state.root.destroy()
 		state.runtime.create_task(self._shutdown())
