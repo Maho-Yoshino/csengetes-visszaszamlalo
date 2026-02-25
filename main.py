@@ -3,8 +3,9 @@ sys.dont_write_bytecode = True # Prevent '__pycache__' creation
 from asyncio import new_event_loop, set_event_loop
 from logging import getLogger, WARNING, DEBUG, INFO, Formatter
 from logging.handlers import TimedRotatingFileHandler
-from tkinter import Tk, messagebox
+from tkinter import messagebox
 from sys import executable, argv, platform
+from pathlib import Path
 from datetime import datetime
 from os import path, chdir, environ
 from github import Github, Repository, GitRelease
@@ -151,6 +152,11 @@ def main(dummyDate:datetime|None = None):
 		filename = path.basename(default_name)
 		_, _, date = filename.rpartition(".")
 		return path.join(dirname, f"{date}.log")
+	latestLogPath = Path("logs") / "latest.log"
+	latestLogPath.parent.mkdir(exist_ok=True, parents=True)
+	if not latestLogPath.exists():
+		with latestLogPath.open("x"):
+			logger.warning("Could not find any 'latest.log', Created an empty one")
 	handler = TimedRotatingFileHandler("logs/latest.log", when="midnight", interval=1, backupCount=5)
 	handler.suffix = "%Y-%m-%d"
 	formatter = Formatter(f"%(asctime)s:%(name)-15s:%(funcName)-15s:%(lineno)-3d:%(levelname)-7s:%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -175,7 +181,7 @@ try:
 		main()
 except KeyboardInterrupt: pass
 except Exception as e:
-	logger.exception("An error occurred during runtime", exc_info=e)
+	logger.exception("An error occurred during runtime", exc_info=True)
 	messagebox.showerror(
 		state.settings.localization.messages.error.title, 
 		state.settings.localization.messages.error.message, 
