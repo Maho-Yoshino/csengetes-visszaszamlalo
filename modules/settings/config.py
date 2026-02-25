@@ -7,18 +7,18 @@ from ..utils import clamp
 
 logger = getLogger(__name__)
 
+_defaults = {
+	"background": "#000000",
+	"foreground": "#FFFFFF",
+	"lang": "en",
+	"ignoreUpdates": False,
+	"alpha": {"default": 0.75, "onHover":0.25},
+	"showTeacher": False
+}
 class Config:
 	# NOTE: Changes are not persisted until save() is called explicitly
-	defaults = {
-		"background": "#000000",
-		"foreground": "#FFFFFF",
-		"lang": "en",
-		"ignoreUpdates": False,
-		"alpha": {"default": 0.75, "onHover":0.25},
-		"showTeacher": False
-	}
-	def __init__(self, filename:str = "config.json"):
-		self.path = Path("config") / filename
+	def __init__(self):
+		self.path = Path("config") / "config.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
 			logger.warning("Config file not found, creating a default one.")
@@ -30,11 +30,10 @@ class Config:
 				logger.info("Configs loaded")
 
 		changed = False
-		for key, value in self.defaults.items():
+		for key, value in _defaults.items():
 			if key not in self._data:
 				self._data[key] = value
 				changed = True
-		self._data.setdefault("alpha", self.defaults["alpha"])
 		if changed:
 			self.save()
 	def save(self):
@@ -62,6 +61,14 @@ class Config:
 	@showTeacher.setter
 	def showTeacher(self, value:bool):
 		self._data["showTeacher"] = value
+		try:
+			for frame in state.clock.classFrames:
+				if value:
+					frame.teacherLabel.grid(row=2)
+				else:
+					frame.teacherLabel.grid_forget()
+		except (AttributeError, NameError):
+			logger.exception("Could not find clock's class frames")
 	# endregion
 	# region debug
 	@property
@@ -90,7 +97,7 @@ class Config:
 			return int(self._data["background"].removeprefix("#"), 16)
 		except ValueError:
 			logger.error(f"Invalid background value given in settings ({self._data["background"]}), defaulting to white.")
-			return int(self.defaults["background"].removeprefix("#"), 16)
+			return int(self._defaults["background"].removeprefix("#"), 16)
 	@background.setter
 	def background(self, value:int):
 		_ = f"#{value:06X}"
@@ -99,17 +106,13 @@ class Config:
 		state.clock.root.config(background=_)
 		clk.mainLabel.config(background=_)
 		clk.timeLabel.config(background=_)
-		clk.class1Label.config(background=_)
-		clk.class2Label.config(background=_)
-		clk.teacher1Label.config(background=_)
-		clk.teacher2Label.config(background=_)
 		clk.auxLabel.config(background=_)
 		clk.homeworkLabel.config(background=_)
 		clk.examLabel.config(background=_)
-		clk.loc1Label.config(background=_)
-		clk.loc2Label.config(background=_)
 		clk.separator.config(background=_)
 		clk.vertSeparator.config(background=_)
+		for frame in clk.classFrames:
+			frame.bg = _
 	# endregion
 	# region Foreground color
 	@property
@@ -122,21 +125,20 @@ class Config:
 		self._data["foreground"] = _
 		clk.mainLabel.config(fg=_)
 		clk.timeLabel.config(fg=_)
-		clk.class1Label.config(fg=_)
-		clk.class2Label.config(fg=_)
-		clk.teacher1Label.config(fg=_)
-		clk.teacher2Label.config(fg=_)
 		clk.auxLabel.config(fg=_)
 		clk.homeworkLabel.config(fg=_)
 		clk.examLabel.config(fg=_)
-		clk.loc1Label.config(fg=_)
-		clk.loc2Label.config(fg=_)
 		clk.separator.config(fg=_)
 		clk.vertSeparator.config(fg=_)
+		for frame in clk.classFrames:
+			frame.fg = _
 	# endregion
 	# region Language
 	@property
 	def lang(self) -> str:
 		return self._data["lang"]
+	@lang.setter
+	def lang(self, value:str):
+		self._data["lang"] = value
+		self.save()
 	# endregion
-	

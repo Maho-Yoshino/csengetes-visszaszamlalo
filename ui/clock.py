@@ -3,79 +3,157 @@ from datetime import datetime, timedelta
 from asyncio import sleep as asleep, CancelledError
 from time import perf_counter
 from logging import getLogger
-from tkinter import Label, Frame, messagebox, TclError
+from tkinter import Label, Frame, messagebox, TclError, Tk
 from tksvg import SvgImage
 from ctypes import windll, c_byte, byref, Structure
 from modules.schedule import Schedule, _Class
 
-class Clock:
+init_data:dict[str, int|str] = {}
+class classFrame(Frame):
+	_data:dict[str, int|str]
+	def __init__(self, master, *, _class:_Class=None):
+		self._data = {
+			"wraplength": 0,
+			"bg":init_data["bg"],
+			"fg":init_data["fg"],
+			"class":_class
+		}
+		self._logger = getLogger(__name__)
+		super().__init__(master, bg=init_data["bg"])
+		self.nameLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
+		self.roomLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
+		self.teacherLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
+		self._class = _class
+	# region Class
+	@property
+	def _class(self) -> _Class|None:
+		return self._data["class"]
+	@_class.setter
+	def _class(self, value:_Class|None):
+		self._data["class"] = value
+		if value is not None:
+			self.nameLabel.config(text=value.name)
+			self.nameLabel.grid(row=0)
+			self.roomLabel.config(text=value.room)
+			self.roomLabel.grid(row=1)
+			self.teacherLabel.config(text=value.teacher)
+			if state.settings.config.showTeacher:
+				self.teacherLabel.grid(row=2)
+	# endregion
+	# region Background
+	@property
+	def bg(self) -> str:
+		return self._data["bg"]
+	@bg.setter
+	def bg(self, value:str):
+		self._data["bg"] = value
+		self.nameLabel.config(bg=value)
+		self.roomLabel.config(bg=value)
+		self.teacherLabel.config(bg=value)
+		self.config(bg=value)
+	# endregion
+	# region Foreground
+	@property
+	def fg(self) -> str:
+		return self._data["fg"]
+	@fg.setter
+	def fg(self, value:str):
+		self._data["fg"] = value
+		self.nameLabel.config(fg=value)
+		self.roomLabel.config(fg=value)
+		self.teacherLabel.config(fg=value)
+	# endregion
+	# region Wraplength
+	@property
+	def wraplength(self) -> int:
+		return self._data["wraplength"]
+	@wraplength.setter
+	def wraplength(self, value:int):
+		self._data["wraplength"] = value
+		self.nameLabel.config(wraplength=value)
+		self.roomLabel.config(wraplength=value)
+		self.teacherLabel.config(wraplength=value)
+	# endregion
+class Clock(Tk):
 	def __init__(self):
-		state.schedule = Schedule()
-		self.logger = getLogger(__name__)
-		self.root = state.root
-		self.root.iconbitmap(default="assets/icon.ico")
-		self.root.configure(bg=f"#{state.settings.config.background:06x}", )
-		self.root.attributes("-topmost", True)
-		self.root.title(state.windowHandle)
-		self.root.resizable(False, False)
-		self.root.overrideredirect(True)
-		self.root.wm_attributes("-alpha", state.settings.config.alpha["default"])
-		self.root.grid(3, 5, self.root.winfo_screenwidth()//4, self.root.winfo_screenheight()//8)
-		self.root.config(padx=15, pady=15, border=1, borderwidth=1)
+		global init_data
 		init_data = {
 			"text":"",
 			"bg":f"#{state.settings.config.background:06x}",
 			"fg":f"#{state.settings.config.foreground:06x}"
 		}
-		self.mainLabel = Label(self.root, init_data, font=state.fontSize(20))
-		self.mainLabel.grid(row=0, column=0, sticky="nsew", columnspan=3)
+		state.schedule = Schedule()
+		# region Misc config
+		super().__init__()
+		state.root = self
+		self.logger = getLogger(__name__)
+		# endregion
+		# region Main config
+		self.iconbitmap(default="assets/icon.ico")
+		self.configure(bg=f"#{state.settings.config.background:06x}")
+		self.attributes("-topmost", True)
+		self.title(state.windowHandle)
+		self.resizable(False, False)
+		self.overrideredirect(True)
+		self.wm_attributes("-alpha", state.settings.config.alpha["default"])
+		self.pxwidth = self.winfo_screenwidth()//4
+		self.pxheight = self.winfo_screenheight()//8
+		self.geometry(f"{self.pxwidth}x{self.pxheight}+{self.winfo_screenwidth()-self.pxwidth}+{self.winfo_screenheight()-self.pxheight}")
+		self.grid(baseWidth=1, widthInc=self.pxwidth)
+		self.config(padx=15, pady=15, border=1, borderwidth=1)
+		# endregion
+		# region Main text and time config
+		self.columnconfigure(0, weight=1)
+
+		self.mainLabel = Label(self, init_data, font=state.fontSize(20))
+		self.mainLabel.grid(row=0, column=0, sticky="nsew")
 		self.mainLabel.grid_rowconfigure(0, weight=1)
-		self.timeFrame = Frame(self.root, bg=init_data["bg"])
-		self.timeFrame.grid(column=0, row=1, columnspan=4)
-		self.timeFrame.grid_rowconfigure(0, weight=0)
+
+		self.timeFrame = Frame(self, bg=init_data["bg"]) # Frame so the exam and homework icons can happen
+		self.timeFrame.grid_rowconfigure(0, weight=1)
 		self.timeFrame.grid_rowconfigure(1, weight=1)
 		self.timeLabel = Label(self.timeFrame, init_data, font=state.fontSize(30), anchor="center")
 		self.timeLabel.grid(column=1)
 		self.timeLabel.grid_columnconfigure(1, weight=1)
-		self.separator = Frame(self.root, bg=init_data["fg"], height=1, width=self.root.winfo_width())
-		self.separator.grid_rowconfigure(2, weight=1)
-		self.class1Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center", wraplength=128)
-		self.class1Label.grid_rowconfigure(3, weight=1)
-		self.class2Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.loc2Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.loc1Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.teacher1Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.teacher2Label = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.auxLabel = Label(self.root, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center")
-		self.vertSeparator = Frame(self.root, bg=init_data["fg"], width=1, height=self.root.winfo_height())
-		del init_data
-		self.root.columnconfigure(0, weight=1)
-		self.root.columnconfigure(1, weight=0)
-		self.root.columnconfigure(2, weight=1)
-		self.root.protocol("WM_DELETE_WINDOW", self.root.withdraw)
 		self.homeworkIcon = self.loadSvg("homework")
-		self.homeworkLabel = Label(
-			self.timeFrame, 
-			image=self.homeworkIcon, 
-			bg=f"#{state.settings.config.background:06x}",
-			fg=f"#{state.settings.config.foreground:06x}"
-		)
+		self.homeworkLabel = Label(self.timeFrame, image=self.homeworkIcon, bg=init_data["bg"], fg=init_data["fg"])
 		self.homeworkLabel.image = self.homeworkIcon
 		self.examIcon = self.loadSvg("exam")
-		self.examLabel = Label(
-			self.timeFrame, 
-			image=self.examIcon, 
-			bg=f"#{state.settings.config.background:06x}",
-			fg=f"#{state.settings.config.foreground:06x}"
-		)
+		self.examLabel = Label(self.timeFrame, image=self.examIcon, bg=init_data["bg"], fg=init_data["fg"])
 		self.examLabel.image = self.examIcon
+		# endregion
+		# region Classes setup
+		self.classesContainer = Frame(self, bg=init_data["bg"])
+		self.classFrames:list[classFrame] = []
+		maxClassesAtOnce = max(*[max(*[len(j) for j in i.values()]) for i in state.settings.schedule.getUnifiedSchedule()])
+		for _ in range(maxClassesAtOnce):
+			self.classFrames.append(classFrame(self.classesContainer))
+		# endregion
+		# region Misc setup
+		self.auxLabel = Label(self, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center", text=state.settings.localization.nextClass)
+		self.separator = Frame(self, bg=init_data["fg"], height=1, width=self.winfo_width())
+		self.separator.grid_rowconfigure(2, weight=1)
+		self.vertSeparator = Frame(self, bg=init_data["fg"], width=1, height=self.winfo_height())
+		del init_data
+		self.columnconfigure(0, weight=1)
+		self.columnconfigure(1, weight=0)
+		self.columnconfigure(2, weight=1)
+		self.protocol("WM_DELETE_WINDOW", self.withdraw)
+		# endregion
+		# region Asyncio loops
 		self.mainloopTask = state.runtime.create_task(self.mainloop())
 		self.mainloopTask.add_done_callback(state.exc_handler)
 		self.setClickThroughTask = state.runtime.create_task(self.setClickThrough())
 		self.setClickThroughTask.add_done_callback(state.exc_handler)
 		self.transparencyTask = state.runtime.create_task(self.transparencyCheck())
 		self.transparencyTask.add_done_callback(state.exc_handler)
+		# endregion
 		self.logger.info("Clock setup complete")
+	def changeColors(self, *, fg:str=None, bg:str=None):
+		for _class in self.classFrames:
+			_class.updateColors(fg, bg)
+		if bg:
+			self.config(bg=bg)
 	def loadSvg(self, filename:str) -> SvgImage:
 		try:
 			with open(f"assets/{filename}.svg", "r") as file:
@@ -86,13 +164,13 @@ class Clock:
 		return SvgImage(filename, master=self.timeFrame, data=svg_text, scaletoheight=25)
 	lastWidth:int = 0
 	def setDynamicSize(self):
-		if (self.lastWidth != self.root.winfo_width()):
-			self.logger.debug(f"window size: {self.root.winfo_width()}x{self.root.winfo_height()}+{self.root.winfo_screenwidth()-self.root.winfo_width()}+0")
-			self.lastWidth = self.root.winfo_width()
-		self.root.geometry(f"+{self.root.winfo_screenwidth()-self.root.winfo_width()}+0")
+		if (self.lastWidth != self.winfo_width()):
+			self.logger.debug(f"window size: {self.winfo_width()}x{self.winfo_height()}+{self.winfo_screenwidth()-self.winfo_width()}+0")
+			self.lastWidth = self.winfo_width()
+		self.geometry(f"+{self.winfo_screenwidth()-self.winfo_width()}+0")
 	async def setClickThrough(self):
 		self.logger.debug("Setting click-through window")
-		while not self.root.winfo_viewable():
+		while not self.winfo_viewable():
 			await asleep(0.05)
 		self.logger.debug("Window found")
 		try:
@@ -143,100 +221,41 @@ class Clock:
 			except (CancelledError, TclError): pass
 			except Exception:
 				self.logger.exception("An error happened during transparency check")
-	def setClassLabels(self, A_class:_Class, B_class:_Class|None = None, aux:bool = False):			
-		if self.class1Label.winfo_ismapped():
-			self.class1Label.grid(row=3, column=0, sticky="nsew")
-		if self.loc1Label.winfo_ismapped():
-			self.loc1Label.grid(row=4, column=0, sticky="nsew")
-		if self.timeLabel.winfo_ismapped():
-			self.timeLabel.grid(row=1, column=0, sticky="nsew", columnspan=3)
+	def setClassLabels(self, *classes:_Class, aux:bool = False):
+		self.mainLabel.grid(row=0, column=0)
+		self.timeFrame.grid(row=1, column=0)
+		self.separator.grid(row=2, column=0)
+
+		self.classesContainer.grid(row=3, column=0)
+		for i in range(len(classes)):
+			obj = self.classFrames[i]
+			if state.settings.schedule.group == -1 or state.settings.schedule.group == i:
+				obj.grid(row=0, column=i)
+			else:
+				obj.grid_forget()
+			if state.settings.config.showTeacher:
+				obj.teacherLabel.grid(row=2)
+				obj.rowconfigure(2, weight=1, minsize=20)
+			else:
+				obj.teacherLabel.grid_forget()
+			obj._class = classes[i]
 
 		if state.settings.events.current_exam():
-			if self.homeworkLabel.winfo_ismapped():
-				self.homeworkLabel.grid_forget()
+			self.homeworkLabel.grid_forget()
 			self.examLabel.grid(row=1, column=3)
 		elif state.settings.events.current_homework():
-			if self.examLabel.winfo_ismapped():
-				self.examLabel.grid_forget()
+			self.examLabel.grid_forget()
 			self.homeworkLabel.grid(row=1, column=3)
 		else:
-			if self.examLabel.winfo_ismapped():
-				self.examLabel.grid_forget()
-			if self.homeworkLabel.winfo_ismapped():
-				self.homeworkLabel.grid_forget()
-		
-		self.class1Label.config(text=f"{A_class.name}", anchor="center")
-		self.loc1Label.config(text=f"{A_class.room}")
-		
-		if not aux and self.auxLabel.winfo_ismapped():
+			self.examLabel.grid_forget()
+			self.homeworkLabel.grid_forget()
+
+		if not aux:
 			self.auxLabel.grid_forget()
-			self.root.rowconfigure(6, weight=0, minsize=0)
-		elif aux and not self.auxLabel.winfo_ismapped():
+			self.rowconfigure(6, weight=0, minsize=0)
+		else:
 			self.auxLabel.grid(row=6, column=0, sticky="nsew", columnspan=3)
-			self.auxLabel.config(text=state.settings.localization.nextClass)
-			self.root.rowconfigure(6, weight=1)
-		if not self.separator.winfo_ismapped(): 
-			self.separator.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=3, ipadx=100)
-		
-		if state.settings.config.showTeacher:
-			self.root.rowconfigure(5, weight=1, minsize=20)
-			if B_class is None:
-				if self.teacher2Label.winfo_ismapped():
-					self.teacher2Label.grid_forget()
-				if not self.teacher1Label.winfo_ismapped(): 
-					self.teacher1Label.grid(row=5, column=0, sticky="nsew", columnspan=3)
-				else:
-					self.teacher1Label.grid_configure(columnspan=3)
-				self.teacher1Label.config(
-					text=f"{A_class.teacher}", 
-					anchor="center", 
-					wraplength=self.root.winfo_width()
-				)
-			else:
-				if not self.teacher2Label.winfo_ismapped(): 
-					self.teacher2Label.grid(row=5, column=2, sticky="nsew")
-				if not self.teacher1Label.winfo_ismapped(): 
-					self.teacher1Label.grid(row=5, column=0, sticky="nsew", columnspan=1)
-				else:
-					self.teacher1Label.grid_configure(columnspan=1)
-				self.teacher2Label.config(
-					text=f"{B_class.teacher}", 
-					anchor="center", 
-					wraplength=self.root.winfo_width()//2
-				)
-				self.teacher1Label.config(
-					text=f"{A_class.teacher}", 
-					anchor="center", 
-					wraplength=self.root.winfo_width()//2
-				)
-		else:
-			self.root.rowconfigure(5, weight=0, minsize=0)
-		
-		if B_class is not None:
-			if not self.class2Label.winfo_ismapped(): 
-				self.class2Label.grid(row=3, column=2, sticky="nsew")
-			if not self.loc2Label.winfo_ismapped(): 
-				self.loc2Label.grid(row=4, column=2, sticky="nsew")
-			if not self.vertSeparator.winfo_ismapped(): 
-				self.vertSeparator.grid(row=3, column=1, sticky="ns", padx=5, pady=5, rowspan=2)
-			self.class1Label.grid_configure(columnspan=1)
-			self.loc1Label.grid_configure(columnspan=1)
-			self.class2Label.config(text=f"{B_class.name}", anchor="center", wraplength=self.root.winfo_width()//2)
-			self.loc1Label.config(wraplength=self.root.winfo_width()//2)
-			self.loc2Label.config(text=f"{B_class.room}", wraplength=self.root.winfo_width()//2)
-			self.class1Label.config(wraplength=self.root.winfo_width()//2)
-			self.class2Label.config(wraplength=self.root.winfo_width()//2)
-		else:
-			if self.class2Label.winfo_ismapped(): 
-				self.class2Label.grid_forget()
-			if self.loc2Label.winfo_ismapped(): 
-				self.loc2Label.grid_forget()
-			if self.vertSeparator.winfo_ismapped(): 
-				self.vertSeparator.grid_forget()
-			self.class1Label.grid_configure(columnspan=3)
-			self.loc1Label.grid_configure(columnspan=3)
-			self.class1Label.config(wraplength=self.root.winfo_width())
-			self.loc1Label.config(wraplength=self.root.winfo_width())
+			self.rowconfigure(6, weight=1)
 	alerted:datetime = datetime.fromtimestamp(0)
 	def sendAlert(self):
 		async def msg(alert:dict[str, str]):
@@ -260,13 +279,13 @@ class Clock:
 				state.runtime.create_task(msg(alert))
 				self.logger.debug(f"Sent alert")
 				alerted = state.getTime().replace(second=0, microsecond=0)
-	prev_day:datetime = state.getTime().date()
 	async def mainloop(self):
+		prev_day:datetime = state.getTime().date()
 		while True:
 			_start = perf_counter()
 			delay = state.settings.schedule.delay
-			if self.prev_day != state.schedule._date:
-				self.prev_day = state.getTime().date()
+			if prev_day != state.schedule._date:
+				prev_day = state.getTime().date()
 				self.logger.debug("Day changed since last loop")
 				state.schedule = Schedule()
 				if len(state.schedule.classes) == 0: await asleep(60*30) # 30 min delay
@@ -287,7 +306,7 @@ class Clock:
 					tmp = datetime.combine(now, _class.begin) - now + timedelta(seconds=delay)
 					self.mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-					self.setClassLabels(_class, tmp_class)
+					self.old_setClassLabels(_class, tmp_class)
 					break
 				elif ((_class.endDatetime + timedelta(seconds=delay)).time() > now_time): # In class
 					tmp = datetime.combine(now, _class.end) - now + timedelta(seconds=delay)
@@ -298,18 +317,19 @@ class Clock:
 						num == len(state.schedule.classes)-1 # Last class of the day
 					):
 						state.currentClassIndex = num + 1
-						self.setClassLabels(_class, tmp_class)
+						self.old_setClassLabels(_class, tmp_class)
 					else: # Less than 10 mins left
 						state.currentClassIndex = num + 2
-						if isinstance(next_class := state.schedule.classes[num+1], list): # Next class is split
-							self.setClassLabels(next_class[0], next_class[1], True)
-						else: # Next class is together
-							self.setClassLabels(next_class, None, True)
+						next_classes = state.schedule.classes[num+1]
+						self.old_setClassLabels(next_classes[0], next_classes[1], True)
 					break
 			else: # No class ends after now (No If branch broke the loop)
 				self.mainLabel.config(text=loc.mainlabel.dayOver)
 				state.currentClassIndex = -1
-				[i.grid_forget() for i in [self.class1Label,self.class2Label,self.loc1Label,self.loc2Label,self.auxLabel,self.teacher1Label,self.teacher2Label] if i.winfo_ismapped()]
+				for frame in self.classFrames: 
+					if frame.winfo_ismapped(): frame.grid_forget()
+				if self.auxLabel.winfo_ismapped():
+					self.auxLabel.grid_forget()
 				if self.separator.winfo_ismapped():
 					self.separator.grid_forget()
 				if self.vertSeparator.winfo_ismapped():

@@ -6,11 +6,17 @@ import modules.state as state
 
 logger = getLogger(__name__)
 
+_defaults = {
+	"specialDays": {},
+	"alerts": [],
+	"exams": {},
+	"homework": {}
+}
 class Events:
 	# NOTE: Changes are not persisted until save() is called explicitly
-	def __init__(self, filename:str = "events.json"):
+	def __init__(self):
 		self.datetime_fmt = "%Y-%m-%d"
-		self.path = Path("config") / filename
+		self.path = Path("config") / "events.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
 			logger.warning("Events file not found, creating a default one.")
@@ -20,16 +26,9 @@ class Events:
 			with open(self.path, "r", encoding="utf-8") as f:
 				self._data = jload(f)
 				logger.info("Events loaded")
-		
-		defaults = {
-			"specialDays": {},
-			"alerts": [],
-			"exams": {},
-			"homework": {}
-		}
 
 		changed = False
-		for key, value in defaults.items():
+		for key, value in _defaults.items():
 			if key not in self._data:
 				self._data[key] = value
 				changed = True

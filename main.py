@@ -159,19 +159,18 @@ def main(dummyDate:datetime|None = None):
 	logger.addHandler(handler)
 	logger.setLevel(DEBUG if debug else INFO)
 	logger.info(f"Application Starting up (v{VERSION})")
-	state.root = Tk()
 	state.runtime = new_event_loop()
 	set_event_loop(state.runtime)
+	state.clock = Clock()
 	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
 	state.tkPumpTask.add_done_callback(state.exc_handler)
 	state.tray = Tray()
-	state.clock = Clock()
 	state.runtime.run_forever()
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		main()
-		#main(datetime(year=2026, month=1, day=22, hour=12))
+		#main()
+		main(datetime(year=2026, month=2, day=25, hour=12))
 	else:
 		main()
 except KeyboardInterrupt: pass

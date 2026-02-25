@@ -8,11 +8,11 @@ ClassKey = Literal["room", "teacher", "name"]
 CLASS_KEYS = {"room", "teacher", "name"}
 class Classes:
 	# NOTE: Changes are not persisted until save() is called explicitly
-	def __init__(self, filename:str = "classes.json"):
-		self.path = Path("config") / filename
+	def __init__(self):
+		self.path = Path("config") / "classes.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
-			logger.warning("Class list file not found, creating a default one.")
+			logger.warning("Class list file not found, creating default.")
 			self._data = {}
 			self.save()
 		else:

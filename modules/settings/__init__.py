@@ -7,7 +7,7 @@ from .localization import Localization
 class Settings:
 	def __init__(self):
 		self.classes = Classes()
-		self.schedule = Schedule()
 		self.config = Config()
 		self.events = Events()
+		self.schedule = Schedule(self.classes, self.events)
 		self.localization = Localization(self.config.lang)
