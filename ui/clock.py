@@ -96,10 +96,9 @@ class Clock(Tk):
 		self.resizable(False, False)
 		self.overrideredirect(True)
 		self.wm_attributes("-alpha", state.settings.config.alpha["default"])
-		self.pxwidth = self.winfo_screenwidth()//4
-		self.pxheight = self.winfo_screenheight()//8
-		self.geometry(f"{self.pxwidth}x{self.pxheight}+{self.winfo_screenwidth()-self.pxwidth}+{self.winfo_screenheight()-self.pxheight}")
-		self.grid(baseWidth=1, widthInc=self.pxwidth)
+		self.pxwidth = self.winfo_screenwidth()//8
+		self.pxheight = self.winfo_screenheight()//4
+		self.geometry(f"{self.pxwidth}x{self.pxheight}+{self.winfo_screenwidth()-self.pxwidth}+0")
 		self.config(padx=15, pady=15, border=1, borderwidth=1)
 		# endregion
 		# region Main text and time config
@@ -125,7 +124,10 @@ class Clock(Tk):
 		# region Classes setup
 		self.classesContainer = Frame(self, bg=init_data["bg"])
 		self.classFrames:list[classFrame] = []
-		maxClassesAtOnce = max(*[max(*[len(j) for j in i.values()]) for i in state.settings.schedule.getUnifiedSchedule()])
+		maxClassesAtOnce = 0
+		for day in state.settings.schedule.getUnifiedSchedule():
+			if len(day) > maxClassesAtOnce:
+				maxClassesAtOnce = len(day)
 		for _ in range(maxClassesAtOnce):
 			self.classFrames.append(classFrame(self.classesContainer))
 		# endregion
@@ -164,6 +166,7 @@ class Clock(Tk):
 		return SvgImage(filename, master=self.timeFrame, data=svg_text, scaletoheight=25)
 	lastWidth:int = 0
 	def setDynamicSize(self):
+		return
 		if (self.lastWidth != self.winfo_width()):
 			self.logger.debug(f"window size: {self.winfo_width()}x{self.winfo_height()}+{self.winfo_screenwidth()-self.winfo_width()}+0")
 			self.lastWidth = self.winfo_width()
