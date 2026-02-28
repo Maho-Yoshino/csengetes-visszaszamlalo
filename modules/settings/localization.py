@@ -3,7 +3,6 @@ from pathlib import Path
 from logging import getLogger
 from tkinter import messagebox
 from dataclasses import dataclass
-logger = getLogger(__name__)
 def merge(obj: dict, default: dict) -> dict:
 	return {k: obj.get(k, v) for k, v in default.items()}
 class Localization:
@@ -90,16 +89,17 @@ class Localization:
 	tray:_trayLoc
 	settings:_settingsLoc
 	def __init__(self, language:str):
+		self.logger = getLogger(__name__)
 		if not Path(f"lang\\{language}.json").exists():
-			logger.warning(f"Given locale '{language}.json' does not exist. Defaulting to english.")
+			self.logger.warning(f"Given locale '{language}.json' does not exist. Defaulting to english.")
 			messagebox.showwarning("Invalid language selected", f"The selected language '{language}' does not exist in the program.\nDefaulting to english.")
 			language = "en"
 		if language == "en" and not Path("lang\\en.json").exists():
-			logger.critical("English locale doesn't exist on user's computer")
+			self.logger.critical("English locale doesn't exist on user's computer")
 			return
 		with open(f"lang\\{language}.json", "r", encoding="utf-8") as f:
 			self._lang:dict = jload(f)
-			logger.info(f"Locale '{language}' loaded properly")
+			self.logger.info(f"Locale '{language}' loaded properly")
 		with open(f"lang\\en.json", "r", encoding="utf-8") as f:
 			self._defaults:dict = jload(f)
 		self._lang_tag = language
@@ -116,5 +116,5 @@ class Localization:
 		try:
 			return text.format_map(values)
 		except KeyError as e:
-			logger.error(f"Missing localization placeholder: {e}")
+			self.logger.error(f"Missing localization placeholder: {e}")
 			return text

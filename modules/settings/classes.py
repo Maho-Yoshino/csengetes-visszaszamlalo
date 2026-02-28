@@ -2,27 +2,27 @@ from json import load as jload, dump as jdump
 from pathlib import Path
 from logging import getLogger
 from typing import Literal
-logger = getLogger(__name__)
 
 ClassKey = Literal["room", "teacher", "name"]
 CLASS_KEYS = {"room", "teacher", "name"}
 class Classes:
 	# NOTE: Changes are not persisted until save() is called explicitly
 	def __init__(self):
+		self._logger = getLogger(__name__)
 		self.path = Path("config") / "classes.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
-			logger.warning("Class list file not found, creating default.")
+			self._logger.warning("Class list file not found, creating default.")
 			self._data = {}
 			self.save()
 		else:
 			with open(self.path, "r", encoding="utf-8") as f:
 				self._data = jload(f)
 				if not isinstance(self._data, dict):
-					logger.error("Invalid classlist format, resetting")
+					self._logger.error("Invalid classlist format, resetting")
 					self._data = {}
 					self.save()
-				logger.info("Class list loaded")
+				self._logger.info("Class list loaded")
 	def save(self):
 		with self.path.open("w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)

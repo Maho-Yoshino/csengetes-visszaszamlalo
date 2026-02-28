@@ -9,7 +9,11 @@ if TYPE_CHECKING:
 	from .events import Events
 from ..state import getTime
 
-logger = getLogger(__name__)
+class _classData:
+	def __init__(self, data:dict[str, str]):
+		self.name = data.get("name")
+		self.room = data.get("room")
+		self.teacher = data.get("teacher")
 
 _defaults = {
 	"default": [{},{},{},{},{}],
@@ -21,18 +25,19 @@ _defaults = {
 class Schedule:
 	# NOTE: Changes are not persisted until save() is called explicitly
 	def __init__(self, classes:'Classes', events:'Events'):
+		self._logger = getLogger(__name__)
 		self.classes = classes
 		self.events = events
 		self.path = Path("config") / "schedule.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
-			logger.warning("Schedule file not found, creating a default one.")
+			self._logger.warning("Schedule file not found, creating a default one.")
 			self._data = {}
 			self.save()
 		else:
 			with open(self.path, "r", encoding="utf-8") as f:
 				self._data = jload(f)
-				logger.info("Schedule settings loaded")
+				self._logger.info("Schedule settings loaded")
 
 		changed = False
 		for key, value in _defaults.items():
@@ -47,7 +52,7 @@ class Schedule:
 	# region default
 	@property
 	def default(self) -> list[dict[str, str|None|_classData|list[_classData|None]]]:
-		returnData:list[dict[str, 'Schedule._classData'|None]] = []
+		returnData:list[dict[str, '_classData'|None]] = []
 		for ind, day in enumerate(self._data["default"]):
 			returnData.append({})
 			for key, value in day.items():
@@ -95,23 +100,18 @@ class Schedule:
 		self.save()
 	# endregion
 	# region Unified schedule (Primary, Secondary and Special days combined)
-	class _classData:
-		def __init__(self, data:dict[str, str]):
-			self.name = data.get("name")
-			self.room = data.get("room")
-			self.teacher = data.get("teacher")
 	def convertToClassData(self, data:str|dict[str, str]|None|list[str|dict[str, str]]) -> list[_classData|None]|_classData|None:
 		if isinstance(data, str):
-			return self._classData(self.classes.get(data))
+			return _classData(self.classes.get(data))
 		elif isinstance(data, dict):
-			return self._classData(data)
+			return _classData(data)
 		elif isinstance(data, list):
 			_ = []
 			for data in data:
 				if isinstance(data, str):
-					_.append(self._classData(self.classes.get(data)))
+					_.append(_classData(self.classes.get(data)))
 				elif isinstance(data, dict):
-					_.append(self._classData(data))
+					_.append(_classData(data))
 				elif data is None:
 					_.append(None)
 				else:

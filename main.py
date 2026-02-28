@@ -175,8 +175,8 @@ def main(dummyDate:datetime|None = None):
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		#main()
-		main(datetime(year=2026, month=2, day=25, hour=12))
+		main()
+		#main(datetime(year=2026, month=2, day=25, hour=12))
 	else:
 		main()
 except KeyboardInterrupt: pass

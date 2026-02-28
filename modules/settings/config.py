@@ -5,8 +5,6 @@ from logging import getLogger
 from typing import Literal
 from ..utils import clamp
 
-logger = getLogger(__name__)
-
 _defaults = {
 	"background": "#000000",
 	"foreground": "#FFFFFF",
@@ -18,16 +16,17 @@ _defaults = {
 class Config:
 	# NOTE: Changes are not persisted until save() is called explicitly
 	def __init__(self):
+		self._logger = getLogger(__name__)
 		self.path = Path("config") / "config.json"
 		self.path.parent.mkdir(parents=True, exist_ok=True)
 		if (not self.path.exists()):
-			logger.warning("Config file not found, creating a default one.")
+			self._logger.warning("Config file not found, creating a default one.")
 			self._data = {}
 			self.save()
 		else:
 			with open(self.path, "r", encoding="utf-8") as f:
 				self._data = jload(f)
-				logger.info("Configs loaded")
+				self._logger.info("Configs loaded")
 
 		changed = False
 		for key, value in _defaults.items():
@@ -68,7 +67,7 @@ class Config:
 				else:
 					frame.teacherLabel.grid_forget()
 		except (AttributeError, NameError):
-			logger.exception("Could not find clock's class frames")
+			self._logger.exception("Could not find clock's class frames")
 	# endregion
 	# region debug
 	@property
@@ -96,7 +95,7 @@ class Config:
 		try:
 			return int(self._data["background"].removeprefix("#"), 16)
 		except ValueError:
-			logger.error(f"Invalid background value given in settings ({self._data["background"]}), defaulting to white.")
+			self._logger.error(f"Invalid background value given in settings ({self._data["background"]}), defaulting to white.")
 			return int(self._defaults["background"].removeprefix("#"), 16)
 	@background.setter
 	def background(self, value:int):

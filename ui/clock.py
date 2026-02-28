@@ -96,10 +96,10 @@ class Clock(Tk):
 		self.resizable(False, False)
 		self.overrideredirect(True)
 		self.wm_attributes("-alpha", state.settings.config.alpha["default"])
-		self.pxwidth = self.winfo_screenwidth()//8
-		self.pxheight = self.winfo_screenheight()//4
-		self.geometry(f"{self.pxwidth}x{self.pxheight}+{self.winfo_screenwidth()-self.pxwidth}+0")
-		self.config(padx=15, pady=15, border=1, borderwidth=1)
+		width = self.winfo_screenwidth()//6
+		height = self.winfo_screenheight()//4
+		self.geometry(f"{width}x{height}+{self.winfo_screenwidth()-width}+0")
+		self.config(padx=15, pady=15)
 		# endregion
 		# region Main text and time config
 		self.columnconfigure(0, weight=1)
@@ -133,13 +133,11 @@ class Clock(Tk):
 		# endregion
 		# region Misc setup
 		self.auxLabel = Label(self, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center", text=state.settings.localization.nextClass)
-		self.separator = Frame(self, bg=init_data["fg"], height=1, width=self.winfo_width())
+		self.separator = Frame(self, bg=init_data["fg"], height=1, width=self.winfo_screenwidth())
 		self.separator.grid_rowconfigure(2, weight=1)
-		self.vertSeparator = Frame(self, bg=init_data["fg"], width=1, height=self.winfo_height())
+		self.vertSeparators:list[Frame] = []
 		del init_data
 		self.columnconfigure(0, weight=1)
-		self.columnconfigure(1, weight=0)
-		self.columnconfigure(2, weight=1)
 		self.protocol("WM_DELETE_WINDOW", self.withdraw)
 		# endregion
 		# region Asyncio loops
@@ -152,8 +150,12 @@ class Clock(Tk):
 		# endregion
 		self.logger.info("Clock setup complete")
 	def changeColors(self, *, fg:str=None, bg:str=None):
+		if fg is None and bg is None:
+			self.logger.warning("No foreground or background given for changeColors")
+			return
 		for _class in self.classFrames:
-			_class.updateColors(fg, bg)
+			if fg: _class.fg = fg
+			if bg: _class.bg = bg
 		if bg:
 			self.config(bg=bg)
 	def loadSvg(self, filename:str) -> SvgImage:
@@ -170,6 +172,7 @@ class Clock(Tk):
 		if (self.lastWidth != self.winfo_width()):
 			self.logger.debug(f"window size: {self.winfo_width()}x{self.winfo_height()}+{self.winfo_screenwidth()-self.winfo_width()}+0")
 			self.lastWidth = self.winfo_width()
+			self.separator.config(width=self.winfo_width()-50)
 		self.geometry(f"+{self.winfo_screenwidth()-self.winfo_width()}+0")
 	async def setClickThrough(self):
 		self.logger.debug("Setting click-through window")
@@ -227,13 +230,30 @@ class Clock(Tk):
 	def setClassLabels(self, *classes:_Class, aux:bool = False):
 		self.mainLabel.grid(row=0, column=0)
 		self.timeFrame.grid(row=1, column=0)
-		self.separator.grid(row=2, column=0)
+		self.separator.grid(row=2, column=0, sticky="ns")
 
 		self.classesContainer.grid(row=3, column=0)
 		for i in range(len(classes)):
 			obj = self.classFrames[i]
+			# region Add Vertical Separators
+			if state.settings.schedule.group == -1:
+				while len(self.vertSeparators) < i:
+					self.classesContainer.columnconfigure(i*2+1, minsize=1, weight=0)
+					self.vertSeparators.append(Frame(self.classesContainer, bg=init_data["fg"], width=1, height=self.winfo_height()))
+					self.vertSeparators[i].grid(column=i*2+1, row=0)
+				j = len(self.vertSeparators)
+				while j > i:
+					self.vertSeparators.pop(j).grid_forget()
+					j -= 1
+			# endregion
 			if state.settings.schedule.group == -1 or state.settings.schedule.group == i:
-				obj.grid(row=0, column=i)
+				obj.grid(row=0, column=i*2)
+			if len(classes) > 1:
+				obj.wraplength = self.winfo_width()//len(classes)
+			elif len(classes) == 1:
+				for i in range(len(self.vertSeparators)):
+					self.vertSeparators.pop(i).grid_forget()
+				obj.grid(row=0, column=0)
 			else:
 				obj.grid_forget()
 			if state.settings.config.showTeacher:
@@ -242,7 +262,6 @@ class Clock(Tk):
 			else:
 				obj.teacherLabel.grid_forget()
 			obj._class = classes[i]
-
 		if state.settings.events.current_exam():
 			self.homeworkLabel.grid_forget()
 			self.examLabel.grid(row=1, column=3)
@@ -283,12 +302,10 @@ class Clock(Tk):
 				self.logger.debug(f"Sent alert")
 				alerted = state.getTime().replace(second=0, microsecond=0)
 	async def mainloop(self):
-		prev_day:datetime = state.getTime().date()
 		while True:
 			_start = perf_counter()
 			delay = state.settings.schedule.delay
-			if prev_day != state.schedule._date:
-				prev_day = state.getTime().date()
+			if state.schedule._date != state.getTime().date():
 				self.logger.debug("Day changed since last loop")
 				state.schedule = Schedule()
 				if len(state.schedule.classes) == 0: await asleep(60*30) # 30 min delay
@@ -298,21 +315,16 @@ class Clock(Tk):
 			self.sendAlert()
 			loc = state.settings.localization
 			for num, _class in enumerate(state.schedule.classes):
-				_class:list[_Class]|_Class
-				tmp_class:_Class|None = None
-				if isinstance(_class, list): # If 2 classes then split in 2
-					tmp_class:_Class = _class[1]
-					_class:_Class = _class[0]
-				if tmp_class is None and _class.name is None and _class.room is None and _class.teacher is None:
+				if not _class:
 					continue
-				if ((_class.beginDatetime + timedelta(seconds=delay)).time() > now_time): # Break time
-					tmp = datetime.combine(now, _class.begin) - now + timedelta(seconds=delay)
+				if ((_class[0].begin + timedelta(seconds=delay)).time() > now_time): # Break time
+					tmp = datetime.combine(now, _class[0].begin.time()) - now + timedelta(seconds=delay)
 					self.mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-					self.old_setClassLabels(_class, tmp_class)
+					self.setClassLabels(*_class)
 					break
-				elif ((_class.endDatetime + timedelta(seconds=delay)).time() > now_time): # In class
-					tmp = datetime.combine(now, _class.end) - now + timedelta(seconds=delay)
+				elif ((_class[0].end + timedelta(seconds=delay)).time() > now_time): # In class
+					tmp = datetime.combine(now, _class[0].end.time()) - now + timedelta(seconds=delay)
 					self.mainLabel.config(text=loc.format(loc.mainlabel.inClass, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 					if (
@@ -320,11 +332,11 @@ class Clock(Tk):
 						num == len(state.schedule.classes)-1 # Last class of the day
 					):
 						state.currentClassIndex = num + 1
-						self.old_setClassLabels(_class, tmp_class)
+						self.setClassLabels(*_class)
 					else: # Less than 10 mins left
 						state.currentClassIndex = num + 2
 						next_classes = state.schedule.classes[num+1]
-						self.old_setClassLabels(next_classes[0], next_classes[1], True)
+						self.setClassLabels(*next_classes, aux=True)
 					break
 			else: # No class ends after now (No If branch broke the loop)
 				self.mainLabel.config(text=loc.mainlabel.dayOver)
