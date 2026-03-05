@@ -15,7 +15,7 @@ class scheduleGUI(Toplevel):
 			self.destroy()
 			obj.focus()
 			return self.logger.debug("Schedule opened more than once. Refocussed on older settings window")
-		super().__init__(state.root)
+		super().__init__(state.clock)
 		self.title("Schedule")
 		windowHeight = max(max([len(i) for i in state.settings.schedule.default]), max([len(val) for key, val in state.settings.events.specialDays.items() if datetime.strptime(key, "%Y-%m-%d").strftime("%V") == (state.getTime()).strftime("%V")]))
 		windowWidth = len(state.settings.schedule.default)

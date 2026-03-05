@@ -15,7 +15,7 @@ class delayGUI(Toplevel):
 			self.destroy()
 			obj.focus()
 			return self.logger.debug("Delay window opened more than once. Refocussed on older window")
-		super().__init__(state.root)
+		super().__init__(state.clock)
 		loc = state.settings.localization
 		self.title(loc.delaySetting.title)
 		self.geometry(f"+{self.winfo_screenwidth()//2-25}+{self.winfo_screenheight()//2-25}")
@@ -34,6 +34,7 @@ class delayGUI(Toplevel):
 		state.openGUIs["delay"] = self
 	def saveValue(self):
 		state.settings.schedule.delay = self.delayvar.get()
+		state.settings.schedule.save()
 		self.closeWindow()
 	def closeWindow(self):
 		self.destroy()

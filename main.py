@@ -106,7 +106,7 @@ def checkUpdate():
 state.settings = Settings()
 
 def findInstance(name:str) -> bool:
-	"""Check if another instance of the application is running, and returns `True` if there is, otherwise `False`"""
+	"""Checks and returns if another instance of the application is running"""
 	k32 = windll.kernel32
 	mutex = k32.CreateMutexW(None, BOOL(True), name)
 	if k32.GetLastError() == 183:
@@ -168,7 +168,7 @@ def main(dummyDate:datetime|None = None):
 	state.runtime = new_event_loop()
 	set_event_loop(state.runtime)
 	state.clock = Clock()
-	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.root))
+	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.clock))
 	state.tkPumpTask.add_done_callback(state.exc_handler)
 	state.tray = Tray()
 	state.runtime.run_forever()
@@ -176,7 +176,7 @@ def main(dummyDate:datetime|None = None):
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
 		main()
-		#main(datetime(year=2026, month=2, day=25, hour=12))
+		#main(datetime(year=2026, month=3, day=4, hour=16))
 	else:
 		main()
 except KeyboardInterrupt: pass

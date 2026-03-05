@@ -20,9 +20,9 @@ class classFrame(Frame):
 		}
 		self._logger = getLogger(__name__)
 		super().__init__(master, bg=init_data["bg"])
-		self.nameLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
-		self.roomLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
-		self.teacherLabel = Label(self, cnf=init_data, padx=5, anchor="center", justify="center")
+		self.nameLabel = Label(self, cnf=init_data, padx=5, anchor="n", justify="center")
+		self.roomLabel = Label(self, cnf=init_data, padx=5, anchor="n", justify="center")
+		self.teacherLabel = Label(self, cnf=init_data, padx=5, anchor="n", justify="center")
 		self._class = _class
 	# region Class
 	@property
@@ -39,6 +39,13 @@ class classFrame(Frame):
 			self.teacherLabel.config(text=value.teacher)
 			if state.settings.config.showTeacher:
 				self.teacherLabel.grid(row=2)
+			else:
+				self.teacherLabel.grid_forget()
+		else:
+			self.nameLabel.config(text=state.settings.localization.noneClass)
+			self.nameLabel.grid(row=0)
+			self.roomLabel.grid_forget()
+			self.teacherLabel.grid_forget()
 	# endregion
 	# region Background
 	@property
@@ -76,6 +83,12 @@ class classFrame(Frame):
 	# endregion
 class Clock(Tk):
 	def __init__(self):
+		# Rows setup:
+		# 0 - Mainlabel
+		# 1 - TimeFrame (timeLabel, homeworkLabel, examLabel)
+		# 2 - Horizontal separator
+		# 3 - classesFrame
+		# 4 - auxLabel
 		global init_data
 		init_data = {
 			"text":"",
@@ -85,7 +98,6 @@ class Clock(Tk):
 		state.schedule = Schedule()
 		# region Misc config
 		super().__init__()
-		state.root = self
 		self.logger = getLogger(__name__)
 		# endregion
 		# region Main config
@@ -100,10 +112,9 @@ class Clock(Tk):
 		height = self.winfo_screenheight()//4
 		self.geometry(f"{width}x{height}+{self.winfo_screenwidth()-width}+0")
 		self.config(padx=15, pady=15)
+		self.grid_columnconfigure(0, weight=1)
 		# endregion
 		# region Main text and time config
-		self.columnconfigure(0, weight=1)
-
 		self.mainLabel = Label(self, init_data, font=state.fontSize(20))
 		self.mainLabel.grid(row=0, column=0, sticky="nsew")
 		self.mainLabel.grid_rowconfigure(0, weight=1)
@@ -122,6 +133,8 @@ class Clock(Tk):
 		self.examLabel.image = self.examIcon
 		# endregion
 		# region Classes setup
+		self.separator = Frame(self, bg=init_data["fg"], height=1, width=self.winfo_screenwidth())
+		
 		self.classesContainer = Frame(self, bg=init_data["bg"])
 		self.classFrames:list[classFrame] = []
 		maxClassesAtOnce = 0
@@ -130,14 +143,14 @@ class Clock(Tk):
 				maxClassesAtOnce = len(day)
 		for _ in range(maxClassesAtOnce):
 			self.classFrames.append(classFrame(self.classesContainer))
+		self.vertSeparators:list[Frame] = []
+
+		self.grid_rowconfigure(3, weight=1)
 		# endregion
 		# region Misc setup
-		self.auxLabel = Label(self, init_data, font=state.fontSize(10), padx=5, anchor="center", justify="center", text=state.settings.localization.nextClass)
-		self.separator = Frame(self, bg=init_data["fg"], height=1, width=self.winfo_screenwidth())
-		self.separator.grid_rowconfigure(2, weight=1)
-		self.vertSeparators:list[Frame] = []
-		del init_data
-		self.columnconfigure(0, weight=1)
+		self.auxLabel = Label(self, init_data, font=state.fontSize(10), anchor="center", justify="center", text=state.settings.localization.nextClass)
+		self.grid_rowconfigure(4, weight=0)
+
 		self.protocol("WM_DELETE_WINDOW", self.withdraw)
 		# endregion
 		# region Asyncio loops
@@ -167,13 +180,6 @@ class Clock(Tk):
 			raise
 		return SvgImage(filename, master=self.timeFrame, data=svg_text, scaletoheight=25)
 	lastWidth:int = 0
-	def setDynamicSize(self):
-		return
-		if (self.lastWidth != self.winfo_width()):
-			self.logger.debug(f"window size: {self.winfo_width()}x{self.winfo_height()}+{self.winfo_screenwidth()-self.winfo_width()}+0")
-			self.lastWidth = self.winfo_width()
-			self.separator.config(width=self.winfo_width()-50)
-		self.geometry(f"+{self.winfo_screenwidth()-self.winfo_width()}+0")
 	async def setClickThrough(self):
 		self.logger.debug("Setting click-through window")
 		while not self.winfo_viewable():
@@ -181,7 +187,7 @@ class Clock(Tk):
 		self.logger.debug("Window found")
 		try:
 			while True:
-				hwnd = windll.user32.FindWindowW(None, state.root.title())
+				hwnd = windll.user32.FindWindowW(None, self.title())
 				styles = windll.user32.GetWindowLongW(hwnd, -20)
 				styles |= 0x00000020  # WS_EX_LAYERED (Allows transparency)	
 				styles |= 0x00000080  # WS_EX_TRANSPARENT (Click-through)
@@ -211,18 +217,17 @@ class Clock(Tk):
 		except Exception:
 			self.logger.exception("An error occurred while checking battery saver status.") 
 	async def transparencyCheck(self):
-		root = state.root
 		async def isCursorOverWindow():
-			win_x = root.winfo_rootx()
-			win_y = root.winfo_rooty()
-			return (win_x <= root.winfo_pointerx() <= win_x + root.winfo_width() and 
-					win_y <= root.winfo_pointery() <= win_y + root.winfo_height())
+			win_x = self.winfo_rootx()
+			win_y = self.winfo_rooty()
+			return (win_x <= self.winfo_pointerx() <= win_x + self.winfo_width() and 
+					win_y <= self.winfo_pointery() <= win_y + self.winfo_height())
 		while True:
 			try:
-				if not await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.config.alpha["default"]: 
-					root.wm_attributes("-alpha", state.settings.config.alpha["default"])
-				elif await isCursorOverWindow() and root.wm_attributes("-alpha") != state.settings.config.alpha["onHover"]: 
-					root.wm_attributes("-alpha", state.settings.config.alpha["onHover"])
+				if not await isCursorOverWindow() and self.wm_attributes("-alpha") != state.settings.config.alpha["default"]: 
+					self.wm_attributes("-alpha", state.settings.config.alpha["default"])
+				elif await isCursorOverWindow() and self.wm_attributes("-alpha") != state.settings.config.alpha["onHover"]: 
+					self.wm_attributes("-alpha", state.settings.config.alpha["onHover"])
 				await asleep(self.batterySaverEnabled(1, 0.1))
 			except (CancelledError, TclError): pass
 			except Exception:
@@ -233,35 +238,44 @@ class Clock(Tk):
 		self.separator.grid(row=2, column=0, sticky="ns")
 
 		self.classesContainer.grid(row=3, column=0)
+		# region Add Vertical Separators
+		if state.settings.schedule.group == -1:
+			needed = max(0, len(classes)-1)
+			while len(self.vertSeparators) < needed:
+				sep = Frame(self.classesContainer, bg=init_data["fg"], width=1)
+				self.vertSeparators.append(sep)
+			for idx, sep in enumerate(self.vertSeparators):
+				if idx < needed:
+					sep.grid(column=idx*2+1, row=0, sticky="ns")
+				else:
+					sep.grid_forget()
+		# endregion
+		# region Add Classes
+		self.update_idletasks() # to fix wraplength being 1 on startup
 		for i in range(len(classes)):
 			obj = self.classFrames[i]
-			# region Add Vertical Separators
-			if state.settings.schedule.group == -1:
-				while len(self.vertSeparators) < i:
-					self.classesContainer.columnconfigure(i*2+1, minsize=1, weight=0)
-					self.vertSeparators.append(Frame(self.classesContainer, bg=init_data["fg"], width=1, height=self.winfo_height()))
-					self.vertSeparators[i].grid(column=i*2+1, row=0)
-				j = len(self.vertSeparators)
-				while j > i:
-					self.vertSeparators.pop(j).grid_forget()
-					j -= 1
-			# endregion
+
 			if state.settings.schedule.group == -1 or state.settings.schedule.group == i:
-				obj.grid(row=0, column=i*2)
+				obj.grid(row=0, column=i*2, sticky="nsew")
+			
 			if len(classes) > 1:
 				obj.wraplength = self.winfo_width()//len(classes)
 			elif len(classes) == 1:
 				for i in range(len(self.vertSeparators)):
-					self.vertSeparators.pop(i).grid_forget()
-				obj.grid(row=0, column=0)
+					self.vertSeparators.pop().grid_forget()
+				obj.wraplength = self.winfo_width()
+				obj.grid(row=0, column=0, sticky="nsew")
 			else:
 				obj.grid_forget()
+			
 			if state.settings.config.showTeacher:
 				obj.teacherLabel.grid(row=2)
-				obj.rowconfigure(2, weight=1, minsize=20)
+				obj.grid_rowconfigure(2, weight=1, minsize=20)
 			else:
 				obj.teacherLabel.grid_forget()
 			obj._class = classes[i]
+		# endregion
+		# region Exam and Homework icons
 		if state.settings.events.current_exam():
 			self.homeworkLabel.grid_forget()
 			self.examLabel.grid(row=1, column=3)
@@ -271,13 +285,13 @@ class Clock(Tk):
 		else:
 			self.examLabel.grid_forget()
 			self.homeworkLabel.grid_forget()
-
+		# endregion
+		# region Aux label
 		if not aux:
 			self.auxLabel.grid_forget()
-			self.rowconfigure(6, weight=0, minsize=0)
 		else:
-			self.auxLabel.grid(row=6, column=0, sticky="nsew", columnspan=3)
-			self.rowconfigure(6, weight=1)
+			self.auxLabel.grid(row=4, column=0, sticky="ns", columnspan=3)
+		# endregion
 	alerted:datetime = datetime.fromtimestamp(0)
 	def sendAlert(self):
 		async def msg(alert:dict[str, str]):
@@ -314,6 +328,7 @@ class Clock(Tk):
 			now_time = now.time()
 			self.sendAlert()
 			loc = state.settings.localization
+			self.grid_rowconfigure(0, weight=0)
 			for num, _class in enumerate(state.schedule.classes):
 				if not _class:
 					continue
@@ -340,21 +355,16 @@ class Clock(Tk):
 					break
 			else: # No class ends after now (No If branch broke the loop)
 				self.mainLabel.config(text=loc.mainlabel.dayOver)
+				self.grid_rowconfigure(0, weight=100)
 				state.currentClassIndex = -1
 				for frame in self.classFrames: 
 					if frame.winfo_ismapped(): frame.grid_forget()
-				if self.auxLabel.winfo_ismapped():
-					self.auxLabel.grid_forget()
-				if self.separator.winfo_ismapped():
-					self.separator.grid_forget()
-				if self.vertSeparator.winfo_ismapped():
-					self.vertSeparator.grid_forget()
-				if self.timeFrame.winfo_ismapped():
-					self.timeFrame.grid_forget()
-				self.setDynamicSize()
+				self.auxLabel.grid_forget()
+				self.separator.grid_forget()
+				[i.grid_forget() for i in self.vertSeparators]
+				self.timeFrame.grid_forget()
 				await asleep(10)
 				continue
-			self.setDynamicSize()
 			update_delay = self.batterySaverEnabled(5, 1)
 			if state.dummyDate is not None:
 				state.dummyDate = state.dummyDate + timedelta(seconds=1)

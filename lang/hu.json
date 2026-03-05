@@ -1,4 +1,5 @@
 {
+	"noneClass":"Lyukasóra",
 	"messages":{
 		"newSettings": {
 			"title": "Új beállítások fájl",
@@ -22,10 +23,10 @@
 		}
 	},
 	"classNumbering": {
-		"default":"."
+		"default": "."
 	},
 	"mainlabel":{
-		"inClass":"{num} óra végéig",
+		"inClass": "{num} óra végéig",
 		"onBreak": "Szünet végéig",
 		"dayOver": "A napnak vége"
 	},
@@ -34,27 +35,27 @@
 		"defaultText": "Értesítés ideje elérkezett"
 	},
 	"nextClass": "Következő óra",
-	"substitute":"Helyettesítő",
+	"substitute": "Helyettesítő",
 	"delaySetting":{
-		"title":"Késleltetés beállítása",
-		"label":"Késleltetés beállítása (másodpercben)",
-		"help":"Negatív szám = Sietés\nPozitív szám = Késés",
-		"btn":"Mentés"
+		"title": "Késleltetés beállítása",
+		"label": "Késleltetés beállítása (másodpercben)",
+		"help": "Negatív szám = Sietés\nPozitív szám = Késés",
+		"btn": "Mentés"
 	},
 	"tray": {
 		"name": "Csengetés Visszaszámláló",
-		"delay":"Késleltetés: {time}",
+		"delay": "Késleltetés: {time}",
 		"delayMinutesDisplay": "p",
 		"delaySecondsDisplay": "mp",
-		"fullscreen_schedule":"Órarend",
-		"settings":"Beállítások",
-		"close":"Kilépés"
+		"fullscreen_schedule": "Órarend",
+		"settings": "Beállítások",
+		"close": "Kilépés"
 	},
 	"settings": {
 		"title": "Visszaszámláló Beállítások",
 		"topbar": {
-			"schedule":"Órarend",
-			"special_days":"Speciális napok",
+			"schedule": "Órarend",
+			"special_days": "Speciális napok",
 			"alerts": "Értesítések",
 			"general": "Általános"
 		}

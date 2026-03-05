@@ -1,3 +1,4 @@
+from __future__ import annotations
 from json import load as jload
 from pathlib import Path
 from logging import getLogger
@@ -40,16 +41,18 @@ class Localization:
 			self.dayOver = obj.get("dayOver", default["dayOver"])
 	class _numberingLoc:
 		def __init__(self, obj:dict[str, str]):
-			self.default = obj.get("default")
-			self.values = {k: v for k, v in obj.items() if k != "default"}
+			self.default = obj.pop("default")
+			self.values = {k: v for k, v in obj.items()}
 		def getSuffix(self, _class:int) -> str:
-			return self.values.get(str(_class), self.default)
+			if str(_class) in self.values:
+				return self.values.get(str(_class), self.default)
+			return self.values.get(str(_class)[0], self.default)
 	class _messagesLoc:
-		newSettings:_message
-		error:_message
-		windowsOnly:_message
-		anotherInstance:_message
-		updatePrompt:_message
+		newSettings:'_message'
+		error:'_message'
+		windowsOnly:'_message'
+		anotherInstance:'_message'
+		updatePrompt:'_message'
 		@dataclass(slots=True)
 		class _message:
 			title:str
@@ -79,6 +82,7 @@ class Localization:
 				default["updatePrompt"]
 			)
 	_lang_tag:str
+	noneClass:str
 	messages:_messagesLoc
 	classNumbering:_numberingLoc # Only required value is "default"
 	mainlabel:_mainlabelLoc
@@ -102,7 +106,9 @@ class Localization:
 			self.logger.info(f"Locale '{language}' loaded properly")
 		with open(f"lang\\en.json", "r", encoding="utf-8") as f:
 			self._defaults:dict = jload(f)
+		self._merged = merge(self._lang, self._defaults)
 		self._lang_tag = language
+		self.noneClass = self._merged["noneClass"]
 		self.messages = self._messagesLoc(self._lang.get("messages", {}), self._defaults["messages"])
 		self.classNumbering = self._numberingLoc(self._lang.get("classNumbering"))
 		self.mainlabel = self._mainlabelLoc(self._lang.get("mainlabel", {}), self._defaults["mainlabel"])

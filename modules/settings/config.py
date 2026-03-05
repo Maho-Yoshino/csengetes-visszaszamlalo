@@ -3,7 +3,6 @@ from json import load as jload, dump as jdump
 from pathlib import Path
 from logging import getLogger
 from typing import Literal
-from ..utils import clamp
 
 _defaults = {
 	"background": "#000000",
@@ -13,6 +12,7 @@ _defaults = {
 	"alpha": {"default": 0.75, "onHover":0.25},
 	"showTeacher": False
 }
+def clamp(num:int|float, _min:int|float, _max:int|float): return max(_min, min(num, _max))
 class Config:
 	# NOTE: Changes are not persisted until save() is called explicitly
 	def __init__(self):

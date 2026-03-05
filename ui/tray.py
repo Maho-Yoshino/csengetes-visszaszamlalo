@@ -44,8 +44,8 @@ class Tray:
 		self.icon.stop()
 		for level in state.openGUIs.values():
 			level.destroy()
-		state.root.quit()
-		state.root.destroy()
+		state.clock.quit()
+		state.clock.destroy()
 		state.runtime.create_task(self._shutdown())
 	async def _shutdown(self):
 		tasks = []

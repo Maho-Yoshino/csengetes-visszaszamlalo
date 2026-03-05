@@ -17,7 +17,7 @@ class settingsGUI(Toplevel):
 		if state.openGUIs.get("settings", None) is not None:
 			state.openGUIs["settings"].focus_force()
 			return self.logger.debug("Settings opened more than once. Focus set to older window")
-		super().__init__(state.root)
+		super().__init__(state.clock)
 		state.openGUIs["settings"] = self
 		self.protocol("WM_DELETE_WINDOW", self._closeFunc)
 		# endregion

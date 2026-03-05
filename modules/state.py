@@ -19,7 +19,6 @@ tray:Tray = None
 clock:Clock
 
 windowHandle:str = u"Csengetés időzítő"
-root:Tk = None
 dummyDate:Optional[datetime] = None
 
 runtime:AbstractEventLoop = None
@@ -55,7 +54,7 @@ def exc_handler(task: Task):
 			)
 			tray.quit()
 		try:
-			root.after(0, showError)
+			clock.after(0, showError)
 		except Exception:
 			_logger.exception("Failed to schedule Tk error dialog")
 			tray.quit()

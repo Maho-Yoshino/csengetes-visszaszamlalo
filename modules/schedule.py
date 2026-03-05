@@ -13,11 +13,16 @@ class _Class:
 	name:str
 	room:str|None = None
 	teacher:str|None = None
-	def __init__(self, _class:_classData, times:str):
+	def __init__(self, _class:_classData|None, times:str):
 		_date = state.getTime().date()
 		self.begin, self.end = Schedule.parseTimes(times)
 		self.begin = datetime.combine(_date, self.begin)
 		self.end = datetime.combine(_date, self.end)
+		if _class is None:
+			self.name = state.settings.localization.noneClass
+			self.room = None
+			self.teacher = None
+			return
 		self.name = _class.name
 		if (self.name is None):
 			raise ValueError(f"Parameter 'name' of class at time '{times}' does not exist")
