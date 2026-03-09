@@ -7,8 +7,10 @@ if not exist ".venv" (
 	python -m venv .venv
 )
 call ./.venv/Scripts/activate
-python.exe -m pip install --upgrade pip
-pip install -r requirements.txt
+echo [Setup] Upgrading pip
+python.exe -m pip install --upgrade pip -q -q
+echo [Setup] Installing requirements
+pip install -r requirements.txt -q -q
 call deactivate
 echo [Setup] Setup complete
 pause

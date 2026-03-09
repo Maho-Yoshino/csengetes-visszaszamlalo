@@ -107,12 +107,12 @@ class Schedule:
 			return _classData(data)
 		elif isinstance(data, list):
 			_ = []
-			for data in data:
-				if isinstance(data, str):
-					_.append(_classData(self.classes.get(data)))
-				elif isinstance(data, dict):
-					_.append(_classData(data))
-				elif data is None:
+			for data2 in data:
+				if isinstance(data2, str):
+					_.append(_classData(self.classes.get(data2)))
+				elif isinstance(data2, dict):
+					_.append(_classData(data2))
+				elif data2 is None:
 					_.append(None)
 				else:
 					raise ValueError(f"Invalid type ({type(data)}) given")
@@ -121,7 +121,7 @@ class Schedule:
 			return None
 		else:
 			raise ValueError(f"Invalid type ({type(data)}) given")
-	def getUnifiedSchedule(self, *, week_of:datetime|None=None) -> list[dict[str, str | _classData | list[_classData | None] | None]]:
+	def getUnifiedSchedule(self, *, week_of:datetime|None=None) -> list[dict[str, _classData | list[_classData | None] | None]]:
 		finalSchedule = deepcopy(self.default)
 		if week_of is None: _date = getTime().date() # Get current week if other week is not given
 		else: _date = week_of.date()
