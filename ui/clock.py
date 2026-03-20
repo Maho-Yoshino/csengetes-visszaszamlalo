@@ -229,7 +229,12 @@ class Clock(Tk):
 				elif await isCursorOverWindow() and self.wm_attributes("-alpha") != state.settings.config.alpha["onHover"]: 
 					self.wm_attributes("-alpha", state.settings.config.alpha["onHover"])
 				await asleep(self.batterySaverEnabled(1, 0.1))
-			except (CancelledError, TclError): pass
+			except CancelledError:
+				break
+			except TclError:
+				if state.tray is not None and state.tray.shutting_down:
+					break
+				await asleep(0.1)
 			except Exception:
 				self.logger.exception("An error happened during transparency check")
 	def setClassLabels(self, *classes:_Class, aux:bool = False):
@@ -261,8 +266,10 @@ class Clock(Tk):
 			if len(classes) > 1:
 				obj.wraplength = self.winfo_width()//len(classes)
 			elif len(classes) == 1:
-				for i in range(len(self.vertSeparators)):
+				for _ in range(len(self.vertSeparators)):
 					self.vertSeparators.pop().grid_forget()
+				for j in self.classFrames:
+					j.grid_forget()
 				obj.wraplength = self.winfo_width()
 				obj.grid(row=0, column=0, sticky="nsew")
 			else:

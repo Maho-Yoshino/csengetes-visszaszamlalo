@@ -4,7 +4,7 @@ if __name__ == "__main__":
 	from os import path
 	sp.append(path.abspath(path.join(path.dirname(__file__), '..')))
 import modules.state as state
-from asyncio import sleep, gather
+from asyncio import gather, all_tasks, Task, current_task, wait_for
 from logging import getLogger
 from PIL.Image import open as imgopen
 from ui.settings import settingsGUI
@@ -41,22 +41,44 @@ class Tray:
 			return
 		self.shutting_down = True
 		logger.info("Closing application")
-		self.icon.stop()
-		for level in state.openGUIs.values():
-			level.destroy()
-		state.clock.quit()
-		state.clock.destroy()
-		state.runtime.create_task(self._shutdown())
-	async def _shutdown(self):
-		tasks = []
-		for task in (state.clock.mainloopTask, state.clock.transparencyTask, state.tkPumpTask, state.clock.setClickThroughTask):
-			if task and not task.done():
-				task.cancel()
-				tasks.append(task)
-		if tasks:
-			await gather(*tasks, return_exceptions=True)
-		if state.runtime is not None: 
+		try:
+			self.icon.stop()
+		except Exception:
+			logger.exception("Failed to stop tray icon cleanly")
+
+		current = current_task(state.runtime)
+		tasks:list[Task] = [
+			t for t in all_tasks(state.runtime)
+			if t is not current and not t.done()
+		]
+
+		logger.debug("Destroying Tk windows")
+		for level in list(state.openGUIs.values()):
+			try:
+				level.destroy()
+			except Exception:
+				logger.exception("Failed to destroy a child Tk window")
+		state.openGUIs.clear()
+		try:
+			state.clock.quit()
+			state.clock.destroy()
+		except Exception:
+			logger.exception("Failed to destroy the main clock window")
+		logger.debug("Tk destruction done")
+		
+		for task in tasks:
+			task.cancel()
+		state.runtime.create_task(self._shutdown(tasks))
+
+	async def _shutdown(self, tasks:list[Task]):
+		logger.debug("Shutdown coroutine started")
+		try:
+			if tasks:
+				await wait_for(gather(*tasks, return_exceptions=True), timeout=2)
+		except TimeoutError:
+			logger.debug("Shutdown timed out; remaining tasks:")
+			for task in tasks:
+				logger.debug("Task alive=%s cancelled=%s done=%s repr=%r",
+					not task.done(), task.cancelled(), task.done(), task)
+		finally:
 			state.runtime.stop()
-			while state.runtime.is_running():
-				await sleep(0.05)
-			state.runtime.close()

@@ -1,6 +1,6 @@
 import sys
 sys.dont_write_bytecode = True # Prevent '__pycache__' creation
-from asyncio import new_event_loop, set_event_loop
+from asyncio import new_event_loop, set_event_loop, all_tasks, gather
 from logging import getLogger, WARNING, DEBUG, INFO, Formatter
 from logging.handlers import TimedRotatingFileHandler
 from tkinter import messagebox
@@ -15,6 +15,7 @@ import modules.state as state
 from modules.settings import Settings
 from ui.clock import Clock
 from ui.tray import Tray
+from time import sleep
 logger = getLogger()
 getLogger("PIL").setLevel(WARNING)
 getLogger("pystray").setLevel(WARNING)
@@ -171,7 +172,18 @@ def main(dummyDate:datetime|None = None):
 	state.tkPumpTask = state.runtime.create_task(state.tkPump(state.clock))
 	state.tkPumpTask.add_done_callback(state.exc_handler)
 	state.tray = Tray()
-	state.runtime.run_forever()
+	try:
+		state.runtime.run_forever()
+	finally:
+		pending = [task for task in all_tasks(state.runtime) if not task.done()]
+		for task in pending:
+			task.cancel()
+		if pending:
+			state.runtime.run_until_complete(gather(*pending, return_exceptions=True))
+		state.runtime.run_until_complete(state.runtime.shutdown_asyncgens())
+		if hasattr(state.runtime, "shutdown_default_executor"):
+			state.runtime.run_until_complete(state.runtime.shutdown_default_executor())
+		state.runtime.close()
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
@@ -181,12 +193,11 @@ try:
 		main()
 except KeyboardInterrupt: pass
 except Exception as e:
-	logger.exception("An error occurred during runtime", exc_info=True)
+	logger.exception("An error occurred during runtime", exc_info=e)
 	messagebox.showerror(
 		state.settings.localization.messages.error.title, 
 		state.settings.localization.messages.error.message, 
 		icon="error"
 	)
 finally:
-	if state.tray:
-		state.tray.quit()
+	exit(0)
