@@ -46,10 +46,22 @@ class Events:
 			str | list[str] | bool | None | dict[str, str] | list[dict[str, str]]
 		]
 	]:
-		return {
-			datetime.strptime(date_str, self.datetime_fmt):schedule
-			for date_str, schedule in self._data["specialDays"].items()
-		}
+		today = state.getTime().date()
+		new_data:dict[date, bool|dict[str, str]] = {}
+		changed:bool=False
+		for _date, data in self._data["specialDays"].items():
+			_date = datetime.strptime(_date, "%Y-%m-%d")
+			if _date.date() < today:
+				changed = True
+				continue
+			new_data[_date] = data
+		if changed:
+			self._data["specialDays"] = {
+				day.strftime(self.datetime_fmt): schedule
+				for day, schedule in new_data.items()
+			}
+			self.save()
+		return new_data
 	def setSpecialDay(self, day:datetime, schedule:dict[str, str|list[str]|None|dict[str, str]|list[dict[str, str]]]):
 		self._data["specialDays"][day.strftime(self.datetime_fmt)] = schedule
 		self.save()

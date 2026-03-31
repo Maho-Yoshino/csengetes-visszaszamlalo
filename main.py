@@ -7,7 +7,7 @@ from tkinter import messagebox
 from sys import executable, argv, platform
 from pathlib import Path
 from datetime import datetime
-from os import path, chdir, environ
+from os import path, chdir, environ, _exit
 from github import Github, Repository, GitRelease
 from ctypes import windll
 from ctypes.wintypes import BOOL
@@ -184,11 +184,12 @@ def main(dummyDate:datetime|None = None):
 		if hasattr(state.runtime, "shutdown_default_executor"):
 			state.runtime.run_until_complete(state.runtime.shutdown_default_executor())
 		state.runtime.close()
+		_exit(0)
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		main()
-		#main(datetime(year=2026, month=3, day=4, hour=16))
+		#main()
+		main(datetime(year=2026, month=4, day=1, hour=14, minute=0))
 	else:
 		main()
 except KeyboardInterrupt: pass

@@ -1,7 +1,7 @@
 from json import load as jload, dump as jdump
 from pathlib import Path
 from logging import getLogger
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, time, date
 from copy import deepcopy
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -20,7 +20,8 @@ _defaults = {
 	"secondary": {},
 	"offsetSecondary": False, # Offset the secondary schedule by 1 week (A-B weeks -> B-A weeks essentially)
 	"delay":0,
-	"group":-1 # In case more than 1 class is given for a class, display the n-th one; If -1 then display all 
+	"group":-1, # In case more than 1 class is given for a class, display the n-th one; If -1 then display all 
+	"timeSlots": {}
 }
 class Schedule:
 	# NOTE: Changes are not persisted until save() is called explicitly
@@ -79,8 +80,10 @@ class Schedule:
 	@offsetSecondary.setter
 	def offsetSecondary(self, value:bool):
 		self._data["offsetSecondary"] = value
-	def currentlySecondaryWeek(self) -> bool:
-		return getTime().date().isocalendar().week % 2 == int(self.offsetSecondary)
+	def currentlySecondaryWeek(self, _date:datetime|date|None = None) -> bool:
+		if _date is None: _date = getTime()
+		if isinstance(_date, datetime): _date = _date.date()
+		return _date.isocalendar().week % 2 == int(self.offsetSecondary)
 	# endregion
 	# region delay
 	@property
@@ -98,6 +101,27 @@ class Schedule:
 	def group(self, value:int):
 		self._data["group"] = value
 		self.save()
+	# endregion
+	# region time slots
+	@property
+	def timeSlots(self) -> dict[int, tuple[time, time]]:
+		tmp:dict[int, tuple[time, time]] = {}
+		for _classIndex, times in self._data["timeSlots"].items():
+			_classIndex:str; times:str
+			tmp[int(_classIndex)] = times
+		return tmp
+	@property
+	def timeSlotsTime(self) -> dict[int, tuple[time, time]]:
+		tmp:dict[int, tuple[time, time]] = {}
+		for _classIndex, times in self._data["timeSlots"].items():
+			_classIndex:str; times:str
+			_ = times.split("-")
+			startTime = datetime.strptime(_[0], "%H:%M").time()
+			endTime = datetime.strptime(_[1], "%H:%M").time()
+			tmp[int(_classIndex)] = (startTime, endTime)
+		return tmp
+	def setTimeSlots(self, _class:int, startTime:time, endTime:time):
+		self._data["timeSlots"][str(_class)] = f"{startTime.strftime("%H:%M")}-{endTime.strftime("%H:%M")}"
 	# endregion
 	# region Unified schedule (Primary, Secondary and Special days combined)
 	def convertToClassData(self, data:str|dict[str, str]|None|list[str|dict[str, str]]) -> list[_classData|None]|_classData|None:
@@ -123,30 +147,51 @@ class Schedule:
 			raise ValueError(f"Invalid type ({type(data)}) given")
 	def getUnifiedSchedule(self, *, week_of:datetime|None=None) -> list[dict[str, _classData | list[_classData | None] | None]]:
 		finalSchedule = deepcopy(self.default)
+		defaultTimeSlots = self.timeSlots
+		# region Get week constraints
 		if week_of is None: _date = getTime().date() # Get current week if other week is not given
 		else: _date = week_of.date()
 		weekstart = _date - timedelta(days=_date.weekday()) # Get monday
-		if self.currentlySecondaryWeek():
-			for dayInd, data in self.secondary.items():
-				for times, classID in data.items():
-					if times in self.default[int(dayInd)]:
-						finalSchedule[times] = classID
-		for day, data in self.events.specialDays.items(): # Merge special days with the new schedule
-			day:datetime; data:dict[str, bool|dict[str, str|None|list[str]]]
-			if weekstart > day.date() > (weekstart + timedelta(days=7)):
+		# endregion
+		# region Secondary Week
+		if self.currentlySecondaryWeek(_date):
+			for dayInd, secondary_day in self.secondary.items():
+				for classIndex, classID in secondary_day.items():
+					finalSchedule[int(dayInd)][defaultTimeSlots[int(classIndex)]] = self.convertToClassData(classID)
+		# endregion
+		# region Special days
+		for _date, special_day in self.events.specialDays.items(): # Merge special days with the new schedule
+			_date:datetime; special_day:dict[str, bool|dict[str, str|None|list[str]]]
+			if weekstart > _date.date():
 				continue
-			full_schedule:bool = data.get("full", False)
-			_classes:dict[str, str|None|list[str]] = data.get("classes")
-			if not full_schedule: # Replace only the given items
-				new_timetable = finalSchedule[day.weekday()]
-				for time, _class in _classes.items():
-					if time not in new_timetable:
-						continue
-					new_timetable[time] = self.convertToClassData(_class)
-				finalSchedule[day.weekday()] = new_timetable
-			else: # Replace every item in the day
-				new_timetable = {}
-				for time, _class in _classes.items():
-					new_timetable[time] = self.convertToClassData(_class)
-		return finalSchedule
+			if _date.date() >= weekstart + timedelta(days=7):
+				continue
+			full_schedule:bool = special_day.get("full", False)
+			newTimeSlots = special_day.get("timeSlots")
+			if newTimeSlots:
+				tmp = {}
+				for _classIndex, times in newTimeSlots.items():
+					_classIndex:str; times:str
+					tmp[int(_classIndex)] = times
+				newTimeSlots = tmp
+			else:
+				newTimeSlots = defaultTimeSlots
+			_classes:dict[str, str|None|list[str]] = special_day.get("classes")
+			new_timetable = {} if full_schedule else deepcopy(finalSchedule[_date.weekday()])
+			for classIndex, _class in _classes.items():
+				if full_schedule or classIndex in new_timetable:
+					new_timetable[newTimeSlots[int(classIndex)]] = self.convertToClassData(_class)
+			finalSchedule[_date.weekday()] = new_timetable
+		# endregion
+		# region Convert classIndex to times
+		newFinalSchedule = []
+		for ind, _schedule in enumerate(finalSchedule):
+			newFinalSchedule.append({})
+			for classIndex, data in _schedule.items():
+				try:
+					newFinalSchedule[ind][defaultTimeSlots[int(classIndex)]] = data
+				except ValueError: 
+					newFinalSchedule[ind][classIndex] = data
+		# endregion
+		return newFinalSchedule
 	# endregion
