@@ -6,6 +6,7 @@ if __name__ == "__main__":
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 from logging import getLogger
+from pathlib import Path
 from tkinter import (
     BooleanVar,
     Checkbutton,
@@ -40,24 +41,49 @@ class settingsGUI(Toplevel):
         state.openGUIs["settings"] = self
         self.protocol("WM_DELETE_WINDOW", self._closeFunc)
 
+        self.bg = "#202020"
+        self.fg = "#FFFFFF"
+        self.surface = "#2B2B2B"
+        self.accent = "#3A3A3A"
         self.style = ttk.Style(self)
-        self.style.configure("mainText.Label", foreground="#FFFFFF", background="#202020")
-        self.style.configure("section.TFrame", background="#202020")
-        self.style.configure("scheduleElement.TButton", padding=8)
-        self.configure(background="#202020")
+        try:
+            self.style.theme_use("clam")
+        except Exception:
+            pass
+        self.style.configure("TFrame", background=self.bg)
+        self.style.configure("TLabel", foreground=self.fg, background=self.bg)
+        self.style.configure("mainText.Label", foreground=self.fg, background=self.bg)
+        self.style.configure("TButton", foreground=self.fg, background=self.surface)
+        self.style.map("TButton", background=[("active", self.accent)])
+        self.style.configure("scheduleElement.TButton", padding=8, foreground=self.fg, background=self.surface)
+        self.style.map("scheduleElement.TButton", background=[("active", self.accent)])
+        self.style.configure("TLabelframe", background=self.bg, foreground=self.fg)
+        self.style.configure("TLabelframe.Label", background=self.bg, foreground=self.fg)
+        self.style.configure("TEntry", fieldbackground=self.surface, foreground=self.fg, insertcolor=self.fg)
+        self.style.configure("TCombobox", fieldbackground=self.surface, foreground=self.fg, background=self.surface, arrowcolor=self.fg)
+        self.style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", self.surface)],
+            foreground=[("readonly", self.fg)],
+            selectbackground=[("readonly", self.accent)],
+            selectforeground=[("readonly", self.fg)],
+        )
+        self.style.configure("TSpinbox", fieldbackground=self.surface, foreground=self.fg, background=self.surface, arrowcolor=self.fg)
+        self.style.configure("TCheckbutton", background=self.bg, foreground=self.fg)
+        self.configure(background=self.bg)
 
         loc = state.settings.localization
         self.title(loc.settings.title)
         self.geometry(f"980x720+{self.winfo_screenwidth()//2-490}+{self.winfo_screenheight()//2-360}")
 
-        menu = Menu(self, background="#202020", fg="#FFFFFF", relief="ridge")
+        menu = Menu(self, background=self.bg, fg=self.fg, relief="ridge", activebackground=self.accent, activeforeground=self.fg)
         menu.add_command(label=loc.settings.topbar["schedule"], command=self._openSchedule)
         menu.add_command(label=loc.settings.topbar["special_days"], command=self._openSpecialDays)
         menu.add_command(label=loc.settings.topbar["alerts"], command=self._openAlerts)
         menu.add_command(label=loc.settings.topbar["general"], command=self._openGeneral)
         self.config(menu=menu)
 
-        self.content = Frame(self, bg="#202020")
+        self.content = Frame(self, bg=self.bg)
         self.content.pack(fill="both", expand=True, padx=12, pady=12)
         self._openSchedule()
 
@@ -72,6 +98,40 @@ class settingsGUI(Toplevel):
     def _current_week_start(self) -> date:
         today = state.getTime().date()
         return today - timedelta(days=today.weekday())
+
+    def _style_tk_frame(self, widget: Frame):
+        widget.configure(bg=self.bg)
+
+    def _style_listbox(self, widget: Listbox):
+        widget.configure(
+            bg=self.surface,
+            fg=self.fg,
+            selectbackground=self.accent,
+            selectforeground=self.fg,
+            highlightbackground=self.bg,
+            highlightcolor=self.accent,
+        )
+
+    def _style_text(self, widget: Text):
+        widget.configure(
+            bg=self.surface,
+            fg=self.fg,
+            insertbackground=self.fg,
+            highlightbackground=self.bg,
+            highlightcolor=self.accent,
+        )
+
+    def _style_checkbutton(self, widget: Checkbutton):
+        widget.configure(
+            bg=self.bg,
+            fg=self.fg,
+            activebackground=self.bg,
+            activeforeground=self.fg,
+            selectcolor=self.surface,
+        )
+
+    def _style_dialog(self, widget: Toplevel):
+        widget.configure(bg=self.bg)
 
     def _format_class_value(self, value) -> str:
         classes = state.settings.classes.classes
@@ -121,6 +181,49 @@ class settingsGUI(Toplevel):
         datetime.strptime(text, "%H:%M")
         return text
 
+    def _available_languages(self) -> list[str]:
+        return sorted(path.stem for path in Path("lang").glob("*.json"))
+
+    def _create_time_inputs(self, parent, *, start: str = ""):
+        hour_var = StringVar(value="00")
+        minute_var = StringVar(value="00")
+        if start:
+            parsed = datetime.strptime(start, "%H:%M")
+            hour_var.set(f"{parsed.hour:02}")
+            minute_var.set(f"{parsed.minute:02}")
+        frame = ttk.Frame(parent)
+        ttk.Spinbox(frame, from_=0, to=23, width=3, format="%02.0f", textvariable=hour_var, wrap=True).pack(side="left")
+        ttk.Label(frame, text=":").pack(side="left")
+        ttk.Spinbox(frame, from_=0, to=59, width=3, format="%02.0f", textvariable=minute_var, wrap=True).pack(side="left")
+        return frame, hour_var, minute_var
+
+    def _time_from_vars(self, hour_var: StringVar, minute_var: StringVar) -> str:
+        hour = int(hour_var.get())
+        minute = int(minute_var.get())
+        if hour not in range(24) or minute not in range(60):
+            raise ValueError("Invalid time value.")
+        return f"{hour:02}:{minute:02}"
+
+    def _create_date_inputs(self, parent, *, value: str | None = None):
+        today = state.getTime().date()
+        parsed = today
+        if value:
+            parsed = datetime.strptime(value, "%Y-%m-%d").date()
+        year_var = StringVar(value=str(parsed.year))
+        month_var = StringVar(value=f"{parsed.month:02}")
+        day_var = StringVar(value=f"{parsed.day:02}")
+        frame = ttk.Frame(parent)
+        ttk.Spinbox(frame, from_=today.year - 10, to=today.year + 10, width=5, textvariable=year_var, wrap=True).pack(side="left")
+        ttk.Label(frame, text="-").pack(side="left")
+        ttk.Spinbox(frame, from_=1, to=12, width=3, format="%02.0f", textvariable=month_var, wrap=True).pack(side="left")
+        ttk.Label(frame, text="-").pack(side="left")
+        ttk.Spinbox(frame, from_=1, to=31, width=3, format="%02.0f", textvariable=day_var, wrap=True).pack(side="left")
+        return frame, year_var, month_var, day_var
+
+    def _date_from_vars(self, year_var: StringVar, month_var: StringVar, day_var: StringVar) -> str:
+        value = date(int(year_var.get()), int(month_var.get()), int(day_var.get()))
+        return value.strftime("%Y-%m-%d")
+
     def _openSchedule(self):
         self._clearContent()
         root = ttk.Frame(self.content)
@@ -164,6 +267,7 @@ class settingsGUI(Toplevel):
         ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
 
         class_list = Listbox(classes_frame, exportselection=False, height=12)
+        self._style_listbox(class_list)
         class_list.grid(row=1, column=0, rowspan=6, sticky="nsew", padx=(0, 10))
         classes_frame.grid_columnconfigure(1, weight=1)
         classes_frame.grid_rowconfigure(1, weight=1)
@@ -233,6 +337,7 @@ class settingsGUI(Toplevel):
 
     def _edit_weekly_slot(self, day_index: int, slot: int | None = None):
         dialog = Toplevel(self)
+        self._style_dialog(dialog)
         dialog.title(f"Edit {DAY_NAMES[day_index]}")
         dialog.transient(self)
         dialog.grab_set()
@@ -245,23 +350,25 @@ class settingsGUI(Toplevel):
 
         slot_var = StringVar(value=str(existing_slot))
         value_var = StringVar(value=self._format_class_value(value) if value is not None else "")
-        start_var = StringVar()
-        end_var = StringVar()
         current_time = state.settings.schedule._data["timeSlots"].get(str(existing_slot), "")
+        start_time = ""
+        end_time = ""
         if current_time:
-            start, end = current_time.split("-", 1)
-            start_var.set(start)
-            end_var.set(end)
+            start_time, end_time = current_time.split("-", 1)
 
         ttk.Label(dialog, text="Slot").grid(row=0, column=0, sticky="w", padx=8, pady=4)
         ttk.Entry(dialog, textvariable=slot_var).grid(row=0, column=1, sticky="ew", padx=8, pady=4)
         ttk.Label(dialog, text="Start").grid(row=1, column=0, sticky="w", padx=8, pady=4)
-        ttk.Entry(dialog, textvariable=start_var).grid(row=1, column=1, sticky="ew", padx=8, pady=4)
+        start_frame, start_hour_var, start_minute_var = self._create_time_inputs(dialog, start=start_time)
+        start_frame.grid(row=1, column=1, sticky="w", padx=8, pady=4)
         ttk.Label(dialog, text="End").grid(row=2, column=0, sticky="w", padx=8, pady=4)
-        ttk.Entry(dialog, textvariable=end_var).grid(row=2, column=1, sticky="ew", padx=8, pady=4)
+        end_frame, end_hour_var, end_minute_var = self._create_time_inputs(dialog, start=end_time)
+        end_frame.grid(row=2, column=1, sticky="w", padx=8, pady=4)
         ttk.Label(dialog, text=f"Class code(s) or {NONE_TOKEN}").grid(row=3, column=0, sticky="w", padx=8, pady=4)
         ttk.Entry(dialog, textvariable=value_var).grid(row=3, column=1, sticky="ew", padx=8, pady=4)
-        Checkbutton(dialog, text="Save as secondary-week override", variable=is_secondary).grid(row=4, column=0, columnspan=2, sticky="w", padx=8, pady=4)
+        secondary_check = Checkbutton(dialog, text="Save as secondary-week override", variable=is_secondary)
+        self._style_checkbutton(secondary_check)
+        secondary_check.grid(row=4, column=0, columnspan=2, sticky="w", padx=8, pady=4)
         ttk.Label(dialog, text="Available codes: " + ", ".join(sorted(state.settings.classes.classes))).grid(row=5, column=0, columnspan=2, sticky="w", padx=8, pady=4)
         dialog.grid_columnconfigure(1, weight=1)
 
@@ -270,8 +377,8 @@ class settingsGUI(Toplevel):
                 slot_index = int(slot_var.get().strip())
                 if slot_index <= 0:
                     raise ValueError("Slot must be positive")
-                start = self._parse_timestring(start_var.get())
-                end = self._parse_timestring(end_var.get())
+                start = self._time_from_vars(start_hour_var, start_minute_var)
+                end = self._time_from_vars(end_hour_var, end_minute_var)
                 parsed = self._parse_class_entry(value_var.get())
             except Exception as exc:
                 return messagebox.showerror("Invalid slot", str(exc), parent=dialog)
@@ -313,11 +420,12 @@ class settingsGUI(Toplevel):
 
         ttk.Label(left, text="Special days", style="mainText.Label").pack(anchor="w")
         day_list = Listbox(left, exportselection=False, width=18, height=18)
+        self._style_listbox(day_list)
         day_list.pack(fill="y", expand=True, pady=(8, 8))
         for key in sorted(state.settings.events._data["specialDays"]):
             day_list.insert(END, key)
 
-        selected_date = StringVar(value=datetime.now().strftime("%Y-%m-%d"))
+        selected_date = StringVar(value=state.getTime().strftime("%Y-%m-%d"))
         full_var = BooleanVar(value=False)
         row_container = ttk.Frame(right)
         row_container.pack(fill="both", expand=True, pady=(8, 0))
@@ -327,15 +435,25 @@ class settingsGUI(Toplevel):
             row_frame = ttk.Frame(row_container)
             row_frame.pack(fill="x", pady=2)
             slot_var = StringVar(value=str(slot))
-            start_var = StringVar(value=start)
-            end_var = StringVar(value=end)
             value_var = StringVar(value=value)
             ttk.Entry(row_frame, textvariable=slot_var, width=8).pack(side="left", padx=(0, 4))
-            ttk.Entry(row_frame, textvariable=start_var, width=8).pack(side="left", padx=(0, 4))
-            ttk.Entry(row_frame, textvariable=end_var, width=8).pack(side="left", padx=(0, 4))
+            start_frame, start_hour_var, start_minute_var = self._create_time_inputs(row_frame, start=start)
+            start_frame.pack(side="left", padx=(0, 4))
+            end_frame, end_hour_var, end_minute_var = self._create_time_inputs(row_frame, start=end)
+            end_frame.pack(side="left", padx=(0, 4))
             ttk.Entry(row_frame, textvariable=value_var).pack(side="left", fill="x", expand=True, padx=(0, 4))
             ttk.Button(row_frame, text="X", width=3, command=lambda: remove_row(row_frame)).pack(side="left")
-            rows.append({"frame": row_frame, "slot": slot_var, "start": start_var, "end": end_var, "value": value_var})
+            rows.append(
+                {
+                    "frame": row_frame,
+                    "slot": slot_var,
+                    "start_hour": start_hour_var,
+                    "start_minute": start_minute_var,
+                    "end_hour": end_hour_var,
+                    "end_minute": end_minute_var,
+                    "value": value_var,
+                }
+            )
 
         def remove_row(row_frame: ttk.Frame):
             for index, row in enumerate(list(rows)):
@@ -352,6 +470,10 @@ class settingsGUI(Toplevel):
                 return
             key = day_list.get(day_list.curselection()[0])
             selected_date.set(key)
+            parsed_date = datetime.strptime(key, "%Y-%m-%d").date()
+            date_year_var.set(str(parsed_date.year))
+            date_month_var.set(f"{parsed_date.month:02}")
+            date_day_var.set(f"{parsed_date.day:02}")
             data = state.settings.events._data["specialDays"].get(key, {})
             full_var.set(bool(data.get("full", False)))
             classes = data.get("classes", {}) or {}
@@ -367,9 +489,12 @@ class settingsGUI(Toplevel):
 
         day_list.bind("<<ListboxSelect>>", load_special_day)
 
-        ttk.Label(right, text="Date (YYYY-MM-DD)").pack(anchor="w")
-        ttk.Entry(right, textvariable=selected_date).pack(fill="x", pady=(0, 8))
-        Checkbutton(right, text="Replace entire day", variable=full_var).pack(anchor="w", pady=(0, 8))
+        ttk.Label(right, text="Date").pack(anchor="w")
+        date_frame, date_year_var, date_month_var, date_day_var = self._create_date_inputs(right, value=selected_date.get())
+        date_frame.pack(anchor="w", pady=(0, 8))
+        full_check = Checkbutton(right, text="Replace entire day", variable=full_var)
+        self._style_checkbutton(full_check)
+        full_check.pack(anchor="w", pady=(0, 8))
         ttk.Label(right, text="Rows: slot | start | end | classes").pack(anchor="w")
 
         button_bar = ttk.Frame(right)
@@ -377,26 +502,26 @@ class settingsGUI(Toplevel):
         ttk.Button(button_bar, text="Add row", command=add_row).pack(side="left")
 
         def new_special_day():
-            key = selected_date.get().strip()
             try:
-                datetime.strptime(key, "%Y-%m-%d")
+                key = self._date_from_vars(date_year_var, date_month_var, date_day_var)
             except ValueError:
-                return messagebox.showerror("Invalid date", "Use YYYY-MM-DD.", parent=self)
+                return messagebox.showerror("Invalid date", "Use a valid date.", parent=self)
+            selected_date.set(key)
             if key not in day_list.get(0, END):
                 day_list.insert(END, key)
             day_list.selection_clear(0, END)
-            day_list.selection_set(END)
+            day_list.selection_set(day_list.size() - 1)
             state.settings.events._data["specialDays"].setdefault(key, {"full": False})
             load_special_day()
 
         ttk.Button(button_bar, text="New date", command=new_special_day).pack(side="left", padx=(6, 0))
 
         def save_special_day():
-            key = selected_date.get().strip()
             try:
-                datetime.strptime(key, "%Y-%m-%d")
+                key = self._date_from_vars(date_year_var, date_month_var, date_day_var)
             except ValueError:
-                return messagebox.showerror("Invalid date", "Use YYYY-MM-DD.", parent=self)
+                return messagebox.showerror("Invalid date", "Use a valid date.", parent=self)
+            selected_date.set(key)
 
             payload: dict[str, object] = {"full": full_var.get()}
             classes: dict[str, object] = {}
@@ -407,11 +532,10 @@ class settingsGUI(Toplevel):
                     if not slot:
                         continue
                     int(slot)
-                    start = row["start"].get().strip()
-                    end = row["end"].get().strip()
+                    start = self._time_from_vars(row["start_hour"], row["start_minute"])
+                    end = self._time_from_vars(row["end_hour"], row["end_minute"])
                     value = row["value"].get().strip()
-                    if start and end:
-                        time_slots[slot] = f"{self._parse_timestring(start)}-{self._parse_timestring(end)}"
+                    time_slots[slot] = f"{start}-{end}"
                     if value:
                         classes[slot] = self._parse_class_entry(value)
             except Exception as exc:
@@ -449,6 +573,7 @@ class settingsGUI(Toplevel):
         ttk.Label(root, text="Set an alert time, optional date or weekday, and an optional message.", style="mainText.Label").pack(anchor="w", pady=(0, 12))
 
         alert_list = Listbox(root, exportselection=False, height=12)
+        self._style_listbox(alert_list)
         alert_list.pack(fill="x", pady=(0, 12))
         for alert in state.settings.events._data["alerts"]:
             target = alert.get("date", f"weekday={alert.get('weekday', 'daily')}")
@@ -456,36 +581,44 @@ class settingsGUI(Toplevel):
 
         form = ttk.Frame(root)
         form.pack(fill="x")
-        time_var = StringVar()
-        date_var = StringVar()
-        weekday_var = StringVar()
+        weekday_options = [("Daily", ""), *[(f"{index} - {name}", str(index)) for index, name in enumerate(DAY_NAMES)]]
+        weekday_labels = [label for label, _ in weekday_options]
+        weekday_lookup = {label: value for label, value in weekday_options}
+        weekday_var = StringVar(value=weekday_labels[0])
         keep_var = BooleanVar(value=False)
-        ttk.Label(form, text="Time (HH:MM)").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        ttk.Entry(form, textvariable=time_var).grid(row=0, column=1, sticky="ew", padx=4, pady=4)
-        ttk.Label(form, text="Date (YYYY-MM-DD)").grid(row=1, column=0, sticky="w", padx=4, pady=4)
-        ttk.Entry(form, textvariable=date_var).grid(row=1, column=1, sticky="ew", padx=4, pady=4)
-        ttk.Label(form, text="Weekday 0-6").grid(row=2, column=0, sticky="w", padx=4, pady=4)
-        ttk.Entry(form, textvariable=weekday_var).grid(row=2, column=1, sticky="ew", padx=4, pady=4)
-        Checkbutton(form, text="Keep recurring alert", variable=keep_var).grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=4)
-        ttk.Label(form, text="Message").grid(row=4, column=0, sticky="nw", padx=4, pady=4)
+        use_date_var = BooleanVar(value=False)
+        ttk.Label(form, text="Time").grid(row=0, column=0, sticky="w", padx=4, pady=4)
+        alert_time_frame, alert_hour_var, alert_minute_var = self._create_time_inputs(form)
+        alert_time_frame.grid(row=0, column=1, sticky="w", padx=4, pady=4)
+        ttk.Label(form, text="Date").grid(row=1, column=0, sticky="w", padx=4, pady=4)
+        alert_date_frame, alert_year_var, alert_month_var, alert_day_var = self._create_date_inputs(form)
+        alert_date_frame.grid(row=1, column=1, sticky="w", padx=4, pady=4)
+        ttk.Label(form, text="Weekday").grid(row=2, column=0, sticky="w", padx=4, pady=4)
+        ttk.Combobox(form, textvariable=weekday_var, values=weekday_labels, state="readonly").grid(row=2, column=1, sticky="ew", padx=4, pady=4)
+        exact_date_check = Checkbutton(form, text="Use exact date", variable=use_date_var)
+        self._style_checkbutton(exact_date_check)
+        exact_date_check.grid(row=3, column=0, columnspan=2, sticky="w", padx=4, pady=4)
+        keep_check = Checkbutton(form, text="Keep recurring alert", variable=keep_var)
+        self._style_checkbutton(keep_check)
+        keep_check.grid(row=4, column=0, columnspan=2, sticky="w", padx=4, pady=4)
+        ttk.Label(form, text="Message").grid(row=5, column=0, sticky="nw", padx=4, pady=4)
         message_box = Text(form, height=4, width=40)
-        message_box.grid(row=4, column=1, sticky="ew", padx=4, pady=4)
+        self._style_text(message_box)
+        message_box.grid(row=5, column=1, sticky="ew", padx=4, pady=4)
         form.grid_columnconfigure(1, weight=1)
 
         def save_alert():
             try:
-                time_value = self._parse_timestring(time_var.get())
+                time_value = self._time_from_vars(alert_hour_var, alert_minute_var)
                 payload = {"time": time_value, "keep": keep_var.get()}
                 message = message_box.get("1.0", END).strip()
                 if message:
                     payload["message"] = message
-                if date_var.get().strip():
-                    payload["date"] = datetime.strptime(date_var.get().strip(), "%Y-%m-%d").strftime("%Y-%m-%d")
-                elif weekday_var.get().strip():
-                    weekday_value = int(weekday_var.get().strip())
-                    if weekday_value not in range(7):
-                        raise ValueError("Weekday must be between 0 and 6.")
-                    payload["weekday"] = weekday_value
+                weekday_value = weekday_lookup[weekday_var.get()]
+                if use_date_var.get():
+                    payload["date"] = self._date_from_vars(alert_year_var, alert_month_var, alert_day_var)
+                elif weekday_value != "":
+                    payload["weekday"] = int(weekday_value)
                 state.settings.events._data["alerts"].append(payload)
                 state.settings.events.save()
                 self._openAlerts()
@@ -513,7 +646,8 @@ class settingsGUI(Toplevel):
         cfg = state.settings.config
         background_var = StringVar(value=f"#{cfg.background:06X}")
         foreground_var = StringVar(value=f"#{cfg.foreground:06X}")
-        lang_var = StringVar(value=cfg.lang)
+        lang_options = self._available_languages()
+        lang_var = StringVar(value=cfg.lang if cfg.lang in lang_options else (lang_options[0] if lang_options else cfg.lang))
         ignore_updates_var = BooleanVar(value=cfg.ignoreUpdates)
         show_teacher_var = BooleanVar(value=cfg.showTeacher)
         alpha_default_var = StringVar(value=str(cfg.alpha.get("default", 0.75)))
@@ -530,10 +664,17 @@ class settingsGUI(Toplevel):
         ]
         for row, (label, var) in enumerate(items):
             ttk.Label(fields, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=4)
-            ttk.Entry(fields, textvariable=var).grid(row=row, column=1, sticky="ew", padx=4, pady=4)
+            if label == "Language":
+                ttk.Combobox(fields, textvariable=var, values=lang_options, state="readonly").grid(row=row, column=1, sticky="ew", padx=4, pady=4)
+            else:
+                ttk.Entry(fields, textvariable=var).grid(row=row, column=1, sticky="ew", padx=4, pady=4)
         fields.grid_columnconfigure(1, weight=1)
-        Checkbutton(fields, text="Ignore updates", variable=ignore_updates_var).grid(row=5, column=0, columnspan=2, sticky="w", padx=4, pady=4)
-        Checkbutton(fields, text="Show teacher", variable=show_teacher_var).grid(row=6, column=0, columnspan=2, sticky="w", padx=4, pady=4)
+        ignore_updates_check = Checkbutton(fields, text="Ignore updates", variable=ignore_updates_var)
+        self._style_checkbutton(ignore_updates_check)
+        ignore_updates_check.grid(row=5, column=0, columnspan=2, sticky="w", padx=4, pady=4)
+        show_teacher_check = Checkbutton(fields, text="Show teacher", variable=show_teacher_var)
+        self._style_checkbutton(show_teacher_check)
+        show_teacher_check.grid(row=6, column=0, columnspan=2, sticky="w", padx=4, pady=4)
 
         def choose_color(target: StringVar):
             color = colorchooser.askcolor(target.get(), parent=self)[1]
