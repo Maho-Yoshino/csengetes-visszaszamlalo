@@ -6,12 +6,13 @@ from logging import getLogger
 from tkinter import Label, Frame, messagebox, TclError, Tk
 from tksvg import SvgImage
 from ctypes import windll, c_byte, byref, Structure
-from modules.schedule import Schedule, _Class
+from modules.schedule import Schedule
+from modules.settings.schedule import UnifiedClassData, _classData
 
 init_data:dict[str, int|str] = {}
 class classFrame(Frame):
 	_data:dict[str, int|str]
-	def __init__(self, master, *, _class:_Class=None):
+	def __init__(self, master, _class:_classData):
 		self._data = {
 			"wraplength": 0,
 			"bg":init_data["bg"],
@@ -26,10 +27,10 @@ class classFrame(Frame):
 		self._class = _class
 	# region Class
 	@property
-	def _class(self) -> _Class|None:
+	def _class(self) -> _classData:
 		return self._data["class"]
 	@_class.setter
-	def _class(self, value:_Class|None):
+	def _class(self, value:_classData|None):
 		self._data["class"] = value
 		if value is not None:
 			self.nameLabel.config(text=value.name)
@@ -137,12 +138,15 @@ class Clock(Tk):
 		
 		self.classesContainer = Frame(self, bg=init_data["bg"])
 		self.classFrames:list[classFrame] = []
-		maxClassesAtOnce = 0
-		for day in state.settings.schedule.getUnifiedSchedule():
-			if len(day) > maxClassesAtOnce:
-				maxClassesAtOnce = len(day)
-		for _ in range(maxClassesAtOnce):
-			self.classFrames.append(classFrame(self.classesContainer))
+		highestClassesAtOnce = 0
+		unified = state.settings.schedule.getUnifiedSchedule()
+		for ind, day in enumerate(unified):
+			if len(unified[highestClassesAtOnce]) < len(day):
+				highestClassesAtOnce = ind
+		for _ in range(len(unified[highestClassesAtOnce])):
+			_ = unified[highestClassesAtOnce][_].data
+			for _ in [classFrame(self.classesContainer, _[i]) for i in range(len(_))]:
+				self.classFrames.append(_)
 		self.vertSeparators:list[Frame] = []
 
 		self.grid_rowconfigure(3, weight=1)
@@ -237,7 +241,7 @@ class Clock(Tk):
 				await asleep(0.1)
 			except Exception:
 				self.logger.exception("An error happened during transparency check")
-	def setClassLabels(self, *classes:_Class, aux:bool = False):
+	def setClassLabels(self, classes:UnifiedClassData, aux:bool = False):
 		self.mainLabel.grid(row=0, column=0)
 		self.timeFrame.grid(row=1, column=0)
 		self.separator.grid(row=2, column=0, sticky="ns")
@@ -245,7 +249,8 @@ class Clock(Tk):
 		self.classesContainer.grid(row=3, column=0)
 		# region Add Vertical Separators
 		if state.settings.schedule.group == -1:
-			needed = max(0, len(classes)-1)
+			if classes.data is None: needed = 0
+			else: needed = max(0, len(classes.data)-1)
 			while len(self.vertSeparators) < needed:
 				sep = Frame(self.classesContainer, bg=init_data["fg"], width=1)
 				self.vertSeparators.append(sep)
@@ -257,15 +262,15 @@ class Clock(Tk):
 		# endregion
 		# region Add Classes
 		self.update_idletasks() # to fix wraplength being 1 on startup
-		for i in range(len(classes)):
+		for i in range(len(classes.data)):
 			obj = self.classFrames[i]
 
 			if state.settings.schedule.group == -1 or state.settings.schedule.group == i:
 				obj.grid(row=0, column=i*2, sticky="nsew")
 			
-			if len(classes) > 1:
-				obj.wraplength = self.winfo_width()//len(classes)
-			elif len(classes) == 1:
+			if len(classes.data) > 1:
+				obj.wraplength = self.winfo_width()//len(classes.data)
+			elif len(classes.data) == 1:
 				for _ in range(len(self.vertSeparators)):
 					self.vertSeparators.pop().grid_forget()
 				for j in self.classFrames:
@@ -280,7 +285,7 @@ class Clock(Tk):
 				obj.grid_rowconfigure(2, weight=1, minsize=20)
 			else:
 				obj.teacherLabel.grid_forget()
-			obj._class = classes[i]
+			obj._class = classes.data[i]
 		# endregion
 		# region Exam and Homework icons
 		if state.settings.events.current_exam():
@@ -337,16 +342,16 @@ class Clock(Tk):
 			loc = state.settings.localization
 			self.grid_rowconfigure(0, weight=0)
 			for num, _class in enumerate(state.schedule.classes):
-				if not _class:
+				if _class.data is None:
 					continue
-				if ((_class[0].begin + timedelta(seconds=delay)).time() > now_time): # Break time
-					tmp = datetime.combine(now, _class[0].begin.time()) - now + timedelta(seconds=delay)
+				if ((_ := datetime.combine(now, _class.start) + timedelta(seconds=delay)).time() > now_time): # Break time
+					tmp = _ - now
 					self.mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
-					self.setClassLabels(*_class)
+					self.setClassLabels(_class)
 					break
-				elif ((_class[0].end + timedelta(seconds=delay)).time() > now_time): # In class
-					tmp = datetime.combine(now, _class[0].end.time()) - now + timedelta(seconds=delay)
+				elif ((_ := datetime.combine(now, _class.end) + timedelta(seconds=delay)).time() > now_time): # In class
+					tmp = _ - now
 					self.mainLabel.config(text=loc.format(loc.mainlabel.inClass, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 					if (
@@ -354,11 +359,11 @@ class Clock(Tk):
 						num == len(state.schedule.classes)-1 # Last class of the day
 					):
 						state.currentClassIndex = num + 1
-						self.setClassLabels(*_class)
+						self.setClassLabels(_class)
 					else: # Less than 10 mins left
 						state.currentClassIndex = num + 2
 						next_classes = state.schedule.classes[num+1]
-						self.setClassLabels(*next_classes, aux=True)
+						self.setClassLabels(next_classes, aux=True)
 					break
 			else: # No class ends after now (No If branch broke the loop)
 				self.mainLabel.config(text=loc.mainlabel.dayOver)

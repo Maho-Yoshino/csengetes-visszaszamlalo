@@ -3,17 +3,40 @@ from pathlib import Path
 from logging import getLogger
 from datetime import timedelta, datetime, time, date
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 	from .classes import Classes
 	from .events import Events
 from ..state import getTime
 
+@dataclass(slots=True)
 class _classData:
-	def __init__(self, data:dict[str, str]):
-		self.name = data.get("name")
-		self.room = data.get("room")
-		self.teacher = data.get("teacher")
+	name:str|None = None
+	room:str|None = None
+	teacher:str|None = None
+	@classmethod
+	def from_dict(cls, **data):
+		return cls(**data)
+@dataclass(slots=True, init=True)
+class UnifiedClassData:
+	classIndex:int
+	end:time
+	start:time
+	data: list[_classData|None]
+	def __init__(self, classIndex:int, end:time, start:time, data:_classData|list[_classData|None]|None):
+		self.classIndex = classIndex
+		self.end = end
+		self.start = start
+		if data is None:
+			self.data = []
+		elif isinstance(data, list):
+			self.data = data
+		else:
+			self.data = [data,]
+	@classmethod
+	def from_dict(cls, **data):
+		return cls(**data)
 
 _defaults = {
 	"default": [{},{},{},{},{}],
@@ -104,7 +127,7 @@ class Schedule:
 	# endregion
 	# region time slots
 	@property
-	def timeSlots(self) -> dict[int, tuple[time, time]]:
+	def timeSlots(self) -> dict[int, str]:
 		tmp:dict[int, tuple[time, time]] = {}
 		for _classIndex, times in self._data["timeSlots"].items():
 			_classIndex:str; times:str
@@ -126,28 +149,37 @@ class Schedule:
 	# region Unified schedule (Primary, Secondary and Special days combined)
 	def convertToClassData(self, data:str|dict[str, str]|None|list[str|dict[str, str]]) -> list[_classData|None]|_classData|None:
 		if isinstance(data, str):
-			return _classData(self.classes.get(data))
+			return _classData(**self.classes.get(data))
 		elif isinstance(data, dict):
-			return _classData(data)
+			return _classData(**data)
 		elif isinstance(data, list):
 			_ = []
 			for data2 in data:
 				if isinstance(data2, str):
-					_.append(_classData(self.classes.get(data2)))
+					_.append(_classData(**self.classes.get(data2)))
 				elif isinstance(data2, dict):
-					_.append(_classData(data2))
+					_.append(_classData(**data2))
 				elif data2 is None:
 					_.append(None)
+				elif isinstance(data2, _classData):
+					_.append(data2)
 				else:
-					raise ValueError(f"Invalid type ({type(data)}) given")
+					raise ValueError(f"Invalid type ({type(data2)}) given")
 			return _
 		elif data is None:
 			return None
+		elif isinstance(data, _classData):
+			return data
 		else:
 			raise ValueError(f"Invalid type ({type(data)}) given")
-	def getUnifiedSchedule(self, *, week_of:datetime|None=None) -> list[dict[str, _classData | list[_classData | None] | None]]:
-		finalSchedule = deepcopy(self.default)
-		defaultTimeSlots = self.timeSlots
+	def getUnifiedSchedule(self, week_of:datetime|None=None) -> list[list[UnifiedClassData]]:
+		finalSchedule:list[list[UnifiedClassData]] = []
+		defaultTimeSlots = self.timeSlotsTime
+		for ind, _day in enumerate(self.default):
+			finalSchedule.append([])
+			for classIndex, data in _day.items():
+				times = defaultTimeSlots[int(classIndex)]
+				finalSchedule[ind].append(UnifiedClassData(data=data, classIndex=int(classIndex), start=times[0], end=times[1]))
 		# region Get week constraints
 		if week_of is None: _date = getTime().date() # Get current week if other week is not given
 		else: _date = week_of.date()
@@ -157,7 +189,8 @@ class Schedule:
 		if self.currentlySecondaryWeek(_date):
 			for dayInd, secondary_day in self.secondary.items():
 				for classIndex, classID in secondary_day.items():
-					finalSchedule[int(dayInd)][defaultTimeSlots[int(classIndex)]] = self.convertToClassData(classID)
+					times = defaultTimeSlots[int(classIndex)]
+					finalSchedule[int(dayInd)].append(UnifiedClassData(data=self.convertToClassData(classID), classIndex=int(classIndex), start=times[0], end=times[1]))
 		# endregion
 		# region Special days
 		for _date, special_day in self.events.specialDays.items(): # Merge special days with the new schedule
@@ -169,29 +202,28 @@ class Schedule:
 			full_schedule:bool = special_day.get("full", False)
 			newTimeSlots = special_day.get("timeSlots")
 			if newTimeSlots:
-				tmp = {}
-				for _classIndex, times in newTimeSlots.items():
-					_classIndex:str; times:str
-					tmp[int(_classIndex)] = times
-				newTimeSlots = tmp
+				tmp = newTimeSlots
+				newTimeSlots = {}
+				for ind, times in tmp.items():
+					_ = times.split("-")
+					start = datetime.strptime(_[0], "%H:%M").time()
+					end = datetime.strptime(_[1], "%H:%M").time()
+					newTimeSlots[int(ind)] = (start, end)
 			else:
-				newTimeSlots = defaultTimeSlots
-			_classes:dict[str, str|None|list[str]] = special_day.get("classes")
-			new_timetable = {} if full_schedule else deepcopy(finalSchedule[_date.weekday()])
-			for classIndex, _class in _classes.items():
-				if full_schedule or classIndex in new_timetable:
-					new_timetable[newTimeSlots[int(classIndex)]] = self.convertToClassData(_class)
+				newTimeSlots = {int(k):v for k, v in defaultTimeSlots.items()}
+			_classes:dict[str, str|None|list[str]]|None = special_day.get("classes")
+			new_timetable = [] if full_schedule else deepcopy(finalSchedule[_date.weekday()])
+			if _classes is None:
+				_ = finalSchedule[_date.weekday()]
+				for _class in list(_):
+					_class.start = newTimeSlots[int(_class.classIndex)][0]
+					_class.end = newTimeSlots[int(_class.classIndex)][1]
+					new_timetable.append(_class)
+			else:
+				for classIndex, _class in _classes.items():
+					if full_schedule or classIndex in new_timetable:
+						new_timetable.append(UnifiedClassData(data=self.convertToClassData(_class), classIndex=int(classIndex), start=newTimeSlots[int(classIndex)][0], end=newTimeSlots[int(classIndex)][1]))
 			finalSchedule[_date.weekday()] = new_timetable
 		# endregion
-		# region Convert classIndex to times
-		newFinalSchedule = []
-		for ind, _schedule in enumerate(finalSchedule):
-			newFinalSchedule.append({})
-			for classIndex, data in _schedule.items():
-				try:
-					newFinalSchedule[ind][defaultTimeSlots[int(classIndex)]] = data
-				except ValueError: 
-					newFinalSchedule[ind][classIndex] = data
-		# endregion
-		return newFinalSchedule
+		return finalSchedule
 	# endregion
