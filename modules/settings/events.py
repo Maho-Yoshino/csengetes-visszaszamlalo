@@ -73,31 +73,32 @@ class Events:
 		try:
 			change:bool = False
 			newAlerts:list[dict[str, int|bool|str]] = []
+			now_minute = state.getTime().replace(second=0, microsecond=0)
 			for alert in self._data["alerts"]:
 				alert:dict[str, int|bool|str]
-				new = {
-					"message":alert.get("message", "Set alert has arrived"),
-					"time":alert["time"],
-					"keep":alert.get("keep", False)
-				}
+				if "time" not in alert:
+					change = True
+					continue
+				new = dict(alert)
+				new["message"] = alert.get("message", "Set alert has arrived")
+				new["keep"] = alert.get("keep", False)
 				if (weekday := alert.get("weekday", None)) is not None:
 					new.update({"weekday": weekday})
 				if (_date := alert.get("date", None)) is not None:
 					new.update({"date": _date})
-					if datetime.strptime(f"{_date} {new['time']}", f"{self.datetime_fmt} %H:%M") >= state.getTime():
+					if new["keep"] or datetime.strptime(f"{_date} {new['time']}", f"{self.datetime_fmt} %H:%M") >= now_minute:
 						newAlerts.append(new)
 					else:
 						change = True
 				else:
-					rn = state.getTime()
 					alert_time = datetime.strptime(new["time"], "%H:%M").time()
 					if "weekday" in new:
-						alert_dt = datetime.combine((rn.date() + timedelta(days=(new["weekday"] - rn.weekday()))), alert_time)
+						alert_dt = datetime.combine((now_minute.date() + timedelta(days=(new["weekday"] - now_minute.weekday()) % 7)), alert_time)
 					else:
-						alert_dt = datetime.combine(rn.date(), alert_time)
-						if alert_dt < rn:
+						alert_dt = datetime.combine(now_minute.date(), alert_time)
+						if alert_dt < now_minute:
 							alert_dt += timedelta(days=1)
-					if alert_dt >= rn:
+					if alert_dt >= now_minute:
 						newAlerts.append(new)
 					else:
 						change = True

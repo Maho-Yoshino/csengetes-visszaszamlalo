@@ -46,7 +46,7 @@ _defaults = {
 	"group":-1, # In case more than 1 class is given for a class, display the n-th one; If -1 then display all 
 	"timeSlots": {}
 }
-class Schedule:
+class ScheduleSettings:
 	# NOTE: Changes are not persisted until save() is called explicitly
 	def __init__(self, classes:'Classes', events:'Events'):
 		self._logger = getLogger(__name__)
@@ -203,7 +203,7 @@ class Schedule:
 			newTimeSlots = special_day.get("timeSlots")
 			if newTimeSlots:
 				tmp = newTimeSlots
-				newTimeSlots = {}
+				newTimeSlots = {int(k):v for k, v in defaultTimeSlots.items()}
 				for ind, times in tmp.items():
 					_ = times.split("-")
 					start = datetime.strptime(_[0], "%H:%M").time()
@@ -214,16 +214,16 @@ class Schedule:
 			_classes:dict[str, str|None|list[str]]|None = special_day.get("classes")
 			new_timetable = [] if full_schedule else deepcopy(finalSchedule[_date.weekday()])
 			if _classes is None:
-				_ = finalSchedule[_date.weekday()]
-				for _class in list(_):
+				for _class in new_timetable:
 					_class.start = newTimeSlots[int(_class.classIndex)][0]
 					_class.end = newTimeSlots[int(_class.classIndex)][1]
-					new_timetable.append(_class)
 			else:
 				for classIndex, _class in _classes.items():
-					if full_schedule or classIndex in new_timetable:
-						new_timetable.append(UnifiedClassData(data=self.convertToClassData(_class), classIndex=int(classIndex), start=newTimeSlots[int(classIndex)][0], end=newTimeSlots[int(classIndex)][1]))
-			finalSchedule[_date.weekday()] = new_timetable
+					classIndexInt = int(classIndex)
+					new_timetable = [entry for entry in new_timetable if entry.classIndex != classIndexInt]
+					times = newTimeSlots[classIndexInt]
+					new_timetable.append(UnifiedClassData(data=self.convertToClassData(_class), classIndex=classIndexInt, start=times[0], end=times[1]))
+			finalSchedule[_date.weekday()] = sorted(new_timetable, key=lambda item: item.classIndex)
 		# endregion
 		return finalSchedule
 	# endregion

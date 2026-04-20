@@ -6,4 +6,4 @@ if not exist ".venv" (
 	exit
 )
 .\.venv\Scripts\python .\main.py
-exit
+rem exit

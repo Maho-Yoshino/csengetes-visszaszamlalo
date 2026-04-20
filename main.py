@@ -188,11 +188,14 @@ def main(dummyDate:datetime|None = None):
 
 try:
 	if environ.get('TERM_PROGRAM') == 'vscode':
-		#main()
-		main(datetime(year=2026, month=4, day=1, hour=12, minute=45, second=0))
+		main()
+		#main(datetime(year=2026, month=4, day=1, hour=12, minute=45, second=0))
 	else:
 		main()
-except KeyboardInterrupt: pass
+except KeyboardInterrupt: 
+	logger.info("Keyboard Interrupt requested")
+	if hasattr(state.runtime, "shutdown_default_executor"):
+		state.runtime.run_until_complete(state.runtime.shutdown_default_executor())
 except Exception as e:
 	logger.exception("An error occurred during runtime", exc_info=e)
 	messagebox.showerror(
@@ -201,4 +204,4 @@ except Exception as e:
 		icon="error"
 	)
 finally:
-	exit(0)
+	_exit(0)

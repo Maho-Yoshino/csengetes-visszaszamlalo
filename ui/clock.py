@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from asyncio import sleep as asleep, CancelledError
 from time import perf_counter
 from logging import getLogger
-from tkinter import Label, Frame, messagebox, TclError, Tk
+from tkinter import Button, Label, Frame, TclError, Tk, Toplevel
 from tksvg import SvgImage
 from ctypes import windll, c_byte, byref, Structure
 from modules.schedule import Schedule
@@ -11,8 +11,8 @@ from modules.settings.schedule import UnifiedClassData, _classData
 
 init_data:dict[str, int|str] = {}
 class classFrame(Frame):
-	_data:dict[str, int|str]
-	def __init__(self, master, _class:_classData):
+	_data:dict[str, int|str|_classData|None]
+	def __init__(self, master, _class:_classData|None):
 		self._data = {
 			"wraplength": 0,
 			"bg":init_data["bg"],
@@ -27,7 +27,7 @@ class classFrame(Frame):
 		self._class = _class
 	# region Class
 	@property
-	def _class(self) -> _classData:
+	def _class(self) -> _classData|None:
 		return self._data["class"]
 	@_class.setter
 	def _class(self, value:_classData|None):
@@ -166,15 +166,44 @@ class Clock(Tk):
 		self.transparencyTask.add_done_callback(state.exc_handler)
 		# endregion
 		self.logger.info("Clock setup complete")
-	def changeColors(self, *, fg:str=None, bg:str=None):
-		if fg is None and bg is None:
-			self.logger.warning("No foreground or background given for changeColors")
-			return
-		for _class in self.classFrames:
-			if fg: _class.fg = fg
-			if bg: _class.bg = bg
-		if bg:
-			self.config(bg=bg)
+	def refreshFromSettings(self):
+		bg = f"#{state.settings.config.background:06x}"
+		fg = f"#{state.settings.config.foreground:06x}"
+		self.configure(bg=bg)
+		self.mainLabel.config(bg=bg, fg=fg)
+		self.timeFrame.config(bg=bg)
+		self.timeLabel.config(bg=bg, fg=fg)
+		self.auxLabel.config(bg=bg, fg=fg)
+		self.separator.config(bg=fg)
+	
+		self.homeworkIcon = self.loadSvg("homework")
+		self.homeworkLabel.config(image=self.homeworkIcon, bg=bg, fg=fg)
+		self.homeworkLabel.image = self.homeworkIcon
+	
+		self.examIcon = self.loadSvg("exam")
+		self.examLabel.config(image=self.examIcon, bg=bg, fg=fg)
+		self.examLabel.image = self.examIcon
+	
+		state.schedule = Schedule()
+		self.rebuildClassFrames()
+	def rebuildClassFrames(self):
+		for frame in self.classFrames:
+			frame.destroy()
+		self.classFrames.clear()
+	
+		for sep in self.vertSeparators:
+			sep.destroy()
+		self.vertSeparators.clear()
+	
+		unified = state.settings.schedule.getUnifiedSchedule()
+		max_groups = 1
+		for day in unified:
+			for entry in day:
+				if entry.data is not None:
+					max_groups = max(max_groups, len(entry.data))
+	
+		for _ in range(max_groups):
+			self.classFrames.append(classFrame(self.classesContainer, None))
 	def loadSvg(self, filename:str) -> SvgImage:
 		try:
 			with open(f"assets/{filename}.svg", "r") as file:
@@ -303,12 +332,32 @@ class Clock(Tk):
 			self.auxLabel.grid_forget()
 		else:
 			self.auxLabel.grid(row=4, column=0, sticky="ns", columnspan=3)
-		# endregion
+	# endregion
 	alerted:datetime = datetime.fromtimestamp(0)
+	def showAlertPopup(self, alert:dict[str, str]):
+		loc = state.settings.localization
+		bg = f"#{state.settings.config.background:06x}"
+		fg = f"#{state.settings.config.foreground:06x}"
+		popup = Toplevel(self)
+		popup.title(loc.alert.title)
+		popup.configure(bg=bg, padx=14, pady=12)
+		popup.attributes("-topmost", True)
+		popup.resizable(False, False)
+		Label(
+			popup,
+			text=alert.get("message", loc.alert.defaultText),
+			bg=bg,
+			fg=fg,
+			justify="center",
+			wraplength=280,
+		).pack(fill="both", expand=True, pady=(0, 10))
+		Button(popup, text="OK", command=popup.destroy).pack()
+		popup.update_idletasks()
+		x = self.winfo_screenwidth() // 2 - popup.winfo_width() // 2
+		y = self.winfo_screenheight() // 2 - popup.winfo_height() // 2
+		popup.geometry(f"+{x}+{y}")
+
 	def sendAlert(self):
-		async def msg(alert:dict[str, str]):
-			loc = state.settings.localization
-			messagebox.showinfo(loc.alert.title, f"{alert.get("message", loc.alert.defaultText)}")
 		if len(state.settings.events.alerts) == 0:
 			return
 		for alert in state.settings.events.alerts:
@@ -317,16 +366,29 @@ class Clock(Tk):
 				date = datetime.strptime(tmp, "%Y-%m-%d")
 			time = datetime.combine(state.getTime().date(), datetime.strptime(alert["time"], "%H:%M").time())
 			if (
-				alerted < (rn := state.getTime().replace(second=0, microsecond=0)) and 
+				self.alerted < (rn := state.getTime().replace(second=0, microsecond=0)) and 
 	   			time.replace(second=0, microsecond=0) == rn and 
 				(
 					(date is not None and date.date() == rn.date()) or 
 					date is None
 				)
 			):
-				state.runtime.create_task(msg(alert))
+				self.showAlertPopup(alert)
 				self.logger.debug(f"Sent alert")
-				alerted = state.getTime().replace(second=0, microsecond=0)
+				self.alerted = state.getTime().replace(second=0, microsecond=0)
+				if not alert.get("keep", False):
+					state.settings.events._data["alerts"] = [
+						item
+						for item in state.settings.events._data["alerts"]
+						if not (
+							item.get("time") == alert.get("time") and
+							item.get("date") == alert.get("date") and
+							item.get("weekday") == alert.get("weekday") and
+							item.get("class") == alert.get("class") and
+							item.get("message", state.settings.localization.alert.defaultText) == alert.get("message", state.settings.localization.alert.defaultText)
+						)
+					]
+					state.settings.events.save()
 	async def mainloop(self):
 		while True:
 			_start = perf_counter()
@@ -346,13 +408,13 @@ class Clock(Tk):
 					continue
 				if ((_ := datetime.combine(now, _class.start) + timedelta(seconds=delay)).time() > now_time): # Break time
 					tmp = _ - now
-					self.mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
+					self.mainLabel.config(text=loc.format(loc.mainlabel.onBreak, num=f"{_class.classIndex}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 					self.setClassLabels(_class)
 					break
 				elif ((_ := datetime.combine(now, _class.end) + timedelta(seconds=delay)).time() > now_time): # In class
 					tmp = _ - now
-					self.mainLabel.config(text=loc.format(loc.mainlabel.inClass, num=f"{num+1}{loc.classNumbering.getSuffix(num+1)}"))
+					self.mainLabel.config(text=loc.format(loc.mainlabel.inClass, num=f"{_class.classIndex}{loc.classNumbering.getSuffix(num+1)}"))
 					self.timeLabel.config(text=f"{f"{tmp.seconds//3600:02}:" if tmp.seconds//3600 != 0 else ""}{(tmp.seconds//60)%60:02}:{tmp.seconds%60:02}")
 					if (
 						tmp.seconds > 60*10 or # More than 10 minutes left
@@ -375,10 +437,14 @@ class Clock(Tk):
 				self.separator.grid_forget()
 				[i.grid_forget() for i in self.vertSeparators]
 				self.timeFrame.grid_forget()
-				await asleep(10)
+				try:
+					await asleep(10)
+				except KeyboardInterrupt: return
 				continue
 			update_delay = self.batterySaverEnabled(5, 1)
 			if state.dummyDate is not None:
 				state.dummyDate = state.dummyDate + timedelta(seconds=1)
 			delay = min(max(0.01, update_delay - (perf_counter() - _start)), 10)
-			await asleep(delay)
+			try:
+				await asleep(delay)
+			except KeyboardInterrupt: return
