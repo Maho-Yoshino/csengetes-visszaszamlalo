@@ -15,6 +15,7 @@ from tkinter import (
     Frame,
     Listbox,
     Menu,
+    Radiobutton,
     StringVar,
     Text,
     Toplevel,
@@ -71,21 +72,28 @@ class settingsGUI(Toplevel):
         )
         self.style.configure("TSpinbox", fieldbackground=self.surface, foreground=self.fg, background=self.surface, arrowcolor=self.fg)
         self.style.configure("TCheckbutton", background=self.bg, foreground=self.fg)
+        self.style.configure("TRadiobutton", background=self.bg, foreground=self.fg)
+        self.style.map("TRadiobutton", background=[("active", self.bg)], foreground=[("active", self.fg)])
         self.style.configure("TNotebook", background=self.bg)
         self.style.configure("TNotebook.Tab", foreground=self.fg, background=self.surface)
         self.configure(background=self.bg)
+        self._schedule_anchor_date = state.getTime().date()
+        self._schedule_view_mode = "week"
 
         loc = state.settings.localization
+        self._settings_ui = getattr(loc.settings, "ui", {})
         self.title(loc.settings.title)
         self.state("zoomed")
 
         menu = Menu(self, background=self.bg, fg=self.fg, relief="ridge", activebackground=self.accent, activeforeground=self.fg)
         menu.add_command(label=loc.settings.topbar["schedule"], command=self._openSchedule)
+        menu.add_command(label=loc.settings.topbar["classes"], command=self._openClasses)
         menu.add_command(label=loc.settings.topbar["general"], command=self._openGeneral)
         self.config(menu=menu)
 
         self.content = Frame(self, bg=self.bg)
         self.content.pack(fill="both", expand=True, padx=12, pady=12)
+        self._confirm_class_delete = True
         self._openSchedule()
         self.after(0, self._focus_window)
 
@@ -114,12 +122,51 @@ class settingsGUI(Toplevel):
         self.after(0, self._focus_window)
 
     def _clearContent(self):
+        self.unbind("<Up>")
+        self.unbind("<Down>")
         for child in self.content.winfo_children():
             child.destroy()
 
     def _current_week_start(self) -> date:
+        return self._schedule_anchor_date - timedelta(days=self._schedule_anchor_date.weekday())
+
+    def _ui(self, key: str, default: str, **values) -> str:
+        text = self._settings_ui.get(key, default)
+        if values:
+            return state.settings.localization.format(text, **values)
+        return text
+
+    def _day_name(self, day_index: int) -> str:
+        return self._ui(f"day.{day_index}", DAY_NAMES[day_index])
+
+    def _schedule_reference_datetime(self) -> datetime:
+        return datetime.combine(self._schedule_anchor_date, datetime.min.time())
+
+    def _visible_schedule_days(self) -> list[int]:
+        if self._schedule_view_mode == "day":
+            return [self._schedule_anchor_date.weekday()]
+        if self._schedule_view_mode == "week":
+            return [0, 1, 2, 3, 4]
+        if self._schedule_view_mode == "week_with_saturday":
+            return [0, 1, 2, 3, 4, 5]
+        return [0, 1, 2, 3, 4, 5, 6]
+
+    def _set_schedule_view_mode(self, mode: str):
+        self._schedule_view_mode = mode
+        self._openSchedule()
+
+    def _navigate_schedule(self, direction: int):
+        delta = 1 if self._schedule_view_mode == "day" else 7
+        self._schedule_anchor_date += timedelta(days=direction * delta)
+        self._openSchedule()
+
+    def _show_schedule_today(self):
         today = state.getTime().date()
-        return today - timedelta(days=today.weekday())
+        if self._schedule_view_mode == "day":
+            self._schedule_anchor_date = today
+        else:
+            self._schedule_anchor_date = today - timedelta(days=today.weekday())
+        self._openSchedule()
 
     def _style_tk_frame(self, widget: Frame):
         widget.configure(bg=self.bg)
@@ -152,11 +199,21 @@ class settingsGUI(Toplevel):
             selectcolor=self.surface,
         )
 
+    def _style_radiobutton(self, widget: Radiobutton):
+        widget.configure(
+            bg=self.bg,
+            fg=self.fg,
+            activebackground=self.bg,
+            activeforeground=self.fg,
+            selectcolor=self.fg,
+            highlightthickness=0,
+        )
+
     def _style_dialog(self, widget: Toplevel):
         widget.configure(bg=self.bg)
 
     def _format_class_value(self, value) -> str:
-        classes = state.settings.classes.classes
+        classes = state.settings.classes
         if value is None:
             return NONE_TOKEN
         if isinstance(value, list):
@@ -172,7 +229,7 @@ class settingsGUI(Toplevel):
         if isinstance(value, str):
             return value
         if isinstance(value, dict):
-            name = value.get("name", "custom")
+            name = value.get("name", self._ui("common.custom", "custom"))
             teacher = value.get("teacher")
             return f"{name} ({teacher})" if teacher else name
         return str(value)
@@ -181,19 +238,20 @@ class settingsGUI(Toplevel):
         return f"{data.get('teacher', '')}: {data.get('name', code)} ({data.get('room', '')})"
 
     def _class_option_lookup(self) -> dict[str, str | None]:
-        return {"Null": None} | {
+        return {self._ui("common.null_option", "Null"): None} | {
             self._class_option_label(code, data): code
-            for code, data in sorted(state.settings.classes.classes.items(), key=lambda item: self._class_option_label(item[0], item[1]).lower())
+            for code, data in sorted(state.settings.classes.items(), key=lambda item: self._class_option_label(item[0], item[1]).lower())
         }
 
     def _class_label_for_value(self, value, class_options: dict[str, str | None]) -> str:
+        null_label = self._ui("common.null_option", "Null")
         if value is None:
-            return "Null"
-        if isinstance(value, str) and value in state.settings.classes.classes:
-            label = self._class_option_label(value, state.settings.classes.classes[value])
+            return null_label
+        if isinstance(value, str) and value in state.settings.classes:
+            label = self._class_option_label(value, state.settings.classes[value])
             if label in class_options:
                 return label
-        return "Null"
+        return null_label
 
     def _group_values_for_slot(self, value) -> list[object]:
         if isinstance(value, list):
@@ -203,7 +261,9 @@ class settingsGUI(Toplevel):
         return [value]
 
     def _visible_group_count(self, values: list[object]) -> int:
-        return max(1, sum(1 for value in values if value is not None))
+        if len(values) > 1:
+            return len(values)
+        return 1
 
     def _schedule_class_width(self, entries_by_day: dict[int, dict[int, object]]) -> int:
         longest = len("Wed")
@@ -229,7 +289,7 @@ class settingsGUI(Toplevel):
                 "room": value.room or "",
             }
         if isinstance(value, str):
-            data = state.settings.classes.classes.get(value, {})
+            data = state.settings.classes.get(value, {})
             return {
                 "name": data.get("name", value),
                 "teacher": data.get("teacher", ""),
@@ -290,8 +350,8 @@ class settingsGUI(Toplevel):
         relative_to = "end" if alert.get("relativeTo") == "end" else "start"
         minutes = alert.get("minutes", 0)
         message = alert.get("message", "")
-        base = "before end" if relative_to == "end" else "since start"
-        keep = "keep" if alert.get("keep", False) else "once"
+        base = self._ui("alerts.format.before_end", "before end") if relative_to == "end" else self._ui("alerts.format.since_start", "since start")
+        keep = self._ui("common.keep", "keep") if alert.get("keep", False) else self._ui("common.once", "once")
         return f"{alert.get('time', '--:--')} | {minutes} min {base} | {keep} | {message}"
 
     def _redraw_class_box(self, canvas: Canvas, lines: list[str], substituted: bool):
@@ -318,20 +378,23 @@ class settingsGUI(Toplevel):
         values = values or [None]
         is_split = len(values) > 1
         for index, value in enumerate(values, start=1):
-            if is_split and value is None:
-                continue
             group = ttk.Frame(cell)
             group.pack(side="left", fill="both", expand=True, padx=(0 if index == 1 else 2, 0))
             if is_split:
-                ttk.Label(group, text=f"Group {index}", anchor="w").pack(fill="x")
-            class_data = self._class_display_data(value)
-            box = self._create_class_box(
-                group,
-                lines=[class_data["name"], class_data["teacher"], class_data["room"]],
-                substituted=substitutions[index - 1] if index - 1 < len(substitutions) else False,
-                command=command,
-            )
-            box.pack(fill="both", expand=True)
+                ttk.Label(group, text=self._ui("schedule.group", "Group {index}", index=index), anchor="w").pack(fill="x")
+            if value is None:
+                empty_area = Frame(group, bg=self.bg, cursor="hand2", height=50)
+                empty_area.bind("<Button-1>", lambda _event: command())
+                empty_area.pack(fill="both", expand=True)
+            else:
+                class_data = self._class_display_data(value)
+                box = self._create_class_box(
+                    group,
+                    lines=[class_data["name"], class_data["teacher"], class_data["room"]],
+                    substituted=substitutions[index - 1] if index - 1 < len(substitutions) else False,
+                    command=command,
+                )
+                box.pack(fill="both", expand=True)
         return cell
 
     def _create_empty_slot_area(self, parent, *, day_index: int, slot: int):
@@ -346,11 +409,15 @@ class settingsGUI(Toplevel):
         class_options = self._class_option_lookup()
         option_labels = list(class_options.keys())
         if not option_labels:
-            return messagebox.showerror("No classes", "Add classes to config/classes.json before assigning schedule slots.", parent=self)
+            return messagebox.showerror(
+                self._ui("assignment.no_classes.title", "No classes"),
+                self._ui("assignment.no_classes.message", "Add classes to config/classes.json before assigning schedule slots."),
+                parent=self,
+            )
 
         dialog = Toplevel(self)
         self._style_dialog(dialog)
-        dialog.title(f"Add class to {DAY_NAMES[day_index]}")
+        dialog.title(self._ui("assignment.dialog.title", "Add class to {day_name}", day_name=self._day_name(day_index)))
         dialog.transient(self)
         dialog.grab_set()
         dialog.protocol("WM_DELETE_WINDOW", lambda: self._close_child_window(dialog))
@@ -363,7 +430,7 @@ class settingsGUI(Toplevel):
         secondary_var = BooleanVar(value=str(slot) in state.settings.schedule._data["secondary"].get(str(day_index), {}))
         one_day_var = BooleanVar(value=False)
 
-        ttk.Label(dialog, text="Class number").grid(row=0, column=0, sticky="w", padx=10, pady=(10, 4))
+        ttk.Label(dialog, text=self._ui("assignment.class_number", "Class number")).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 4))
         ttk.Label(dialog, text=str(slot), style="mainText.Label").grid(row=0, column=1, sticky="w", padx=10, pady=(10, 4))
 
         class_rows = ttk.Frame(dialog)
@@ -375,7 +442,7 @@ class settingsGUI(Toplevel):
             for child in class_rows.winfo_children():
                 child.destroy()
             for index, var in enumerate(class_vars, start=1):
-                ttk.Label(class_rows, text=f"Class ({index})").grid(row=index - 1, column=0, sticky="w", padx=10, pady=4)
+                ttk.Label(class_rows, text=self._ui("assignment.class_label", "Class ({index})", index=index)).grid(row=index - 1, column=0, sticky="w", padx=10, pady=4)
                 ttk.Combobox(
                     class_rows,
                     textvariable=var,
@@ -388,7 +455,7 @@ class settingsGUI(Toplevel):
             class_vars.append(StringVar(value=self._class_label_for_value(value, class_options)))
         redraw_class_rows()
 
-        secondary_check = Checkbutton(dialog, text="Set only for secondary week", variable=secondary_var)
+        secondary_check = Checkbutton(dialog, text=self._ui("assignment.secondary_only", "Set only for secondary week"), variable=secondary_var)
         self._style_checkbutton(secondary_check)
         secondary_check.grid(row=2, column=0, columnspan=2, sticky="w", padx=10, pady=4)
 
@@ -399,7 +466,7 @@ class settingsGUI(Toplevel):
             else:
                 secondary_check.configure(state="normal")
 
-        one_day_check = Checkbutton(dialog, text="Set only for this day", variable=one_day_var, command=toggle_one_day)
+        one_day_check = Checkbutton(dialog, text=self._ui("assignment.day_only", "Set only for this day"), variable=one_day_var, command=toggle_one_day)
         self._style_checkbutton(one_day_check)
         one_day_check.grid(row=3, column=0, columnspan=2, sticky="w", padx=10, pady=4)
         dialog.grid_columnconfigure(1, weight=1)
@@ -429,11 +496,11 @@ class settingsGUI(Toplevel):
 
         buttons = ttk.Frame(dialog)
         buttons.grid(row=4, column=0, columnspan=2, sticky="ew", padx=10, pady=10)
-        ttk.Button(buttons, text="Save", command=save_assignment).pack(side="left")
-        ttk.Button(buttons, text="Cancel", command=lambda: self._close_child_window(dialog)).pack(side="left", padx=(6, 0))
+        ttk.Button(buttons, text=self._ui("assignment.save", "Save"), command=save_assignment).pack(side="left")
+        ttk.Button(buttons, text=self._ui("assignment.cancel", "Cancel"), command=lambda: self._close_child_window(dialog)).pack(side="left", padx=(6, 0))
 
         def split_class():
-            class_vars.append(StringVar(value="Null"))
+            class_vars.append(StringVar(value=self._ui("common.null_option", "Null")))
             redraw_class_rows()
             dialog.update_idletasks()
             dialog.geometry(f"{dialog.winfo_reqwidth()}x{dialog.winfo_reqheight()}")
@@ -445,8 +512,8 @@ class settingsGUI(Toplevel):
                 dialog.update_idletasks()
                 dialog.geometry(f"{dialog.winfo_reqwidth()}x{dialog.winfo_reqheight()}")
 
-        ttk.Button(buttons, text="Split class", command=split_class).pack(side="left", padx=(6, 0))
-        ttk.Button(buttons, text="Remove split", command=remove_split).pack(side="left", padx=(6, 0))
+        ttk.Button(buttons, text=self._ui("assignment.split", "Split class"), command=split_class).pack(side="left", padx=(6, 0))
+        ttk.Button(buttons, text=self._ui("assignment.remove_split", "Remove split"), command=remove_split).pack(side="left", padx=(6, 0))
         dialog.update_idletasks()
         dialog.geometry(f"{dialog.winfo_reqwidth()}x{dialog.winfo_reqheight()}")
         self._refresh_clock_runtime()
@@ -463,7 +530,7 @@ class settingsGUI(Toplevel):
             if part.lower() == NONE_TOKEN.lower():
                 parsed.append(None)
                 continue
-            if part not in state.settings.classes.classes:
+            if part not in state.settings.classes:
                 raise ValueError(f"Unknown class code: {part}")
             parsed.append(part)
         if not parsed:
@@ -520,33 +587,276 @@ class settingsGUI(Toplevel):
         value = date(int(year_var.get()), int(month_var.get()), int(day_var.get()))
         return value.strftime("%Y-%m-%d")
 
+    def _class_editor_label(self, code: str, data: dict[str, str]) -> str:
+        name = data.get("name", "").strip() or self._ui("classes.placeholder.name", "New class")
+        teacher = data.get("teacher", "").strip()
+        room = data.get("room", "").strip()
+        details = " | ".join(part for part in (teacher, room) if part)
+        return name + (f" ({details})" if details else "")
+
+    def _new_class_code(self) -> str:
+        base = self._ui("classes.placeholder.code", "NEW_CLASS").strip() or "NEW_CLASS"
+        code = base
+        index = 2
+        while code in state.settings.classes:
+            code = f"{base}_{index}"
+            index += 1
+        return code
+
+    def _confirm_remove_class(self, class_label: str) -> bool:
+        if not self._confirm_class_delete:
+            return True
+
+        dialog = Toplevel(self)
+        self._style_dialog(dialog)
+        dialog.title(self._ui("classes.remove.title", "Remove class"))
+        dialog.transient(self)
+        dialog.grab_set()
+        dialog.resizable(False, False)
+
+        result = {"confirmed": False}
+        ttk.Label(
+            dialog,
+            text=self._ui("classes.remove.message", "Remove {class_label}?", class_label=class_label),
+            wraplength=360,
+            justify="left",
+        ).pack(fill="x", padx=12, pady=(12, 10))
+
+        def finish(confirmed: bool, disable_prompt: bool = False):
+            result["confirmed"] = confirmed
+            if confirmed and disable_prompt:
+                self._confirm_class_delete = False
+            self._close_child_window(dialog)
+
+        buttons = ttk.Frame(dialog)
+        buttons.pack(fill="x", padx=12, pady=(0, 12))
+        ttk.Button(buttons, text=self._ui("classes.button.remove", "Remove"), command=lambda: finish(True)).pack(side="left")
+        ttk.Button(
+            buttons,
+            text=self._ui("classes.button.remove_no_prompt", "Remove and do not ask again"),
+            command=lambda: finish(True, True),
+        ).pack(side="left", padx=(6, 0))
+        ttk.Button(buttons, text=self._ui("assignment.cancel", "Cancel"), command=lambda: finish(False)).pack(side="right")
+
+        dialog.protocol("WM_DELETE_WINDOW", lambda: finish(False))
+        dialog.update_idletasks()
+        dialog.geometry(f"{dialog.winfo_reqwidth()}x{dialog.winfo_reqheight()}")
+        self.wait_window(dialog)
+        return result["confirmed"]
+
+    def _openClasses(self, selected_code: str | None = None):
+        self._clearContent()
+        if selected_code not in state.settings.classes:
+            selected_code = None
+
+        root = ttk.Frame(self.content)
+        root.pack(fill="both", expand=True)
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=3 if selected_code else 1)
+        if selected_code:
+            root.grid_columnconfigure(1, weight=1, minsize=260)
+
+        list_panel = ttk.Frame(root)
+        list_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 12 if selected_code else 0))
+        list_panel.grid_rowconfigure(1, weight=1)
+        list_panel.grid_columnconfigure(0, weight=1)
+
+        ttk.Label(list_panel, text=self._ui("classes.title", "Classes"), style="mainText.Label").grid(row=0, column=0, sticky="w")
+        class_list = Listbox(list_panel, exportselection=False)
+        self._style_listbox(class_list)
+        class_list.grid(row=1, column=0, sticky="nsew", pady=(8, 8))
+
+        code_order = [
+            code
+            for code, _data in sorted(
+                state.settings.classes.items(),
+                key=lambda item: self._class_editor_label(item[0], item[1]).lower(),
+            )
+        ]
+        for code in code_order:
+            class_list.insert(END, self._class_editor_label(code, state.settings.classes[code]))
+
+        if selected_code in code_order:
+            selected_index = code_order.index(selected_code)
+            class_list.selection_set(selected_index)
+            class_list.activate(selected_index)
+            class_list.see(selected_index)
+
+        def navigate_class(direction: int):
+            if not code_order:
+                return "break"
+            selection = class_list.curselection()
+            if selection:
+                next_index = selection[0] + direction
+            elif selected_code in code_order:
+                next_index = code_order.index(selected_code) + direction
+            else:
+                next_index = 0 if direction > 0 else len(code_order) - 1
+            next_index = max(0, min(next_index, len(code_order) - 1))
+            self._openClasses(code_order[next_index])
+            return "break"
+
+        def select_class(_event=None):
+            selection = class_list.curselection()
+            if not selection:
+                return self._openClasses()
+            self._openClasses(code_order[selection[0]])
+
+        class_list.bind("<<ListboxSelect>>", select_class)
+        class_list.bind("<Up>", lambda _event: navigate_class(-1))
+        class_list.bind("<Down>", lambda _event: navigate_class(1))
+        self.bind("<Up>", lambda _event: navigate_class(-1))
+        self.bind("<Down>", lambda _event: navigate_class(1))
+
+        def add_class():
+            code = self._new_class_code()
+            state.settings.classes._data[code] = {
+                "name": self._ui("classes.placeholder.name", "New class"),
+                "room": self._ui("classes.placeholder.location", "New location"),
+                "teacher": self._ui("classes.placeholder.teacher", "New teacher"),
+            }
+            state.settings.classes.save()
+            self._refresh_clock_runtime()
+            self._openClasses(code)
+
+        ttk.Button(list_panel, text=self._ui("classes.button.add", "Add"), command=add_class).grid(row=2, column=0, sticky="ew")
+
+        if not selected_code:
+            return
+
+        selected_data = state.settings.classes[selected_code]
+        editor = ttk.Frame(root)
+        editor.grid(row=0, column=1, sticky="nsew")
+        editor.grid_columnconfigure(1, weight=1)
+
+        ttk.Label(editor, text=self._ui("classes.editor.title", "Edit class"), style="mainText.Label").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+
+        name_var = StringVar(value=selected_data.get("name", ""))
+        location_var = StringVar(value=selected_data.get("room", ""))
+        teacher_var = StringVar(value=selected_data.get("teacher", ""))
+
+        fields = [
+            (self._ui("classes.field.name", "Class name"), name_var),
+            (self._ui("classes.field.location", "Class location"), location_var),
+            (self._ui("classes.field.teacher", "Class teacher"), teacher_var),
+        ]
+        for row, (label, var) in enumerate(fields, start=1):
+            ttk.Label(editor, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=4)
+            entry = ttk.Entry(editor, textvariable=var)
+            entry.grid(row=row, column=1, sticky="ew", pady=4)
+            entry.bind("<Up>", lambda _event: navigate_class(-1))
+            entry.bind("<Down>", lambda _event: navigate_class(1))
+
+        def remove_class():
+            class_label = self._class_editor_label(selected_code, selected_data)
+            if not self._confirm_remove_class(class_label):
+                return
+            state.settings.classes._data.pop(selected_code, None)
+            state.settings.classes.save()
+            self._refresh_clock_runtime()
+            self._openClasses()
+
+        def save_class():
+            state.settings.classes._data[selected_code] = {
+                "name": name_var.get().strip(),
+                "room": location_var.get().strip(),
+                "teacher": teacher_var.get().strip(),
+            }
+            state.settings.classes.save()
+            self._refresh_clock_runtime()
+            self._openClasses(selected_code)
+
+        buttons = ttk.Frame(editor)
+        buttons.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        ttk.Button(buttons, text=self._ui("classes.button.remove", "Remove"), command=remove_class).pack(side="left")
+        ttk.Button(buttons, text=self._ui("classes.button.save", "Save"), command=save_class).pack(side="right")
+
     def _openSchedule(self):
         self._clearContent()
         root = ttk.Frame(self.content)
         root.pack(fill="both", expand=True)
 
         week_start = self._current_week_start()
-        ttk.Label(root, text=f"Week {week_start.isocalendar().week}", style="mainText.Label", anchor="center", justify="center").pack(fill="x")
+        visible_days = self._visible_schedule_days()
+
+        top_bar = ttk.Frame(root)
+        top_bar.pack(fill="x", pady=(0, 12))
+        top_bar.grid_columnconfigure(0, weight=1, uniform="schedule_top")
+        top_bar.grid_columnconfigure(1, weight=1, uniform="schedule_top")
+        top_bar.grid_columnconfigure(2, weight=1, uniform="schedule_top")
+
+        nav_section = ttk.Frame(top_bar)
+        nav_section.grid(row=0, column=0, sticky="w")
+        ttk.Button(nav_section, text=self._ui("schedule.nav.prev", "<"), width=3, command=lambda: self._navigate_schedule(-1)).pack(side="left")
+        ttk.Button(nav_section, text=self._ui("schedule.nav.next", ">"), width=3, command=lambda: self._navigate_schedule(1)).pack(side="left", padx=(6, 0))
+        ttk.Button(nav_section, text=self._ui("schedule.nav.today", "Today"), command=self._show_schedule_today).pack(side="left", padx=(8, 0))
+
+        if self._schedule_view_mode == "day":
+            center_text = self._ui(
+                "schedule.title.day",
+                "{day_name}, {date}",
+                day_name=self._day_name(self._schedule_anchor_date.weekday()),
+                date=self._schedule_anchor_date.strftime("%Y-%m-%d"),
+            )
+        else:
+            last_day = week_start + timedelta(days=max(visible_days))
+            center_text = self._ui(
+                "schedule.title.week",
+                "Week {week} ({start} - {end})",
+                week=week_start.isocalendar().week,
+                start=week_start.strftime("%Y-%m-%d"),
+                end=last_day.strftime("%Y-%m-%d"),
+            )
+        center_section = ttk.Frame(top_bar)
+        center_section.grid(row=0, column=1, sticky="nsew", padx=(12, 12))
+        ttk.Label(center_section, text=center_text, style="mainText.Label", anchor="center", justify="center").pack(fill="x")
         instruction_label = ttk.Label(
-            root,
-            text="Click a class slot to edit the weekly schedule for that day. Use comma-separated class codes for grouped classes.",
+            center_section,
+            text=self._ui(
+                "schedule.instruction",
+                "Click a class slot to edit the weekly schedule for that day. Use comma-separated class codes for grouped classes.",
+            ),
             style="mainText.Label",
             anchor="center",
             justify="center",
         )
-        instruction_label.pack(fill="x", pady=(0, 12))
-        root.bind("<Configure>", lambda event: instruction_label.configure(wraplength=max(event.width - 24, 120)))
+        instruction_label.pack(fill="x")
+        center_section.bind("<Configure>", lambda event: instruction_label.configure(wraplength=max(event.width - 24, 120)))
 
-        unified = state.settings.schedule.getUnifiedSchedule(week_of=state.getTime())
+        mode_section = ttk.Frame(top_bar)
+        mode_section.grid(row=0, column=2, sticky="e")
+        mode_var = StringVar(value=self._schedule_view_mode)
+        mode_buttons = [
+            (self._ui("schedule.mode.day", "day"), "day"),
+            (self._ui("schedule.mode.week", "week"), "week"),
+            (self._ui("schedule.mode.week_with_saturday", "Week with Saturday"), "week_with_saturday"),
+            (self._ui("schedule.mode.full_week", "Entire week"), "full_week"),
+        ]
+        for text, value in mode_buttons:
+            mode_button = Radiobutton(
+                mode_section,
+                text=text,
+                value=value,
+                variable=mode_var,
+                command=lambda v=value: self._set_schedule_view_mode(v),
+            )
+            self._style_radiobutton(mode_button)
+            mode_button.pack(side="left", padx=(0, 6))
+
+        unified = state.settings.schedule.getUnifiedSchedule(week_of=self._schedule_reference_datetime())
         entries_by_day = {
             day_index: {entry.classIndex: entry for entry in sorted(unified[day_index], key=lambda item: item.classIndex)}
             if day_index < len(unified)
             else {}
             for day_index in range(7)
         }
-        slot_indexes = sorted({slot for day_entries in entries_by_day.values() for slot in day_entries})
+        slot_indexes = sorted({slot for day_index in visible_days for slot in entries_by_day[day_index]})
         max_groups_by_slot = {
-            slot: max(self._visible_group_count(day_entries[slot].data or [None]) for day_entries in entries_by_day.values() if slot in day_entries)
+            slot: max(
+                self._visible_group_count(entries_by_day[day_index][slot].data or [None])
+                for day_index in visible_days
+                if slot in entries_by_day[day_index]
+            )
             for slot in slot_indexes
         }
         max_groups_by_day = {
@@ -602,13 +912,23 @@ class settingsGUI(Toplevel):
         schedule_grid.bind("<Enter>", bind_schedule_wheel)
         schedule_grid.bind("<Leave>", unbind_schedule_wheel)
 
-        for day_index in range(7):
-            schedule_grid.grid_columnconfigure(day_index, weight=1, minsize=class_box_width * max_groups_by_day[day_index])
+        time_column_width = 104
+        schedule_grid.grid_columnconfigure(0, weight=0, minsize=time_column_width)
+        ttk.Label(schedule_grid, text="", anchor="center").grid(row=0, column=0, sticky="nsew", padx=2, pady=(0, 2))
+
+        for column_index, day_index in enumerate(visible_days, start=1):
+            schedule_grid.grid_columnconfigure(column_index, weight=1, minsize=class_box_width * max_groups_by_day[day_index])
             header = (week_start + timedelta(days=day_index)).strftime("%a\n%Y-%m-%d")
-            header_label = ttk.Label(schedule_grid, text=header, anchor="center", justify="center", wraplength=max(class_box_width * max_groups_by_day[day_index], 48))
+            header_label = ttk.Label(
+                schedule_grid,
+                text=header,
+                anchor="center",
+                justify="center",
+                wraplength=max(class_box_width * max_groups_by_day[day_index], 48),
+            )
             header_label.grid(
                 row=0,
-                column=day_index,
+                column=column_index,
                 sticky="nsew",
                 padx=2,
                 pady=(0, 2),
@@ -616,12 +936,22 @@ class settingsGUI(Toplevel):
 
         for row_index, slot_index in enumerate(slot_indexes, start=1):
             schedule_grid.grid_rowconfigure(row_index, weight=1, uniform="schedule_slots", minsize=72 if max_groups_by_slot[slot_index] > 1 else 56)
-            for day_index in range(7):
+            slot_label = ttk.Label(
+                schedule_grid,
+                text=f"{slot_index}\n{self._slot_time_string(slot_index)}",
+                anchor="center",
+                justify="center",
+                style="mainText.Label",
+                wraplength=time_column_width - 8,
+            )
+            slot_label.grid(row=row_index, column=0, sticky="nsew", padx=2, pady=2)
+
+            for column_index, day_index in enumerate(visible_days, start=1):
                 entry = entries_by_day[day_index].get(slot_index)
                 if entry is None:
                     self._create_empty_slot_area(schedule_grid, day_index=day_index, slot=slot_index).grid(
                         row=row_index,
-                        column=day_index,
+                        column=column_index,
                         sticky="nsew",
                         padx=2,
                         pady=2,
@@ -634,15 +964,20 @@ class settingsGUI(Toplevel):
                         substitutions=self._substituted_groups(day_index, entry.classIndex, week_start, len(values)),
                         command=lambda d=day_index, s=entry.classIndex, e=entry: self._open_class_slot(d, s, e),
                     )
-                    class_box.grid(row=row_index, column=day_index, sticky="nsew", padx=2, pady=2)
+                    class_box.grid(row=row_index, column=column_index, sticky="nsew", padx=2, pady=2)
 
         add_row = len(slot_indexes) + 1
         schedule_grid.grid_rowconfigure(add_row, weight=1, uniform="schedule_slots", minsize=36)
-        for day_index in range(7):
+        ttk.Label(schedule_grid, text="", anchor="center").grid(row=add_row, column=0, sticky="nsew", padx=2, pady=2)
+        for column_index, day_index in enumerate(visible_days, start=1):
             next_slot = max(entries_by_day[day_index], default=0) + 1
-            ttk.Button(schedule_grid, text="Add slot", command=lambda d=day_index, s=next_slot: self._open_assignment_prompt(d, s)).grid(
+            ttk.Button(
+                schedule_grid,
+                text=self._ui("schedule.add_slot", "Add slot"),
+                command=lambda d=day_index, s=next_slot: self._open_assignment_prompt(d, s),
+            ).grid(
                 row=add_row,
-                column=day_index,
+                column=column_index,
                 sticky="nsew",
                 padx=2,
                 pady=2,
@@ -650,7 +985,7 @@ class settingsGUI(Toplevel):
 
     def _raw_weekly_value(self, day_index: int, slot: int):
         schedule_data = state.settings.schedule._data
-        is_secondary = state.settings.schedule.currentlySecondaryWeek(state.getTime())
+        is_secondary = state.settings.schedule.currentlySecondaryWeek(self._schedule_anchor_date)
         if is_secondary:
             slot_value = schedule_data["secondary"].get(str(day_index), {}).get(str(slot), None)
             if slot_value is not None or str(slot) in schedule_data["secondary"].get(str(day_index), {}):
@@ -662,7 +997,7 @@ class settingsGUI(Toplevel):
     def _open_class_slot(self, day_index: int, slot: int, entry):
         dialog = Toplevel(self)
         self._style_dialog(dialog)
-        dialog.title(f"{DAY_NAMES[day_index]} class")
+        dialog.title(self._ui("class_slot.dialog.title", "{day_name} class", day_name=self._day_name(day_index)))
         dialog.transient(self)
         dialog.grab_set()
         dialog.geometry("460x380")
@@ -679,17 +1014,17 @@ class settingsGUI(Toplevel):
         class_tab = ttk.Frame(notebook)
         events_tab = ttk.Frame(notebook)
         alerts_tab = ttk.Frame(notebook)
-        notebook.add(class_tab, text="Class data")
-        notebook.add(events_tab, text="Events")
-        notebook.add(alerts_tab, text="Alerts")
+        notebook.add(class_tab, text=self._ui("class_slot.tab.class_data", "Class data"))
+        notebook.add(events_tab, text=self._ui("class_slot.tab.events", "Events"))
+        notebook.add(alerts_tab, text=self._ui("class_slot.tab.alerts", "Alerts"))
 
         rows = [
-            ("Date", date_key),
-            ("Time", f"{entry.start.strftime('%H:%M')}-{entry.end.strftime('%H:%M')}"),
-            ("Class name", class_data["name"]),
-            ("Teacher name", class_data["teacher"]),
-            ("Room", class_data["room"]),
-            ("Class number in the day", str(slot)),
+            (self._ui("class_slot.row.date", "Date"), date_key),
+            (self._ui("class_slot.row.time", "Time"), f"{entry.start.strftime('%H:%M')}-{entry.end.strftime('%H:%M')}"),
+            (self._ui("class_slot.row.class_name", "Class name"), class_data["name"]),
+            (self._ui("class_slot.row.teacher_name", "Teacher name"), class_data["teacher"]),
+            (self._ui("class_slot.row.room", "Room"), class_data["room"]),
+            (self._ui("class_slot.row.class_index", "Class number in the day"), str(slot)),
         ]
         for row, (label, value) in enumerate(rows):
             ttk.Label(class_tab, text=label).grid(row=row, column=0, sticky="w", padx=8, pady=5)
@@ -698,11 +1033,13 @@ class settingsGUI(Toplevel):
 
         class_buttons = ttk.Frame(class_tab)
         class_buttons.grid(row=len(rows), column=0, columnspan=2, sticky="w", padx=8, pady=(12, 0))
-        ttk.Button(class_buttons, text="Change class", command=lambda: (dialog.destroy(), self._open_assignment_prompt(day_index, slot))).pack(side="left")
-        ttk.Button(class_buttons, text="Add group", command=lambda: (dialog.destroy(), self._open_assignment_prompt(day_index, slot, add_group=True))).pack(side="left", padx=(6, 0))
-        ttk.Button(class_buttons, text="Delete slot", command=lambda: self._delete_weekly_slot(day_index, slot, dialog)).pack(side="left", padx=(6, 0))
+        ttk.Button(class_buttons, text=self._ui("class_slot.button.change", "Change class"), command=lambda: (dialog.destroy(), self._open_assignment_prompt(day_index, slot))).pack(side="left")
+        ttk.Button(class_buttons, text=self._ui("class_slot.button.add_group", "Add group"), command=lambda: (dialog.destroy(), self._open_assignment_prompt(day_index, slot, add_group=True))).pack(side="left", padx=(6, 0))
+        ttk.Button(class_buttons, text=self._ui("class_slot.button.delete_slot", "Delete slot"), command=lambda: self._delete_weekly_slot(day_index, slot, dialog)).pack(side="left", padx=(6, 0))
 
-        event_type_var = StringVar(value="Homework")
+        homework_label = self._ui("events.type.homework", "Homework")
+        exam_label = self._ui("events.type.exam", "Exam")
+        event_type_var = StringVar(value=homework_label)
         event_topic = Text(events_tab, height=4, width=36)
         self._style_text(event_topic)
         homework_list = Listbox(events_tab, exportselection=False, height=4)
@@ -718,14 +1055,14 @@ class settingsGUI(Toplevel):
             for item in self._event_items("exams", date_key, slot):
                 exam_list.insert(END, item.get("topic", ""))
 
-        ttk.Label(events_tab, text="Homework").grid(row=0, column=0, sticky="w", padx=8, pady=(8, 2))
+        ttk.Label(events_tab, text=homework_label).grid(row=0, column=0, sticky="w", padx=8, pady=(8, 2))
         homework_list.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
-        ttk.Label(events_tab, text="Exam").grid(row=2, column=0, sticky="w", padx=8, pady=(8, 2))
+        ttk.Label(events_tab, text=exam_label).grid(row=2, column=0, sticky="w", padx=8, pady=(8, 2))
         exam_list.grid(row=3, column=0, sticky="nsew", padx=8, pady=(0, 8))
 
         event_form = ttk.Frame(events_tab)
         event_form.grid(row=4, column=0, sticky="ew", padx=8, pady=8)
-        ttk.Combobox(event_form, textvariable=event_type_var, values=["Homework", "Exam"], state="readonly", width=14).grid(row=0, column=0, sticky="w", pady=(0, 4))
+        ttk.Combobox(event_form, textvariable=event_type_var, values=[homework_label, exam_label], state="readonly", width=14).grid(row=0, column=0, sticky="w", pady=(0, 4))
         event_topic.grid(row=5, column=0, sticky="ew", padx=8, pady=(0, 8))
         events_tab.grid_columnconfigure(0, weight=1)
         events_tab.grid_rowconfigure(1, weight=1)
@@ -734,8 +1071,12 @@ class settingsGUI(Toplevel):
         def add_event():
             topic = event_topic.get("1.0", END).strip()
             if not topic:
-                return messagebox.showerror("Invalid event", "Event text is required.", parent=dialog)
-            key = "homework" if event_type_var.get() == "Homework" else "exams"
+                return messagebox.showerror(
+                    self._ui("events.invalid.title", "Invalid event"),
+                    self._ui("events.invalid.message", "Event text is required."),
+                    parent=dialog,
+                )
+            key = "homework" if event_type_var.get() == homework_label else "exams"
             state.settings.events._data[key].setdefault(date_key, []).append({"class": slot, "topic": topic})
             state.settings.events.save()
             event_topic.delete("1.0", END)
@@ -772,13 +1113,13 @@ class settingsGUI(Toplevel):
 
         event_buttons = ttk.Frame(events_tab)
         event_buttons.grid(row=6, column=0, sticky="w", padx=8, pady=(0, 8))
-        ttk.Button(event_buttons, text="Add", command=add_event).pack(side="left")
-        ttk.Button(event_buttons, text="Remove", command=remove_event).pack(side="left", padx=(6, 0))
+        ttk.Button(event_buttons, text=self._ui("events.button.add", "Add"), command=add_event).pack(side="left")
+        ttk.Button(event_buttons, text=self._ui("events.button.remove", "Remove"), command=remove_event).pack(side="left", padx=(6, 0))
         refresh_events()
 
         ttk.Label(
             alerts_tab,
-            text="Alert time is calculated relative to the beginning or end of this class.",
+            text=self._ui("alerts.info", "Alert time is calculated relative to the beginning or end of this class."),
             style="mainText.Label",
             wraplength=400,
             justify="left",
@@ -810,7 +1151,11 @@ class settingsGUI(Toplevel):
             existing_alert = state.settings.events._data["alerts"][alert_index] if alert_index is not None else {}
             alert_dialog = Toplevel(dialog)
             self._style_dialog(alert_dialog)
-            alert_dialog.title("Edit alert" if alert_index is not None else "Add alert")
+            alert_dialog.title(
+                self._ui("alerts.dialog.edit_title", "Edit alert")
+                if alert_index is not None
+                else self._ui("alerts.dialog.add_title", "Add alert")
+            )
             alert_dialog.transient(dialog)
             alert_dialog.grab_set()
 
@@ -828,19 +1173,19 @@ class settingsGUI(Toplevel):
             keep_var = BooleanVar(value=bool(existing_alert.get("keep", False)))
             minutes_var = StringVar(value=str(existing_alert.get("minutes", 5)))
 
-            relative_group = ttk.LabelFrame(alert_dialog, text="Calculate from")
+            relative_group = ttk.LabelFrame(alert_dialog, text=self._ui("alerts.calculate_from", "Calculate from"))
             relative_group.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(10, 6))
-            ttk.Radiobutton(relative_group, text="End of class", variable=relative_var, value="end").pack(anchor="w", padx=8, pady=3)
-            ttk.Radiobutton(relative_group, text="Beginning of class", variable=relative_var, value="start").pack(anchor="w", padx=8, pady=3)
+            ttk.Radiobutton(relative_group, text=self._ui("alerts.from_end", "End of class"), variable=relative_var, value="end").pack(anchor="w", padx=8, pady=3)
+            ttk.Radiobutton(relative_group, text=self._ui("alerts.from_start", "Beginning of class"), variable=relative_var, value="start").pack(anchor="w", padx=8, pady=3)
 
-            ttk.Label(alert_dialog, text="Message").grid(row=1, column=0, sticky="nw", padx=10, pady=6)
+            ttk.Label(alert_dialog, text=self._ui("alerts.message", "Message")).grid(row=1, column=0, sticky="nw", padx=10, pady=6)
             message_box.grid(row=1, column=1, sticky="ew", padx=10, pady=6)
 
-            keep_check = Checkbutton(alert_dialog, text="Keep alert after firing", variable=keep_var)
+            keep_check = Checkbutton(alert_dialog, text=self._ui("alerts.keep_after", "Keep alert after firing"), variable=keep_var)
             self._style_checkbutton(keep_check)
             keep_check.grid(row=2, column=0, columnspan=2, sticky="w", padx=10, pady=6)
 
-            ttk.Label(alert_dialog, text="Minutes since start/before end").grid(row=3, column=0, sticky="w", padx=10, pady=6)
+            ttk.Label(alert_dialog, text=self._ui("alerts.minutes", "Minutes since start/before end")).grid(row=3, column=0, sticky="w", padx=10, pady=6)
             ttk.Spinbox(alert_dialog, from_=0, to=240, textvariable=minutes_var, width=8).grid(row=3, column=1, sticky="w", padx=10, pady=6)
             alert_dialog.grid_columnconfigure(1, weight=1)
 
@@ -872,12 +1217,12 @@ class settingsGUI(Toplevel):
                     self._refresh_clock_runtime()
                     close_alert_dialog()
                 except Exception as exc:
-                    messagebox.showerror("Invalid alert", str(exc), parent=alert_dialog)
+                    messagebox.showerror(self._ui("alerts.invalid.title", "Invalid alert"), str(exc), parent=alert_dialog)
 
             button_row = ttk.Frame(alert_dialog)
             button_row.grid(row=4, column=0, columnspan=2, sticky="w", padx=10, pady=(8, 10))
-            ttk.Button(button_row, text="Save", command=save_alert).pack(side="left")
-            ttk.Button(button_row, text="Cancel", command=close_alert_dialog).pack(side="left", padx=(6, 0))
+            ttk.Button(button_row, text=self._ui("assignment.save", "Save"), command=save_alert).pack(side="left")
+            ttk.Button(button_row, text=self._ui("assignment.cancel", "Cancel"), command=close_alert_dialog).pack(side="left", padx=(6, 0))
             alert_dialog.update_idletasks()
             alert_dialog.geometry(f"{alert_dialog.winfo_reqwidth()}x{alert_dialog.winfo_reqheight()}")
 
@@ -890,8 +1235,8 @@ class settingsGUI(Toplevel):
 
         alert_buttons = ttk.Frame(alerts_tab)
         alert_buttons.grid(row=2, column=1, sticky="sew", padx=(0, 8), pady=(0, 8))
-        ttk.Button(alert_buttons, text="Remove selected alert", command=remove_alert).pack(fill="x", pady=(0, 6))
-        ttk.Button(alert_buttons, text="Add new alert", command=open_alert_prompt).pack(fill="x")
+        ttk.Button(alert_buttons, text=self._ui("alerts.button.remove_selected", "Remove selected alert"), command=remove_alert).pack(fill="x", pady=(0, 6))
+        ttk.Button(alert_buttons, text=self._ui("alerts.button.add_new", "Add new alert"), command=open_alert_prompt).pack(fill="x")
         refresh_alerts()
 
     def _delete_weekly_slot(self, day_index: int, slot: int, dialog: Toplevel | None = None):
@@ -916,7 +1261,7 @@ class settingsGUI(Toplevel):
         right = ttk.Frame(root)
         right.pack(side="left", fill="both", expand=True)
 
-        ttk.Label(left, text="Special days", style="mainText.Label").pack(anchor="w")
+        ttk.Label(left, text=self._ui("special_days.title", "Special days"), style="mainText.Label").pack(anchor="w")
         day_list = Listbox(left, exportselection=False, width=18, height=18)
         self._style_listbox(day_list)
         day_list.pack(fill="y", expand=True, pady=(8, 8))
@@ -940,7 +1285,7 @@ class settingsGUI(Toplevel):
             end_frame, end_hour_var, end_minute_var = self._create_time_inputs(row_frame, start=end)
             end_frame.pack(side="left", padx=(0, 4))
             ttk.Entry(row_frame, textvariable=value_var).pack(side="left", fill="x", expand=True, padx=(0, 4))
-            ttk.Button(row_frame, text="X", width=3, command=lambda: remove_row(row_frame)).pack(side="left")
+            ttk.Button(row_frame, text=self._ui("special_days.button.remove_row", "X"), width=3, command=lambda: remove_row(row_frame)).pack(side="left")
             rows.append(
                 {
                     "frame": row_frame,
@@ -987,23 +1332,27 @@ class settingsGUI(Toplevel):
 
         day_list.bind("<<ListboxSelect>>", load_special_day)
 
-        ttk.Label(right, text="Date").pack(anchor="w")
+        ttk.Label(right, text=self._ui("special_days.date", "Date")).pack(anchor="w")
         date_frame, date_year_var, date_month_var, date_day_var = self._create_date_inputs(right, value=selected_date.get())
         date_frame.pack(anchor="w", pady=(0, 8))
-        full_check = Checkbutton(right, text="Replace entire day", variable=full_var)
+        full_check = Checkbutton(right, text=self._ui("special_days.replace_day", "Replace entire day"), variable=full_var)
         self._style_checkbutton(full_check)
         full_check.pack(anchor="w", pady=(0, 8))
-        ttk.Label(right, text="Rows: slot | start | end | classes").pack(anchor="w")
+        ttk.Label(right, text=self._ui("special_days.rows_help", "Rows: slot | start | end | classes")).pack(anchor="w")
 
         button_bar = ttk.Frame(right)
         button_bar.pack(fill="x", pady=(8, 8))
-        ttk.Button(button_bar, text="Add row", command=add_row).pack(side="left")
+        ttk.Button(button_bar, text=self._ui("special_days.button.add_row", "Add row"), command=add_row).pack(side="left")
 
         def new_special_day():
             try:
                 key = self._date_from_vars(date_year_var, date_month_var, date_day_var)
             except ValueError:
-                return messagebox.showerror("Invalid date", "Use a valid date.", parent=self)
+                return messagebox.showerror(
+                    self._ui("special_days.invalid_date.title", "Invalid date"),
+                    self._ui("special_days.invalid_date.message", "Use a valid date."),
+                    parent=self,
+                )
             selected_date.set(key)
             if key not in day_list.get(0, END):
                 day_list.insert(END, key)
@@ -1013,13 +1362,17 @@ class settingsGUI(Toplevel):
             self._refresh_clock_runtime()
             load_special_day()
 
-        ttk.Button(button_bar, text="New date", command=new_special_day).pack(side="left", padx=(6, 0))
+        ttk.Button(button_bar, text=self._ui("special_days.button.new_date", "New date"), command=new_special_day).pack(side="left", padx=(6, 0))
 
         def save_special_day():
             try:
                 key = self._date_from_vars(date_year_var, date_month_var, date_day_var)
             except ValueError:
-                return messagebox.showerror("Invalid date", "Use a valid date.", parent=self)
+                return messagebox.showerror(
+                    self._ui("special_days.invalid_date.title", "Invalid date"),
+                    self._ui("special_days.invalid_date.message", "Use a valid date."),
+                    parent=self,
+                )
             selected_date.set(key)
 
             payload: dict[str, object] = {"full": full_var.get()}
@@ -1038,7 +1391,7 @@ class settingsGUI(Toplevel):
                     if value:
                         classes[slot] = self._parse_class_entry(value)
             except Exception as exc:
-                return messagebox.showerror("Invalid special day", str(exc), parent=self)
+                return messagebox.showerror(self._ui("special_days.invalid_day.title", "Invalid special day"), str(exc), parent=self)
 
             if classes:
                 payload["classes"] = classes
@@ -1060,8 +1413,8 @@ class settingsGUI(Toplevel):
 
         footer = ttk.Frame(right)
         footer.pack(fill="x", pady=(12, 0))
-        ttk.Button(footer, text="Save special day", command=save_special_day).pack(side="left")
-        ttk.Button(footer, text="Delete", command=delete_special_day).pack(side="left", padx=(6, 0))
+        ttk.Button(footer, text=self._ui("special_days.button.save", "Save special day"), command=save_special_day).pack(side="left")
+        ttk.Button(footer, text=self._ui("special_days.button.delete", "Delete"), command=delete_special_day).pack(side="left", padx=(6, 0))
 
         add_row()
 
@@ -1083,23 +1436,23 @@ class settingsGUI(Toplevel):
         fields = ttk.Frame(root)
         fields.pack(fill="x")
         items = [
-            ("Background", background_var),
-            ("Foreground", foreground_var),
-            ("Language", lang_var),
-            ("Alpha default", alpha_default_var),
-            ("Alpha on hover", alpha_hover_var),
+            (self._ui("general.label.background", "Background"), background_var),
+            (self._ui("general.label.foreground", "Foreground"), foreground_var),
+            (self._ui("general.label.language", "Language"), lang_var),
+            (self._ui("general.label.alpha_default", "Alpha default"), alpha_default_var),
+            (self._ui("general.label.alpha_hover", "Alpha on hover"), alpha_hover_var),
         ]
         for row, (label, var) in enumerate(items):
             ttk.Label(fields, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=4)
-            if label == "Language":
+            if label == self._ui("general.label.language", "Language"):
                 ttk.Combobox(fields, textvariable=var, values=lang_options, state="readonly").grid(row=row, column=1, sticky="ew", padx=4, pady=4)
             else:
                 ttk.Entry(fields, textvariable=var).grid(row=row, column=1, sticky="ew", padx=4, pady=4)
         fields.grid_columnconfigure(1, weight=1)
-        ignore_updates_check = Checkbutton(fields, text="Ignore updates", variable=ignore_updates_var)
+        ignore_updates_check = Checkbutton(fields, text=self._ui("general.ignore_updates", "Ignore updates"), variable=ignore_updates_var)
         self._style_checkbutton(ignore_updates_check)
         ignore_updates_check.grid(row=5, column=0, columnspan=2, sticky="w", padx=4, pady=4)
-        show_teacher_check = Checkbutton(fields, text="Show teacher", variable=show_teacher_var)
+        show_teacher_check = Checkbutton(fields, text=self._ui("general.show_teacher", "Show teacher"), variable=show_teacher_var)
         self._style_checkbutton(show_teacher_check)
         show_teacher_check.grid(row=6, column=0, columnspan=2, sticky="w", padx=4, pady=4)
 
@@ -1110,17 +1463,17 @@ class settingsGUI(Toplevel):
 
         color_buttons = ttk.Frame(root)
         color_buttons.pack(fill="x", pady=(8, 8))
-        ttk.Button(color_buttons, text="Pick background", command=lambda: choose_color(background_var)).pack(side="left")
-        ttk.Button(color_buttons, text="Pick foreground", command=lambda: choose_color(foreground_var)).pack(side="left", padx=(6, 0))
+        ttk.Button(color_buttons, text=self._ui("general.pick_background", "Pick background"), command=lambda: choose_color(background_var)).pack(side="left")
+        ttk.Button(color_buttons, text=self._ui("general.pick_foreground", "Pick foreground"), command=lambda: choose_color(foreground_var)).pack(side="left", padx=(6, 0))
 
         def save_general():
             try:
                 bg = background_var.get().strip()
                 fg = foreground_var.get().strip()
                 if not (bg.startswith("#") and len(bg) == 7):
-                    raise ValueError("Background must be #RRGGBB")
+                    raise ValueError(self._ui("general.invalid.background", "Background must be #RRGGBB"))
                 if not (fg.startswith("#") and len(fg) == 7):
-                    raise ValueError("Foreground must be #RRGGBB")
+                    raise ValueError(self._ui("general.invalid.foreground", "Foreground must be #RRGGBB"))
                 int(bg.removeprefix("#"), 16)
                 int(fg.removeprefix("#"), 16)
                 cfg._data["background"] = bg.upper()
@@ -1137,7 +1490,7 @@ class settingsGUI(Toplevel):
                     self.logger.exception("Could not refresh clock colors from settings UI")
                 self._openGeneral()
             except Exception as exc:
-                messagebox.showerror("Invalid settings", str(exc), parent=self)
+                messagebox.showerror(self._ui("general.invalid.title", "Invalid settings"), str(exc), parent=self)
             self._refresh_clock_runtime()
 
-        ttk.Button(root, text="Save general settings", command=save_general).pack(anchor="w")
+        ttk.Button(root, text=self._ui("general.save", "Save general settings"), command=save_general).pack(anchor="w")

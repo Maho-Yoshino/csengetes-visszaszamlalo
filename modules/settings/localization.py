@@ -4,6 +4,7 @@ from pathlib import Path
 from logging import getLogger
 from tkinter import messagebox
 from dataclasses import dataclass
+
 def merge(obj: dict, default: dict) -> dict:
 	return {k: obj.get(k, v) for k, v in default.items()}
 class Localization:
@@ -20,16 +21,76 @@ class Localization:
 		def from_dict(cls, obj, default):
 			return cls(**merge(obj, default))
 	class _delaySettingLoc:
-		def __init__(self, obj:dict[str, str], default:dict[str, str]):
-			self.title = obj.get("title", default["title"])
-			self.label = obj.get("label", default["label"])
-			self.help = obj.get("help", default["help"])
-			self.btn = obj.get("btn", default["btn"])
+		def __init__(self, obj:dict[str, str]):
+			self.title = obj.get("title")
+			self.label = obj.get("label")
+			self.help = obj.get("help")
+			self.btn = obj.get("btn")
 	class _settingsLoc:
 		topbar:dict[str, str]
+		ui:dict[str, str]
+		@staticmethod
+		def _copy_flat(ui: dict[str, str], prefix: str, obj: dict[str, str]):
+			for key, value in obj.items():
+				if isinstance(value, str):
+					ui[f"{prefix}.{key}"] = value
+
+		@classmethod
+		def _flatten_ui(cls, obj: dict[str, object]) -> dict[str, str]:
+			ui: dict[str, str] = {}
+			for key, value in obj.get("days", {}).items():
+				ui[f"day.{key}"] = value
+			cls._copy_flat(ui, "common", obj.get("common", {}))
+
+			classes = obj.get("classesTab", {})
+			if classes:
+				if isinstance(classes.get("editor.title"), str):
+					ui["classes.editor.title"] = classes["editor.title"]
+				editor = classes.get("editor", {})
+				if isinstance(editor.get("title"), str):
+					ui["classes.title"] = editor["title"]
+				field_keys = {
+					"name": "classes.field.name",
+					"location": "classes.field.location",
+					"teacher": "classes.field.teacher",
+				}
+				for source, target in field_keys.items():
+					if isinstance(editor.get(source), str):
+						ui[target] = editor[source]
+				for key, value in classes.get("buttons", {}).items():
+					if isinstance(value, str):
+						ui[f"classes.button.{key}"] = value
+				for key, value in classes.get("placeholders", {}).items():
+					if isinstance(value, str):
+						ui[f"classes.placeholder.{key}"] = value
+				for key in ("remove.title", "remove.message"):
+					if isinstance(classes.get(key), str):
+						ui[f"classes.{key}"] = classes[key]
+
+			schedule = obj.get("schedule", {})
+			if schedule:
+				nested_prefixes = {
+					"assignments": "assignment",
+					"class_slot": "class_slot",
+					"events": "events",
+					"alerts": "alerts",
+					"special_days": "special_days",
+					"general": "general",
+				}
+				for key, value in schedule.items():
+					if isinstance(value, str):
+						ui[f"schedule.{key}"] = value
+					elif key in nested_prefixes and isinstance(value, dict):
+						cls._copy_flat(ui, nested_prefixes[key], value)
+
+			# Backwards compatibility for locales still using the previous flat map.
+			ui.update(obj.get("ui", {}))
+			return ui
+
 		def __init__(self, obj:dict[str, str|dict[str, str]], default:dict[str, str|dict[str, str]]):
 			self.title = obj.get("title", default["title"])
-			self.topbar = obj.get("topbar", default["topbar"])
+			self.topbar = merge(obj.get("topbar", {}), default.get("topbar", {}))
+			self.ui = merge(self._flatten_ui(obj), self._flatten_ui(default))
 	class _alertLoc:
 		def __init__(self, obj:dict[str, str], default:dict[str, str]):
 			self.title = obj.get("title", default["title"])
@@ -115,7 +176,7 @@ class Localization:
 		self.alert = self._alertLoc(self._lang.get("alert", {}), self._defaults["alert"])
 		self.nextClass = self._lang.get("nextClass", self._defaults["nextClass"])
 		self.substitute = self._lang.get("substitute", self._defaults["substitute"])
-		self.delaySetting = self._delaySettingLoc(self._lang.get("delaySetting", {}), self._defaults["delaySetting"])
+		self.delaySetting = self._delaySettingLoc(merge(self._lang.get("delaySetting", {}), self._defaults["delaySetting"]))
 		self.tray = self._trayLoc.from_dict(self._lang.get("tray", {}), self._defaults["tray"])
 		self.settings = self._settingsLoc(self._lang.get("settings", {}), self._defaults["settings"])
 	def format(self, text: str, **values) -> str:

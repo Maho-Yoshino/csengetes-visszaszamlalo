@@ -55,9 +55,143 @@
 		"title": "Visszaszámláló Beállítások",
 		"topbar": {
 			"schedule": "Órarend",
+			"classes": "Órák",
 			"special_days": "Speciális napok",
 			"alerts": "Értesítések",
 			"general": "Általános"
+		},
+		"days": {
+			"0": "Hétfő",
+			"1": "Kedd",
+			"2": "Szerda",
+			"3": "Csütörtök",
+			"4": "Péntek",
+			"5": "Szombat",
+			"6": "Vasárnap"
+		},
+		"common": {
+			"custom": "custom",
+			"null_option": "Nincs",
+			"keep": "Megtart",
+			"once": "Csak egyszer"
+		},
+		"classesTab": {
+			"editor.title": "Óra szerkesztése",
+			"editor": {
+				"title": "Órák",
+				"name": "Óra neve",
+				"location": "Óra helye",
+				"teacher": "Óra tanára"
+			},
+			"buttons": {
+				"add": "Hozzáadás",
+				"remove": "Törlés",
+				"remove_no_prompt": "Törlés és ne kérdezze újra",
+				"save": "Mentés"
+			},
+			"placeholders": {
+				"code": "UJ_ORA",
+				"name": "Új óra",
+				"location": "Új hely",
+				"teacher": "Új tanár"
+			},
+			"remove.title": "Óra törlése",
+			"remove.message": "Törli ezt: {class_label}?"
+		},
+		"schedule": {
+			"nav.prev": "<",
+			"nav.next": ">",
+			"nav.today": "Ma",
+			"mode.day": "Nap",
+			"mode.week": "Hét",
+			"mode.week_with_saturday": "Hét szombattal",
+			"mode.full_week": "Egész hét",
+			"title.day": "{day_name}, {date}",
+			"title.week": "{week}. Hét ({start} - {end})",
+			"instruction": "Kattintson egy órára hogy szerkessze az óra adatait.",
+			"add_slot": "Óra hozzáadása",
+			"group": "{index}. csoport",
+			"assignments": {
+				"no_classes.title": "Nincsenek órák",
+				"no_classes.message": "Adjon órákat a beállításokba, mielőtt órarendet szerkesztene.",
+				"dialog.title": "Óra hozzáadása naphoz ({day_name})",
+				"class_number": "Hanyadik óra",
+				"class_label": "Class ({index})",
+				"secondary_only": "Csak B hétre",
+				"day_only": "Csak erre a napra",
+				"save": "Mentés",
+				"cancel": "Mégse",
+				"split": "Osztály felosztása",
+				"remove_split": "Felosztás törlése"
+			},
+			"class_slot": {
+				"dialog.title": "{day_name} class",
+				"tab.class_data": "Óra adat",
+				"tab.events": "Események",
+				"tab.alerts": "Értesítések",
+				"row.date": "Dátum",
+				"row.time": "Idő",
+				"row.class_name": "Óra neve",
+				"row.teacher_name": "Tanár neve",
+				"row.room": "Terem",
+				"row.class_index": "Hanyadik óra",
+				"button.change": "Óra változtatása",
+				"button.add_group": "Csoport hozzáadása",
+				"button.delete_slot": "Óra törlése"
+			},
+			"events": {
+				"type.homework": "Házi feladat",
+				"type.exam": "Dolgozat",
+				"invalid.title": "Hibás esemény",
+				"invalid.message": "Esemény szöveg kötelező",
+				"button.add": "Hozzáadás",
+				"button.remove": "Törlés"
+			},
+			"alerts": {
+				"format.before_end": "Vége előtt",
+				"format.since_start": "Kezdés után",
+				"info": "Alert time is calculated relative to the beginning or end of this class.",
+				"dialog.add_title": "Értesítés hozzáadása",
+				"dialog.edit_title": "Értesítés módosítása",
+				"calculate_from": "Számítás",
+				"from_end": "Óra vége",
+				"from_start": "Óra kezdete",
+				"message": "Üzenet",
+				"keep_after": "Megtartás értesítés után",
+				"minutes": "Minutes since start/before end",
+				"invalid.title": "Invalid alert",
+				"button.remove_selected": "Remove selected alert",
+				"button.add_new": "Add new alert"
+			},
+			"special_days": {
+				"title": "Special days",
+				"date": "Dátum",
+				"replace_day": "Egész nap helyettesítése",
+				"rows_help": "Oszlopok: slot | start | end | classes",
+				"button.add_row": "Sor hozzáadása",
+				"button.remove_row": "X",
+				"button.new_date": "New date",
+				"button.save": "Save special day",
+				"button.delete": "Delete",
+				"invalid_date.title": "Invalid date",
+				"invalid_date.message": "Use a valid date.",
+				"invalid_day.title": "Invalid special day"
+			},
+			"general": {
+				"label.background": "Háttér szín",
+				"label.foreground": "Előtér szín",
+				"label.language": "Nyelv",
+				"label.alpha_default": "Alpha alapérték",
+				"label.alpha_hover": "Alpha on hover",
+				"ignore_updates": "Frissítések kihagyása",
+				"show_teacher": "Tanár megjelenítése",
+				"pick_background": "Háttér szín kiválasztás",
+				"pick_foreground": "Előtér szín kiválasztás",
+				"save": "Mentés",
+				"invalid.title": "Invalid settings",
+				"invalid.background": "Background must be #RRGGBB",
+				"invalid.foreground": "Foreground must be #RRGGBB"
+			}
 		}
 	}
 }

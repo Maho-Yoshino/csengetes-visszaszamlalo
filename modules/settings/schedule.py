@@ -70,7 +70,31 @@ class ScheduleSettings:
 				changed = True
 		if changed:
 			self.save()
+	def _numeric_sort_key(self, key) -> tuple[int, int | str]:
+		try:
+			return (0, int(key))
+		except (TypeError, ValueError):
+			return (1, str(key))
+	def _ordered_slot_dict(self, data:dict) -> dict:
+		return {
+			key: data[key]
+			for key in sorted(data.keys(), key=self._numeric_sort_key)
+		}
+	def _normalize_key_order(self):
+		if isinstance(self._data.get("default"), list):
+			self._data["default"] = [
+				self._ordered_slot_dict(day) if isinstance(day, dict) else day
+				for day in self._data["default"]
+			]
+		if isinstance(self._data.get("secondary"), dict):
+			self._data["secondary"] = {
+				day: self._ordered_slot_dict(slots) if isinstance(slots, dict) else slots
+				for day, slots in sorted(self._data["secondary"].items(), key=lambda item: self._numeric_sort_key(item[0]))
+			}
+		if isinstance(self._data.get("timeSlots"), dict):
+			self._data["timeSlots"] = self._ordered_slot_dict(self._data["timeSlots"])
 	def save(self):
+		self._normalize_key_order()
 		with self.path.open("w", encoding="utf-8") as f:
 			jdump(self._data, f, indent=4, ensure_ascii=False)
 	# region default
@@ -177,7 +201,7 @@ class ScheduleSettings:
 		defaultTimeSlots = self.timeSlotsTime
 		for ind, _day in enumerate(self.default):
 			finalSchedule.append([])
-			for classIndex, data in _day.items():
+			for classIndex, data in sorted(_day.items(), key=lambda item: int(item[0])):
 				times = defaultTimeSlots[int(classIndex)]
 				finalSchedule[ind].append(UnifiedClassData(data=data, classIndex=int(classIndex), start=times[0], end=times[1]))
 		# region Get week constraints
@@ -188,7 +212,7 @@ class ScheduleSettings:
 		# region Secondary Week
 		if self.currentlySecondaryWeek(_date):
 			for dayInd, secondary_day in self.secondary.items():
-				for classIndex, classID in secondary_day.items():
+				for classIndex, classID in sorted(secondary_day.items(), key=lambda item: int(item[0])):
 					times = defaultTimeSlots[int(classIndex)]
 					finalSchedule[int(dayInd)].append(UnifiedClassData(data=self.convertToClassData(classID), classIndex=int(classIndex), start=times[0], end=times[1]))
 		# endregion
