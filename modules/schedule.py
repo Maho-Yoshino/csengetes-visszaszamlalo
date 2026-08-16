@@ -16,6 +16,7 @@ class Schedule:
 		weekday = self._date.weekday()
 		self.specialDay = any([day.date() == self._date for day in state.settings.events.specialDays.keys()])
 		if weekday not in range(len(state.settings.schedule.default)) and not self.specialDay:
+			self.classes = []
 			return
 		if len(tmp := state.settings.schedule.getUnifiedSchedule(week_of=other_date)) > weekday:
 			self.classes = tmp[weekday]

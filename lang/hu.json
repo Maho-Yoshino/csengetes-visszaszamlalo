@@ -116,7 +116,7 @@
 				"no_classes.message": "Adjon órákat a beállításokba, mielőtt órarendet szerkesztene.",
 				"dialog.title": "Óra hozzáadása naphoz ({day_name})",
 				"class_number": "Hanyadik óra",
-				"class_label": "Class ({index})",
+				"class_label": "Óra ({index})",
 				"secondary_only": "Csak B hétre",
 				"day_only": "Csak erre a napra",
 				"save": "Mentés",
@@ -125,7 +125,7 @@
 				"remove_split": "Felosztás törlése"
 			},
 			"class_slot": {
-				"dialog.title": "{day_name} class",
+				"dialog.title": "{day_name} óra",
 				"tab.class_data": "Óra adat",
 				"tab.events": "Események",
 				"tab.alerts": "Értesítések",
@@ -150,7 +150,7 @@
 			"alerts": {
 				"format.before_end": "Vége előtt",
 				"format.since_start": "Kezdés után",
-				"info": "Alert time is calculated relative to the beginning or end of this class.",
+				"info": "Az értesítés ideje relatív van számítva az óra kezdetétől vagy végétől.",
 				"dialog.add_title": "Értesítés hozzáadása",
 				"dialog.edit_title": "Értesítés módosítása",
 				"calculate_from": "Számítás",
@@ -158,39 +158,39 @@
 				"from_start": "Óra kezdete",
 				"message": "Üzenet",
 				"keep_after": "Megtartás értesítés után",
-				"minutes": "Minutes since start/before end",
-				"invalid.title": "Invalid alert",
-				"button.remove_selected": "Remove selected alert",
-				"button.add_new": "Add new alert"
+				"minutes": "X perccel óra kezdete után/vége előtt",
+				"invalid.title": "Érvénytelen értesítés",
+				"button.remove_selected": "Kiválasztott értesítés törlése",
+				"button.add_new": "Új értesítés"
 			},
 			"special_days": {
-				"title": "Special days",
+				"title": "Speciális napok",
 				"date": "Dátum",
 				"replace_day": "Egész nap helyettesítése",
-				"rows_help": "Oszlopok: slot | start | end | classes",
+				"rows_help": "Oszlopok: hely | kezdet | vége | órák",
 				"button.add_row": "Sor hozzáadása",
 				"button.remove_row": "X",
-				"button.new_date": "New date",
-				"button.save": "Save special day",
-				"button.delete": "Delete",
-				"invalid_date.title": "Invalid date",
-				"invalid_date.message": "Use a valid date.",
-				"invalid_day.title": "Invalid special day"
+				"button.new_date": "Új dátum",
+				"button.save": "Speciális nap mentése",
+				"button.delete": "Törlés",
+				"invalid_date.title": "Érvénytelen dátum",
+				"invalid_date.message": "Használjon egy érvényes dátumot.",
+				"invalid_day.title": "Érvénytelen speciális nap"
 			},
 			"general": {
 				"label.background": "Háttér szín",
 				"label.foreground": "Előtér szín",
 				"label.language": "Nyelv",
 				"label.alpha_default": "Alpha alapérték",
-				"label.alpha_hover": "Alpha on hover",
+				"label.alpha_hover": "Alpha érték rámutatáskor",
 				"ignore_updates": "Frissítések kihagyása",
 				"show_teacher": "Tanár megjelenítése",
 				"pick_background": "Háttér szín kiválasztás",
 				"pick_foreground": "Előtér szín kiválasztás",
 				"save": "Mentés",
-				"invalid.title": "Invalid settings",
-				"invalid.background": "Background must be #RRGGBB",
-				"invalid.foreground": "Foreground must be #RRGGBB"
+				"invalid.title": "Érvénytelen beállítások",
+				"invalid.background": "A háttérszínnek #RRGGBB formátumban kell lennie",
+				"invalid.foreground": "Az előtérszínnek #RRGGBB formátumban kell lennie"
 			}
 		}
 	}
